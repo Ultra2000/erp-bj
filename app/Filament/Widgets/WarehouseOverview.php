@@ -9,10 +9,19 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 class WarehouseOverview extends BaseWidget
 {
     protected static ?int $sort = 5;
+
+    public ?int $selectedWarehouse = null;
+
+    #[On('warehouse-filter-changed')]
+    public function updateWarehouseFilter(?int $warehouseId): void
+    {
+        $this->selectedWarehouse = $warehouseId;
+    }
 
     protected function getStats(): array
     {
@@ -23,10 +32,18 @@ class WarehouseOverview extends BaseWidget
             return [];
         }
 
-        // Filtrer par entrepôts de l'utilisateur si restriction
+        // Déterminer les entrepôts à filtrer
         $warehouseFilter = null;
+        $warehouseLabel = 'Tous entrepôts';
+        
         if ($user && $user->hasWarehouseRestriction()) {
             $warehouseFilter = $user->accessibleWarehouseIds();
+            $warehouse = $user->defaultWarehouse();
+            $warehouseLabel = $warehouse ? $warehouse->name : 'Mon entrepôt';
+        } elseif ($this->selectedWarehouse) {
+            $warehouseFilter = [$this->selectedWarehouse];
+            $warehouse = Warehouse::find($this->selectedWarehouse);
+            $warehouseLabel = $warehouse ? $warehouse->name : 'Entrepôt';
         }
 
         // Total stock value across accessible warehouses
@@ -80,13 +97,13 @@ class WarehouseOverview extends BaseWidget
 
         return [
             Stat::make('Valeur totale du stock', number_format($totalStockValue, 0, ',', ' ') . ' ' . \Filament\Facades\Filament::getTenant()->currency)
-                ->description('Tous entrepôts')
+                ->description($warehouseLabel)
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
                 ->chart($this->getStockValueChart($companyId)),
 
             Stat::make('Alertes stock', $lowStockCount)
-                ->description('Produits en rupture')
+                ->description($warehouseLabel . ' - Rupture')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($lowStockCount > 0 ? 'danger' : 'success'),
 
@@ -97,7 +114,7 @@ class WarehouseOverview extends BaseWidget
                 ->url(route('filament.admin.resources.stock-transfers.index', ['tenant' => filament()->getTenant()])),
 
             Stat::make('Mouvements aujourd\'hui', $todayMovements)
-                ->description('Entrées & sorties')
+                ->description($warehouseLabel)
                 ->descriptionIcon('heroicon-m-arrow-path')
                 ->color('info'),
         ];

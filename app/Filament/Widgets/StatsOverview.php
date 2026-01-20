@@ -11,38 +11,58 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class StatsOverview extends BaseWidget
 {
+    public ?int $selectedWarehouse = null;
+
+    #[On('warehouse-filter-changed')]
+    public function updateWarehouseFilter(?int $warehouseId): void
+    {
+        $this->selectedWarehouse = $warehouseId;
+    }
+
     protected function getStats(): array
     {
         $user = Auth::user();
         $currency = Filament::getTenant()->currency ?? 'FCFA';
+        $warehouseIds = null;
+        $warehouseLabel = 'Total';
         
-        // Filtrer par entrepôts de l'utilisateur si restriction
+        // Déterminer les entrepôts à filtrer
         if ($user && $user->hasWarehouseRestriction()) {
+            // Utilisateur restreint: ses entrepôts assignés
             $warehouseIds = $user->accessibleWarehouseIds();
-            
+            $warehouse = $user->defaultWarehouse();
+            $warehouseLabel = $warehouse ? $warehouse->name : 'Mon entrepôt';
+        } elseif ($this->selectedWarehouse) {
+            // Admin avec filtre actif
+            $warehouseIds = [$this->selectedWarehouse];
+            $warehouse = \App\Models\Warehouse::find($this->selectedWarehouse);
+            $warehouseLabel = $warehouse ? $warehouse->name : 'Entrepôt sélectionné';
+        }
+        
+        // Calculer les stats selon le filtre
+        if ($warehouseIds) {
             $totalSales = Sale::where('status', 'completed')
                 ->whereIn('warehouse_id', $warehouseIds)
                 ->sum('total');
             
-            // Stock des produits dans les entrepôts accessibles
             $totalProducts = Inventory::whereIn('warehouse_id', $warehouseIds)
                 ->where('quantity', '>', 0)
                 ->distinct('product_id')
                 ->count('product_id');
             
-            // Produits en alerte dans les entrepôts accessibles
             $lowStockProducts = Inventory::whereIn('warehouse_id', $warehouseIds)
                 ->whereColumn('quantity', '<=', 'min_quantity')
                 ->count();
             
-            // Clients liés aux ventes de ces entrepôts
             $totalCustomers = Customer::whereHas('sales', function($q) use ($warehouseIds) {
                 $q->whereIn('warehouse_id', $warehouseIds);
             })->count();
         } else {
+            // Tous les entrepôts
             $totalSales = Sale::where('status', 'completed')->sum('total');
             $totalProducts = Product::count();
             $lowStockProducts = Product::where('stock', '<', 10)->count();
@@ -51,19 +71,19 @@ class StatsOverview extends BaseWidget
 
         return [
             Stat::make('Chiffre d\'affaires', number_format($totalSales, 0, ',', ' ') . ' ' . $currency)
-                ->description('Total des ventes terminées')
+                ->description($warehouseLabel . ' - Ventes terminées')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('success'),
             Stat::make('Produits en stock', $totalProducts)
-                ->description('Nombre total de produits')
+                ->description($warehouseLabel)
                 ->descriptionIcon('heroicon-m-cube')
                 ->color('primary'),
             Stat::make('Produits en alerte', $lowStockProducts)
-                ->description('Stock inférieur à 10 unités')
+                ->description($warehouseLabel . ' - Stock faible')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color('danger'),
             Stat::make('Clients', $totalCustomers)
-                ->description('Nombre total de clients')
+                ->description($warehouseLabel)
                 ->descriptionIcon('heroicon-m-users')
                 ->color('info'),
         ];
