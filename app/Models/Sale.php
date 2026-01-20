@@ -117,9 +117,14 @@ class Sale extends Model
                 $year = date('Y');
                 $prefix = ($sale->type === 'credit_note' ? 'AVR-' : 'FAC-') . $year . '-';
                 
-                $lastNumber = self::where('company_id', $sale->company_id)
+                // Compatible SQLite et MySQL
+                $driver = config('database.default');
+                $substringFn = $driver === 'sqlite' ? 'SUBSTR' : 'SUBSTRING';
+                
+                $lastNumber = self::withoutGlobalScopes()
+                    ->where('company_id', $sale->company_id)
                     ->where('invoice_number', 'like', $prefix . '%')
-                    ->selectRaw("MAX(CAST(SUBSTRING(invoice_number, 10) AS UNSIGNED)) as max_num")
+                    ->selectRaw("MAX(CAST({$substringFn}(invoice_number, 10) AS INTEGER)) as max_num")
                     ->value('max_num') ?? 0;
                 
                 $sale->invoice_number = $prefix . str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
