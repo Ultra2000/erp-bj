@@ -347,7 +347,7 @@ class StockTransferResource extends Resource
                                     ->send();
                             }
                         })
-                        ->visible(fn (StockTransfer $record) => $record->canBeApproved()),
+                        ->visible(fn (StockTransfer $record) => $record->canBeApproved() && (auth()->user()?->isAdmin() || auth()->user()?->hasAccessToWarehouse($record->source_warehouse_id))),
                     Tables\Actions\Action::make('ship')
                         ->label('Expédier')
                         ->icon('heroicon-o-truck')
@@ -369,7 +369,13 @@ class StockTransferResource extends Resource
                                     ->send();
                             }
                         })
-                        ->visible(fn (StockTransfer $record) => $record->canBeShipped()),
+                        ->visible(fn (StockTransfer $record) => $record->canBeShipped() && static::userCanShip($record)),
+                    Tables\Actions\Action::make('receive')
+                        ->label('Réceptionner')
+                        ->icon('heroicon-o-inbox-arrow-down')
+                        ->color('success')
+                        ->url(fn (StockTransfer $record) => static::getUrl('receive', ['record' => $record]))
+                        ->visible(fn (StockTransfer $record) => $record->canBeReceived() && static::userCanReceive($record)),
                     Tables\Actions\Action::make('cancel')
                         ->label('Annuler')
                         ->icon('heroicon-o-x-circle')
@@ -519,5 +525,45 @@ class StockTransferResource extends Resource
             'edit' => Pages\EditStockTransfer::route('/{record}/edit'),
             'receive' => Pages\ReceiveStockTransfer::route('/{record}/receive'),
         ];
+    }
+
+    /**
+     * Vérifie si l'utilisateur peut expédier ce transfert
+     * Seuls les utilisateurs ayant accès à l'entrepôt source peuvent expédier
+     */
+    protected static function userCanShip(StockTransfer $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Admin peut tout faire
+        if ($user->isAdmin()) return true;
+        
+        // Utilisateur restreint: doit avoir accès à l'entrepôt source
+        if ($user->hasWarehouseRestriction()) {
+            return $user->hasAccessToWarehouse($record->source_warehouse_id);
+        }
+        
+        return true;
+    }
+
+    /**
+     * Vérifie si l'utilisateur peut réceptionner ce transfert
+     * Seuls les utilisateurs ayant accès à l'entrepôt destination peuvent réceptionner
+     */
+    protected static function userCanReceive(StockTransfer $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        
+        // Admin peut tout faire
+        if ($user->isAdmin()) return true;
+        
+        // Utilisateur restreint: doit avoir accès à l'entrepôt destination
+        if ($user->hasWarehouseRestriction()) {
+            return $user->hasAccessToWarehouse($record->destination_warehouse_id);
+        }
+        
+        return true;
     }
 }

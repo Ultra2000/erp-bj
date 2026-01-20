@@ -26,9 +26,18 @@ class ReceiveStockTransfer extends Page
     {
         $this->record = $this->resolveRecord($record);
 
-        if (!$this->record->canBeReceived()) {
+        // Vérifier si l'utilisateur peut réceptionner ce transfert
+        $user = auth()->user();
+        $canReceive = $this->record->canBeReceived();
+        
+        if ($user && $user->hasWarehouseRestriction()) {
+            $canReceive = $canReceive && $user->hasAccessToWarehouse($this->record->destination_warehouse_id);
+        }
+
+        if (!$canReceive) {
             Notification::make()
                 ->title('Ce transfert ne peut pas être réceptionné')
+                ->body('Vous n\'avez pas accès à l\'entrepôt de destination ou le transfert n\'est pas en transit.')
                 ->danger()
                 ->send();
 

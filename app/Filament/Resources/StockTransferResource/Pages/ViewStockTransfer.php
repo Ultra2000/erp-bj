@@ -11,11 +11,39 @@ class ViewStockTransfer extends ViewRecord
 {
     protected static string $resource = StockTransferResource::class;
 
+    /**
+     * Vérifie si l'utilisateur peut agir sur l'entrepôt source
+     */
+    protected function userCanActOnSource(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->hasWarehouseRestriction()) {
+            return $user->hasAccessToWarehouse($this->record->source_warehouse_id);
+        }
+        return true;
+    }
+
+    /**
+     * Vérifie si l'utilisateur peut agir sur l'entrepôt destination
+     */
+    protected function userCanActOnDestination(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->hasWarehouseRestriction()) {
+            return $user->hasAccessToWarehouse($this->record->destination_warehouse_id);
+        }
+        return true;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
             Actions\EditAction::make()
-                ->visible(fn () => in_array($this->record->status, ['draft', 'pending'])),
+                ->visible(fn () => in_array($this->record->status, ['draft', 'pending']) && $this->userCanActOnSource()),
             
             Actions\Action::make('submit')
                 ->label('Soumettre')
@@ -29,7 +57,7 @@ class ViewStockTransfer extends ViewRecord
                         ->success()
                         ->send();
                 })
-                ->visible(fn () => $this->record->status === 'draft'),
+                ->visible(fn () => $this->record->status === 'draft' && $this->userCanActOnSource()),
 
             Actions\Action::make('approve')
                 ->label('Approuver')
@@ -51,7 +79,7 @@ class ViewStockTransfer extends ViewRecord
                             ->send();
                     }
                 })
-                ->visible(fn () => $this->record->canBeApproved()),
+                ->visible(fn () => $this->record->canBeApproved() && $this->userCanActOnSource()),
 
             Actions\Action::make('ship')
                 ->label('Expédier')
@@ -75,14 +103,14 @@ class ViewStockTransfer extends ViewRecord
                             ->send();
                     }
                 })
-                ->visible(fn () => $this->record->canBeShipped()),
+                ->visible(fn () => $this->record->canBeShipped() && $this->userCanActOnSource()),
 
             Actions\Action::make('receive')
                 ->label('Réceptionner')
                 ->icon('heroicon-o-inbox-arrow-down')
                 ->color('success')
                 ->url(fn () => $this->getResource()::getUrl('receive', ['record' => $this->record]))
-                ->visible(fn () => $this->record->canBeReceived()),
+                ->visible(fn () => $this->record->canBeReceived() && $this->userCanActOnDestination()),
 
             Actions\Action::make('cancel')
                 ->label('Annuler')
