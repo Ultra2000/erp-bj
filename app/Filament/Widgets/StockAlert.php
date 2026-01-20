@@ -11,6 +11,8 @@ use Livewire\Attributes\On;
 
 class StockAlert extends BaseWidget
 {
+    protected static bool $isDiscovered = false;
+    
     public ?int $selectedWarehouse = null;
 
     #[On('warehouse-filter-changed')]

@@ -1,4 +1,7 @@
 <x-filament-panels::page>
+    {{-- Widget Bonjour Admin (Toujours en haut) --}}
+    @livewire(\App\Filament\Widgets\QuickActionsWidget::class)
+
     {{-- Filtre d'entrepôt pour les admins --}}
     @if(!auth()->user()?->hasWarehouseRestriction())
     <div class="mb-6">

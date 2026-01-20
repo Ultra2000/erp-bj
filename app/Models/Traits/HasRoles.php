@@ -81,7 +81,10 @@ trait HasRoles
      */
     public function isAdminOf(?Company $company = null): bool
     {
-        return $this->hasRole('admin', $company);
+        // Vérifier les différentes variantes du rôle admin
+        return $this->hasRole('admin', $company) 
+            || $this->hasRole('administrateur', $company)
+            || $this->hasRole('Administrateur', $company);
     }
 
     /**

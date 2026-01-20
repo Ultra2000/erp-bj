@@ -11,6 +11,7 @@ use Livewire\Attributes\On;
 
 class SalesChart extends ChartWidget
 {
+    protected static bool $isDiscovered = false;
     protected static ?string $heading = 'Ventes des 7 derniers jours';
     protected static ?int $sort = 2;
 

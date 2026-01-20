@@ -7,6 +7,7 @@ use App\Filament\Widgets\SalesChart;
 use App\Filament\Widgets\StockAlert;
 use App\Filament\Widgets\WarehouseOverview;
 use App\Filament\Widgets\WarehouseStockSummary;
+use App\Filament\Widgets\QuickActionsWidget;
 use App\Models\Warehouse;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -24,7 +25,7 @@ class Dashboard extends Page implements HasForms
     protected static ?string $title = 'Tableau de bord';
     protected static ?int $navigationSort = -2;
     protected static ?string $slug = '';
-    protected static bool $shouldRegisterNavigation = true;
+    protected static string $routePath = '/';
 
     protected static string $view = 'filament.pages.dashboard';
 
@@ -61,7 +62,7 @@ class Dashboard extends Page implements HasForms
         return $form->schema([]);
     }
 
-    protected function getHeaderWidgets(): array
+    protected function getCustomHeaderWidgets(): array
     {
         return [
             StatsOverview::make(['selectedWarehouse' => $this->selectedWarehouse]),
@@ -70,7 +71,7 @@ class Dashboard extends Page implements HasForms
         ];
     }
 
-    protected function getFooterWidgets(): array
+    protected function getCustomFooterWidgets(): array
     {
         return [
             WarehouseOverview::make(['selectedWarehouse' => $this->selectedWarehouse]),
@@ -81,13 +82,8 @@ class Dashboard extends Page implements HasForms
     public function getWidgets(): array
     {
         return array_merge(
-            $this->getHeaderWidgets(),
-            $this->getFooterWidgets()
+            $this->getCustomHeaderWidgets(),
+            $this->getCustomFooterWidgets()
         );
-    }
-
-    public static function getNavigationUrl(): string
-    {
-        return '/admin';
     }
 } 

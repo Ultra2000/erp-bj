@@ -13,6 +13,7 @@ use Livewire\Attributes\On;
 
 class WarehouseOverview extends BaseWidget
 {
+    protected static bool $isDiscovered = false;
     protected static ?int $sort = 5;
 
     public ?int $selectedWarehouse = null;

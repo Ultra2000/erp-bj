@@ -15,6 +15,8 @@ use Livewire\Attributes\On;
 
 class StatsOverview extends BaseWidget
 {
+    protected static bool $isDiscovered = false;
+    
     public ?int $selectedWarehouse = null;
 
     #[On('warehouse-filter-changed')]

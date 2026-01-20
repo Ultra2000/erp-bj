@@ -12,6 +12,7 @@ use Livewire\Attributes\On;
 
 class WarehouseStockSummary extends BaseWidget
 {
+    protected static bool $isDiscovered = false;
     protected static ?int $sort = 6;
     protected int | string | array $columnSpan = 'full';
     protected static ?string $heading = 'Stock par entrepôt';
