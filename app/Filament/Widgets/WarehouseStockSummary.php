@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class WarehouseStockSummary extends BaseWidget
 {
@@ -16,12 +17,19 @@ class WarehouseStockSummary extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $user = Auth::user();
+        
+        $query = Warehouse::query()
+            ->where('company_id', filament()->getTenant()?->id)
+            ->where('is_active', true);
+        
+        // Filtrer par entrepôts de l'utilisateur si restriction
+        if ($user && $user->hasWarehouseRestriction()) {
+            $query->whereIn('id', $user->accessibleWarehouseIds());
+        }
+        
         return $table
-            ->query(
-                Warehouse::query()
-                    ->where('company_id', filament()->getTenant()?->id)
-                    ->where('is_active', true)
-            )
+            ->query($query)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Entrepôt')

@@ -8,6 +8,7 @@ use App\Models\StockMovement;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class WarehouseOverview extends BaseWidget
 {
@@ -16,36 +17,66 @@ class WarehouseOverview extends BaseWidget
     protected function getStats(): array
     {
         $companyId = filament()->getTenant()?->id;
+        $user = Auth::user();
 
         if (!$companyId) {
             return [];
         }
 
-        // Total stock value across all warehouses
-        $totalStockValue = DB::table('product_warehouse')
+        // Filtrer par entrepôts de l'utilisateur si restriction
+        $warehouseFilter = null;
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseFilter = $user->accessibleWarehouseIds();
+        }
+
+        // Total stock value across accessible warehouses
+        $stockQuery = DB::table('product_warehouse')
             ->join('warehouses', 'warehouses.id', '=', 'product_warehouse.warehouse_id')
             ->join('products', 'products.id', '=', 'product_warehouse.product_id')
-            ->where('warehouses.company_id', $companyId)
-            ->selectRaw('SUM(product_warehouse.quantity * COALESCE(products.purchase_price, 0)) as total')
+            ->where('warehouses.company_id', $companyId);
+        
+        if ($warehouseFilter) {
+            $stockQuery->whereIn('warehouses.id', $warehouseFilter);
+        }
+        
+        $totalStockValue = $stockQuery->selectRaw('SUM(product_warehouse.quantity * COALESCE(products.purchase_price, 0)) as total')
             ->value('total') ?? 0;
 
         // Low stock alerts
-        $lowStockCount = DB::table('product_warehouse')
+        $lowStockQuery = DB::table('product_warehouse')
             ->join('warehouses', 'warehouses.id', '=', 'product_warehouse.warehouse_id')
             ->where('warehouses.company_id', $companyId)
             ->whereNotNull('product_warehouse.min_quantity')
-            ->whereRaw('product_warehouse.quantity <= product_warehouse.min_quantity')
-            ->count();
+            ->whereRaw('product_warehouse.quantity <= product_warehouse.min_quantity');
+        
+        if ($warehouseFilter) {
+            $lowStockQuery->whereIn('warehouses.id', $warehouseFilter);
+        }
+        
+        $lowStockCount = $lowStockQuery->count();
 
-        // Pending transfers
-        $pendingTransfers = StockTransfer::where('company_id', $companyId)
-            ->whereIn('status', ['pending', 'approved', 'in_transit'])
-            ->count();
+        // Pending transfers (only those involving accessible warehouses)
+        $transfersQuery = StockTransfer::where('company_id', $companyId)
+            ->whereIn('status', ['pending', 'approved', 'in_transit']);
+        
+        if ($warehouseFilter) {
+            $transfersQuery->where(function($q) use ($warehouseFilter) {
+                $q->whereIn('source_warehouse_id', $warehouseFilter)
+                  ->orWhereIn('destination_warehouse_id', $warehouseFilter);
+            });
+        }
+        
+        $pendingTransfers = $transfersQuery->count();
 
         // Today's movements
-        $todayMovements = StockMovement::where('company_id', $companyId)
-            ->whereDate('created_at', today())
-            ->count();
+        $movementsQuery = StockMovement::where('company_id', $companyId)
+            ->whereDate('created_at', today());
+        
+        if ($warehouseFilter) {
+            $movementsQuery->whereIn('warehouse_id', $warehouseFilter);
+        }
+        
+        $todayMovements = $movementsQuery->count();
 
         return [
             Stat::make('Valeur totale du stock', number_format($totalStockValue, 0, ',', ' ') . ' ' . \Filament\Facades\Filament::getTenant()->currency)

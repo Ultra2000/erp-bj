@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Sale;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Auth;
 use Filament\Facades\Filament;
 
 class SalesChart extends ChartWidget
@@ -15,9 +15,17 @@ class SalesChart extends ChartWidget
 
     protected function getData(): array
     {
-        $data = Sale::where('status', 'completed')
-            ->where('created_at', '>=', now()->subDays(7))
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as total'))
+        $user = Auth::user();
+        
+        $query = Sale::where('status', 'completed')
+            ->where('created_at', '>=', now()->subDays(7));
+        
+        // Filtrer par entrepôts de l'utilisateur si restriction
+        if ($user && $user->hasWarehouseRestriction()) {
+            $query->whereIn('warehouse_id', $user->accessibleWarehouseIds());
+        }
+        
+        $data = $query->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as total'))
             ->groupBy('date')
             ->orderBy('date')
             ->get();
