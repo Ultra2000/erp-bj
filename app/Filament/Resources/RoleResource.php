@@ -24,7 +24,24 @@ class RoleResource extends Resource
     protected static ?string $navigationLabel = 'Rôles';
     protected static ?string $modelLabel = 'Rôle';
     protected static ?string $pluralModelLabel = 'Rôles';
-    protected static bool $shouldRegisterNavigation = false;
+
+    /**
+     * Cacher pour les utilisateurs non-admin
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+        return !$user?->hasWarehouseRestriction();
+    }
+
+    /**
+     * Restreindre l'accès pour les non-admins
+     */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return !$user?->hasWarehouseRestriction();
+    }
 
     public static function form(Form $form): Form
     {

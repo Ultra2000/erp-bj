@@ -29,6 +29,24 @@ class ActivityLogResource extends Resource
     // Désactiver le tenant ownership automatique car on filtre manuellement par company_id
     protected static bool $isScopedToTenant = false;
 
+    /**
+     * Cacher pour les utilisateurs non-admin
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+        return !$user?->hasWarehouseRestriction();
+    }
+
+    /**
+     * Restreindre l'accès pour les non-admins
+     */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return !$user?->hasWarehouseRestriction();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

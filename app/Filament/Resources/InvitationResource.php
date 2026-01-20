@@ -30,14 +30,32 @@ class InvitationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
+        $user = auth()->user();
+        // Cacher pour les utilisateurs non-admin
+        if ($user?->hasWarehouseRestriction()) {
+            return false;
+        }
+        
         $company = \Filament\Facades\Filament::getTenant();
         return $company?->isModuleEnabled('invitations') ?? false;
     }
 
     public static function canAccess(): bool
     {
+        $user = auth()->user();
+        // Cacher pour les utilisateurs non-admin
+        if ($user?->hasWarehouseRestriction()) {
+            return false;
+        }
+        
         $company = \Filament\Facades\Filament::getTenant();
         return $company?->isModuleEnabled('invitations') ?? false;
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        return !$user?->hasWarehouseRestriction();
     }
 
     public static function form(Form $form): Form
