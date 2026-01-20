@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToCompany;
+use App\Models\Traits\HasWarehouseScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Sale extends Model
 {
-    use HasFactory, BelongsToCompany, LogsActivity;
+    use HasFactory, BelongsToCompany, LogsActivity, HasWarehouseScope;
 
     protected $fillable = [
         'company_id',
@@ -41,6 +42,16 @@ class Sale extends Model
         'ppf_id',
         'ppf_chorus_id',
         'ppf_synced_at',
+        // e-MCeF (Bénin)
+        'emcef_uid',
+        'emcef_submitted_at',
+        'emcef_nim',
+        'emcef_code_mecef',
+        'emcef_qr_code',
+        'emcef_counters',
+        'emcef_status',
+        'emcef_certified_at',
+        'emcef_error',
     ];
 
     protected $casts = [
@@ -50,6 +61,8 @@ class Sale extends Model
         'paid_at' => 'datetime',
         'payment_details' => 'array',
         'ppf_synced_at' => 'datetime',
+        'emcef_submitted_at' => 'datetime',
+        'emcef_certified_at' => 'datetime',
     ];
 
     public function parent(): BelongsTo

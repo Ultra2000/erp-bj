@@ -49,5 +49,15 @@ class CreateUser extends CreateRecord
                 $this->record->roles()->attach($defaultRole->id, ['company_id' => $tenant->id]);
             }
         }
+
+        // Assigner les entrepôts sélectionnés
+        $warehouseIds = $this->data['user_warehouses'] ?? [];
+        $defaultWarehouseId = $this->data['default_warehouse'] ?? null;
+        
+        foreach ($warehouseIds as $warehouseId) {
+            $this->record->warehouses()->attach($warehouseId, [
+                'is_default' => $warehouseId == $defaultWarehouseId,
+            ]);
+        }
     }
 }

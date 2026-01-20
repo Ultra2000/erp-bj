@@ -54,7 +54,7 @@
                 });
             @endphp
             <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ number_format($totalValue, 0) }}</div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">Valeur stock ({{ config('settings.currency_symbol', '€') }})</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">Valeur stock ({{ config('settings.currency_symbol', 'FCFA') }})</div>
         </div>
     </div>
 

@@ -28,11 +28,20 @@ class Company extends Model
         'currency',
         'country_code',
         'is_active',
+        // e-MCeF (Bénin)
+        'emcef_nim',
+        'emcef_token',
+        'emcef_token_expires_at',
+        'emcef_enabled',
+        'emcef_sandbox',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_active' => 'boolean',
+        'emcef_enabled' => 'boolean',
+        'emcef_sandbox' => 'boolean',
+        'emcef_token_expires_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -113,14 +122,27 @@ class Company extends Model
     }
 
     /**
+     * Vérifie si une fonctionnalité est activée globalement
+     */
+    public static function isFeatureEnabledGlobally(string $feature): bool
+    {
+        $globalSettings = Cache::get('global_features_settings', []);
+        return $globalSettings[$feature] ?? true;
+    }
+
+    /**
      * Vérifie si un module est activé pour l'entreprise
      */
     public function isModuleEnabled(string $module): bool
     {
         // Les modules d'administration et de base sont toujours actifs
-        // Cela garantit que les utilisateurs, rôles et paramètres restent accessibles
         if (in_array($module, ['users', 'roles', 'settings', 'admin'])) {
             return true;
+        }
+
+        // Vérifier d'abord si la fonctionnalité est activée globalement
+        if (!self::isFeatureEnabledGlobally($module)) {
+            return false;
         }
 
         // Par défaut, tout est activé si rien n'est configuré
@@ -129,8 +151,41 @@ class Company extends Model
         }
 
         // Si le module n'est pas présent dans la config, il est actif par défaut
-        // (pour éviter de masquer des modules non listés dans le formulaire comme products, sales, etc.)
         return $this->settings['modules'][$module] ?? true;
+    }
+
+    /**
+     * Récupère la liste des modules activés pour cette entreprise
+     */
+    public function getEnabledModules(): array
+    {
+        $allFeatures = \App\Filament\Superadmin\Pages\FeaturesManagement::getAvailableFeatures();
+        $enabled = [];
+
+        foreach ($allFeatures as $key => $feature) {
+            if ($this->isModuleEnabled($key)) {
+                $enabled[$key] = $feature;
+            }
+        }
+
+        return $enabled;
+    }
+
+    /**
+     * Récupère la liste des modules désactivés pour cette entreprise
+     */
+    public function getDisabledModules(): array
+    {
+        $allFeatures = \App\Filament\Superadmin\Pages\FeaturesManagement::getAvailableFeatures();
+        $disabled = [];
+
+        foreach ($allFeatures as $key => $feature) {
+            if (!$this->isModuleEnabled($key)) {
+                $disabled[$key] = $feature;
+            }
+        }
+
+        return $disabled;
     }
 
     /**
@@ -290,5 +345,75 @@ class Company extends Model
     public function getFilamentName(): string
     {
         return $this->name;
+    }
+
+    // ============================================
+    // MÉTHODES LIÉES AU PAYS ET À LA LOCALISATION
+    // ============================================
+
+    /**
+     * Récupère la configuration complète du pays de l'entreprise
+     */
+    public function getCountryConfig(): ?array
+    {
+        return \App\Services\CountryConfigService::getCountryConfig($this->country_code ?? 'BJ');
+    }
+
+    /**
+     * Récupère les taux de TVA disponibles pour le pays
+     */
+    public function getVatRates(): array
+    {
+        return \App\Services\CountryConfigService::getVatRates($this->country_code ?? 'BJ');
+    }
+
+    /**
+     * Récupère le taux de TVA par défaut du pays
+     */
+    public function getDefaultVatRate(): float
+    {
+        return \App\Services\CountryConfigService::getDefaultVatRate($this->country_code ?? 'BJ');
+    }
+
+    /**
+     * Récupère les taux de TVA formatés pour un select
+     */
+    public function getVatRatesForSelect(): array
+    {
+        return \App\Services\CountryConfigService::getVatRatesForSelect($this->country_code ?? 'BJ');
+    }
+
+    /**
+     * Formate un montant selon les conventions du pays
+     */
+    public function formatMoney(float $amount): string
+    {
+        return \App\Services\CountryConfigService::formatMoney($amount, $this->country_code ?? 'BJ');
+    }
+
+    /**
+     * Récupère le label du numéro d'identification fiscale (IFU au Bénin)
+     */
+    public function getTaxIdLabel(): string
+    {
+        return \App\Services\CountryConfigService::getTaxIdLabel($this->country_code ?? 'BJ');
+    }
+
+    /**
+     * Récupère le nom du pays
+     */
+    public function getCountryName(): string
+    {
+        $config = $this->getCountryConfig();
+        return $config['name'] ?? 'Bénin';
+    }
+
+    /**
+     * Récupère le symbole de devise
+     */
+    public function getCurrencySymbol(): string
+    {
+        $config = $this->getCountryConfig();
+        return $config['currency_symbol'] ?? 'FCFA';
     }
 }

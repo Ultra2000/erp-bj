@@ -28,6 +28,18 @@ class InvitationResource extends Resource
     protected static ?string $modelLabel = 'Invitation';
     protected static ?string $pluralModelLabel = 'Invitations';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        $company = \Filament\Facades\Filament::getTenant();
+        return $company?->isModuleEnabled('invitations') ?? false;
+    }
+
+    public static function canAccess(): bool
+    {
+        $company = \Filament\Facades\Filament::getTenant();
+        return $company?->isModuleEnabled('invitations') ?? false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

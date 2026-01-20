@@ -539,7 +539,7 @@
 </head>
 <body>
 @php
-    $currency = 'EUR';
+    $currency = $company->currency ?? 'XOF';
     $status = $purchase->status;
     $statusClass = 'status-' . ($status ?: 'pending');
     $discountPercent = $purchase->discount_percent ?? 0;
@@ -556,7 +556,7 @@
     $totalAvantRemise = $purchase->items->sum('total_price');
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
     
-    function amountToWordsFrPurchase($number, $currency = 'EUR') {
+    function amountToWordsFrPurchase($number, $currency = 'XOF') {
         $fmt = new \NumberFormatter('fr_FR', \NumberFormatter::SPELLOUT);
         $euros = floor($number);
         $centimes = round(($number - $euros) * 100);

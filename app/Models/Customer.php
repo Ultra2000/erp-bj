@@ -37,6 +37,7 @@ class Customer extends Model
         'country',
         'country_code',
         'notes',
+        'customer_type',
     ];
 
     public function sales()

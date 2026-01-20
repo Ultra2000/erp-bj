@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SaleResource\Pages;
 use App\Filament\Resources\SaleResource\RelationManagers;
+use App\Filament\Traits\HasModuleCheck;
 use App\Models\Sale;
 use App\Models\Product;
 use App\Models\SaleItem;
@@ -19,7 +20,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class SaleResource extends Resource
 {
+    use HasModuleCheck;
+
     protected static ?string $model = Sale::class;
+    protected static ?string $requiredModule = 'sales';
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
     protected static ?string $navigationGroup = 'Ventes';
@@ -78,23 +82,75 @@ class SaleResource extends Resource
                             ->live(),
                         Forms\Components\Select::make('payment_method')
                             ->label('Mode de paiement')
-                            ->options([
-                                'cash' => 'Espèces',
-                                'card' => 'Carte bancaire',
-                                'transfer' => 'Virement SEPA',
-                                'check' => 'Chèque',
-                                'sepa_debit' => 'Prélèvement SEPA',
-                                'paypal' => 'PayPal',
-                            ])
+                            ->options(function () {
+                                $company = Filament::getTenant();
+                                // Si e-MCeF est activé, utiliser les modes de paiement compatibles
+                                if ($company?->emcef_enabled) {
+                                    return [
+                                        'cash' => 'Espèces',
+                                        'card' => 'Carte bancaire',
+                                        'transfer' => 'Virement bancaire',
+                                        'mobile_money' => 'Mobile Money (MTN/Moov)',
+                                        'check' => 'Chèque',
+                                        'credit' => 'Crédit',
+                                        'other' => 'Autre',
+                                    ];
+                                }
+                                // Modes par défaut
+                                return [
+                                    'cash' => 'Espèces',
+                                    'card' => 'Carte bancaire',
+                                    'transfer' => 'Virement bancaire',
+                                    'check' => 'Chèque',
+                                    'mobile_money' => 'Mobile Money',
+                                    'credit' => 'Crédit',
+                                    'other' => 'Autre',
+                                ];
+                            })
                             ->required(),
-                        Forms\Components\Select::make('bank_account_id')
-                            ->label('Compte de dépôt')
-                            ->relationship('bankAccount', 'name', fn ($query) => $query->where('company_id', $companyId))
-                            ->searchable()
-                            ->preload()
-                            ->required(fn (Forms\Get $get) => $get('status') === 'completed')
-                            ->visible(fn (Forms\Get $get) => $get('status') === 'completed'),
-                    ])->columns(3),
+                    ])->columns(2),
+
+                // Section e-MCeF (Bénin) - Affichée uniquement si certifiée
+                Forms\Components\Section::make('Certification e-MCeF')
+                    ->description('Informations de certification électronique DGI Bénin')
+                    ->icon('heroicon-o-shield-check')
+                    ->schema([
+                        Forms\Components\Grid::make(4)
+                            ->schema([
+                                Forms\Components\Placeholder::make('emcef_status_display')
+                                    ->label('Statut')
+                                    ->content(fn (?Sale $record) => match ($record?->emcef_status) {
+                                        'certified' => '✅ Certifiée',
+                                        'submitted' => '🔄 Soumise',
+                                        'pending' => '⏳ En attente',
+                                        'error' => '❌ Erreur',
+                                        'cancelled' => '🚫 Annulée',
+                                        default => '-',
+                                    }),
+                                Forms\Components\Placeholder::make('emcef_nim_display')
+                                    ->label('NIM')
+                                    ->content(fn (?Sale $record) => $record?->emcef_nim ?? '-'),
+                                Forms\Components\Placeholder::make('emcef_code_display')
+                                    ->label('Code MECeF DGI')
+                                    ->content(fn (?Sale $record) => $record?->emcef_code_mecef ?? '-'),
+                                Forms\Components\Placeholder::make('emcef_certified_at_display')
+                                    ->label('Certifiée le')
+                                    ->content(fn (?Sale $record) => $record?->emcef_certified_at?->format('d/m/Y à H:i') ?? '-'),
+                            ]),
+                        Forms\Components\Placeholder::make('emcef_counters_display')
+                            ->label('Compteurs')
+                            ->content(fn (?Sale $record) => $record?->emcef_counters ?? '-')
+                            ->visible(fn (?Sale $record) => !empty($record?->emcef_counters)),
+                        Forms\Components\Placeholder::make('emcef_error_display')
+                            ->label('Erreur')
+                            ->content(fn (?Sale $record) => $record?->emcef_error)
+                            ->visible(fn (?Sale $record) => $record?->emcef_status === 'error'),
+                    ])
+                    ->visible(function (?Sale $record) {
+                        $company = Filament::getTenant();
+                        return $company?->emcef_enabled && $record && $record->emcef_status !== null && $record->emcef_status !== 'pending';
+                    })
+                    ->collapsed(fn (?Sale $record) => $record?->emcef_status === 'certified'),
 
                 Forms\Components\Section::make('Paramètres financiers')
                     ->schema([
@@ -105,14 +161,14 @@ class SaleResource extends Resource
                             ->helperText('Appliquée sur le total TTC'),
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
-                            ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'EUR') : '-'),
+                            ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
                         Forms\Components\Placeholder::make('total_vat_display')
                             ->label('Total TVA')
-                            ->content(fn (?Sale $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'EUR') : '-'),
+                            ->content(fn (?Sale $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
                         Forms\Components\TextInput::make('total')
                             ->label('Total TTC')
                             ->disabled()
-                            ->prefix(fn () => Filament::getTenant()->currency ?? 'EUR'),
+                            ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF'),
                     ])->columns(4),
 
                 Forms\Components\Section::make('Articles')
@@ -145,14 +201,19 @@ class SaleResource extends Resource
                                         if ($state) {
                                             $product = Product::find($state);
                                             if ($product) {
+                                                $company = Filament::getTenant();
+                                                // Taux TVA par défaut: 18% si e-MCeF, sinon celui du produit
+                                                $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+                                                $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
+                                                
                                                 // Utiliser le prix de vente HT du produit
                                                 $set('unit_price', $product->price);
-                                                $set('vat_rate', $product->vat_rate_sale ?? 20);
-                                                $set('vat_category', $product->vat_category ?? 'S');
+                                                $set('vat_rate', $product->vat_rate_sale ?? $defaultVatRate);
+                                                $set('vat_category', $product->vat_category ?? $defaultVatCategory);
                                                 $set('quantity', 1);
                                                 
                                                 // Calculer le total
-                                                $vatRate = $product->vat_rate_sale ?? 20;
+                                                $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
                                                 $totalHt = $product->price;
                                                 $vat = round($totalHt * ($vatRate / 100), 2);
                                                 $set('total_price', $totalHt + $vat);
@@ -205,12 +266,14 @@ class SaleResource extends Resource
                                     ->label('P.U. HT')
                                     ->required()
                                     ->numeric()
-                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                        $company = Filament::getTenant();
+                                        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
                                         $quantity = $get('quantity');
                                         $unitPrice = $state;
-                                        $vatRate = $get('vat_rate') ?? 20;
+                                        $vatRate = $get('vat_rate') ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
                                             $vat = round($totalHt * ($vatRate / 100), 2);
@@ -220,28 +283,27 @@ class SaleResource extends Resource
                                 Forms\Components\Select::make('vat_rate')
                                     ->label('TVA')
                                     ->options(Product::getCommonVatRates())
-                                    ->default(20.00)
+                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                        $company = Filament::getTenant();
+                                        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
                                         $quantity = $get('quantity');
                                         $unitPrice = $get('unit_price');
-                                        $vatRate = $state ?? 20;
+                                        $vatRate = $state ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
                                             $vat = round($totalHt * ($vatRate / 100), 2);
                                             $set('total_price', $totalHt + $vat);
                                         }
                                     }),
-                                Forms\Components\Select::make('vat_category')
-                                    ->label('Cat.')
-                                    ->options(Product::getVatCategories())
-                                    ->default('S')
-                                    ->visible(false), // Caché mais transmis
+                                Forms\Components\Hidden::make('vat_category')
+                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S'),
                                 Forms\Components\TextInput::make('total_price')
                                     ->label('Total TTC')
                                     ->required()
                                     ->numeric()
-                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->disabled(),
                             ])
                             ->columns(6)
@@ -294,41 +356,39 @@ class SaleResource extends Resource
                     ->label('Total')
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
                     ->sortable(),
-                Tables\Columns\TextColumn::make('ppf_status')
-                    ->label('Statut Chorus Pro')
+                // e-MCeF (Bénin)
+                Tables\Columns\TextColumn::make('emcef_status')
+                    ->label('e-MCeF')
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
-                        'DEPOSEE' => 'gray',
-                        'MISE_A_DISPOSITION' => 'info',
-                        'PRISE_EN_CHARGE' => 'warning',
-                        'MISE_EN_PAIEMENT' => 'success',
-                        'PAYEE' => 'success',
-                        'SUSPENDUE' => 'warning',
-                        'REJETEE' => 'danger',
-                        'ERREUR' => 'danger',
+                        'certified' => 'success',
+                        'submitted' => 'info',
+                        'pending' => 'warning',
+                        'error' => 'danger',
+                        'cancelled' => 'gray',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'DEPOSEE' => '📥 Déposée',
-                        'MISE_A_DISPOSITION' => '📤 Mise à disposition',
-                        'PRISE_EN_CHARGE' => '✓ Prise en charge',
-                        'MISE_EN_PAIEMENT' => '💳 Mise en paiement',
-                        'PAYEE' => '💰 Payée',
-                        'SUSPENDUE' => '⏸️ Suspendue',
-                        'REJETEE' => '✗ Rejetée',
-                        'ERREUR' => '⚠️ Erreur',
+                        'certified' => '✅ Certifiée',
+                        'submitted' => '🔄 Soumise',
+                        'pending' => '⏳ En attente',
+                        'error' => '❌ Erreur',
+                        'cancelled' => '🚫 Annulée',
                         null => '-',
                         default => $state,
                     })
-                    ->toggleable(),
-                Tables\Columns\TextColumn::make('ppf_id')
-                    ->label('N° Flux PPF')
+                    ->toggleable()
+                    ->visible(fn () => Filament::getTenant()?->emcef_enabled ?? false),
+                Tables\Columns\TextColumn::make('emcef_nim')
+                    ->label('NIM')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn () => Filament::getTenant()?->emcef_enabled ?? false)
                     ->copyable(),
-                Tables\Columns\TextColumn::make('ppf_synced_at')
-                    ->label('Dernière synchro PPF')
-                    ->dateTime()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('emcef_code_mecef')
+                    ->label('Code MECeF')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn () => Filament::getTenant()?->emcef_enabled ?? false)
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
                     ->dateTime()
@@ -384,101 +444,231 @@ class SaleResource extends Resource
                     ->modalHeading('Envoyer la facture par email')
                     ->modalButton('Envoyer')
                     ->color('success'),
-                Tables\Actions\Action::make('send_to_ppf')
-                    ->label('Envoyer au PPF')
-                    ->icon('heroicon-o-paper-airplane')
+                // e-MCeF Actions (Bénin)
+                Tables\Actions\Action::make('certify_emcef')
+                    ->label('Certifier (e-MCeF)')
+                    ->icon('heroicon-o-shield-check')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(function (Sale $record, \App\Services\Integration\PpfService $ppfService) {
-                        try {
-                            $ppfService->sendInvoice($record);
+                    ->modalHeading('Certifier la facture')
+                    ->modalDescription('Voulez-vous certifier cette facture auprès de la DGI Bénin (e-MCeF) ?')
+                    ->action(function (Sale $record) {
+                        $company = \Filament\Facades\Filament::getTenant();
+                        if (!$company->emcef_enabled) {
                             \Filament\Notifications\Notification::make()
-                                ->title('Facture envoyée au PPF')
+                                ->title('e-MCeF non configuré')
+                                ->body('Veuillez d\'abord configurer e-MCeF dans les paramètres.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+                        
+                        $emcefService = new \App\Services\EmcefService($company);
+                        $result = $emcefService->submitInvoice($record);
+                        
+                        if ($result['success']) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Facture certifiée !')
+                                ->body('NIM: ' . $record->fresh()->emcef_nim . ' | Code: ' . $record->fresh()->emcef_code_mecef)
                                 ->success()
                                 ->send();
-                        } catch (\Exception $e) {
+                        } else {
                             \Filament\Notifications\Notification::make()
-                                ->title('Erreur lors de l\'envoi')
-                                ->body($e->getMessage())
+                                ->title('Erreur de certification')
+                                ->body($result['error'] ?? 'Erreur inconnue')
                                 ->danger()
                                 ->send();
                         }
                     })
-                    ->visible(fn (Sale $record) => $record->status === 'completed' && !$record->ppf_status),
-                Tables\Actions\Action::make('refresh_ppf_status')
-                    ->label('Actualiser statut PPF')
-                    ->icon('heroicon-o-arrow-path')
+                    ->visible(function (Sale $record) {
+                        $company = \Filament\Facades\Filament::getTenant();
+                        return $company?->emcef_enabled 
+                            && $record->status === 'completed' 
+                            && !in_array($record->emcef_status, ['certified', 'submitted']);
+                    }),
+                Tables\Actions\Action::make('view_emcef_details')
+                    ->label('Détails e-MCeF')
+                    ->icon('heroicon-o-document-magnifying-glass')
                     ->color('info')
-                    ->action(function (Sale $record, \App\Services\Integration\PpfService $ppfService) {
-                        try {
-                            $synced = $ppfService->syncInvoiceStatus($record);
-                            if ($synced) {
-                                $record->update(['ppf_synced_at' => now()]);
+                    ->modalHeading('Détails de certification e-MCeF')
+                    ->modalContent(fn (Sale $record) => view('filament.modals.emcef-details', ['sale' => $record]))
+                    ->modalSubmitAction(false)
+                    ->visible(fn (Sale $record) => $record->emcef_status === 'certified'),
+                Tables\Actions\Action::make('retry_emcef')
+                    ->label('Réessayer e-MCeF')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Réessayer la certification')
+                    ->modalDescription(function (Sale $record) {
+                        if ($record->emcef_status === 'submitted' && $record->emcef_submitted_at) {
+                            $minutes = now()->diffInMinutes($record->emcef_submitted_at);
+                            if ($minutes < 2) {
+                                return "La facture a été soumise il y a {$minutes} minute(s). La confirmation sera retentée.";
+                            }
+                            return "Le délai de 2 minutes est dépassé ({$minutes} min). La facture sera re-soumise entièrement.";
+                        }
+                        return 'Voulez-vous réessayer la certification de cette facture ?';
+                    })
+                    ->action(function (Sale $record) {
+                        $company = \Filament\Facades\Filament::getTenant();
+                        if (!$company->emcef_enabled) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('e-MCeF non configuré')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        // Exécution immédiate (pas de job) pour le retry manuel
+                        $emcefService = new \App\Services\EmcefService($company);
+                        $result = $emcefService->submitInvoice($record);
+                        
+                        if ($result['success']) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Facture certifiée !')
+                                ->body('NIM: ' . $record->fresh()->emcef_nim . ' | Code: ' . $record->fresh()->emcef_code_mecef)
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Erreur de certification')
+                                ->body($result['error'] ?? 'Erreur inconnue')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->visible(fn (Sale $record) => in_array($record->emcef_status, ['error', 'submitted'])),
+                // Action pour confirmer uniquement (facture déjà soumise)
+                Tables\Actions\Action::make('confirm_emcef_only')
+                    ->label('Confirmer (2 min)')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmer la facture')
+                    ->modalDescription(function (Sale $record) {
+                        if ($record->emcef_submitted_at) {
+                            $seconds = now()->diffInSeconds($record->emcef_submitted_at);
+                            $remaining = max(0, 120 - $seconds);
+                            return "⏱️ Temps restant estimé : " . floor($remaining / 60) . "min " . ($remaining % 60) . "s. Confirmer maintenant ?";
+                        }
+                        return 'Confirmer cette facture auprès de la DGI ?';
+                    })
+                    ->action(function (Sale $record) {
+                        $company = \Filament\Facades\Filament::getTenant();
+                        $emcefService = new \App\Services\EmcefService($company);
+                        $result = $emcefService->confirmInvoice($record);
+                        
+                        if ($result['success']) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Facture confirmée !')
+                                ->body('NIM: ' . $record->fresh()->emcef_nim)
+                                ->success()
+                                ->send();
+                        } else {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Erreur de confirmation')
+                                ->body($result['error'] ?? 'Délai peut-être dépassé. Utilisez "Réessayer" pour resoumettre.')
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->visible(fn (Sale $record) => $record->emcef_status === 'submitted' && !empty($record->emcef_uid)),
+                Tables\Actions\Action::make('credit_note')
+                    ->label('Générer un avoir')
+                    ->icon('heroicon-o-receipt-refund')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Générer un avoir')
+                    ->modalDescription(function (Sale $record) {
+                        $company = \Filament\Facades\Filament::getTenant();
+                        $desc = 'Voulez-vous vraiment générer un avoir pour cette facture ? Cela créera une nouvelle facture négative et réintégrera le stock.';
+                        
+                        if ($company?->emcef_enabled) {
+                            if ($record->emcef_status !== 'certified' || empty($record->emcef_code_mecef)) {
+                                return '⚠️ ATTENTION : Cette facture n\'est pas certifiée e-MCeF. L\'avoir ne pourra pas être envoyé à la DGI.';
+                            }
+                            $desc .= "\n\n✅ L'avoir sera automatiquement certifié e-MCeF avec référence à la facture " . $record->emcef_code_mecef;
+                        }
+                        return $desc;
+                    })
+                    ->action(function (Sale $record) {
+                        $company = \Filament\Facades\Filament::getTenant();
+                        
+                        // Vérifier la certification e-MCeF si activé
+                        if ($company?->emcef_enabled && ($record->emcef_status !== 'certified' || empty($record->emcef_code_mecef))) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Facture non certifiée')
+                                ->body('Vous devez d\'abord certifier la facture originale avant de créer un avoir e-MCeF.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        // 1. Dupliquer la vente en avoir
+                        $creditNote = $record->replicate([
+                            'invoice_number', 
+                            'security_hash', 
+                            'previous_hash', 
+                            'created_at', 
+                            'updated_at',
+                            // Reset e-MCeF fields
+                            'emcef_uid',
+                            'emcef_submitted_at',
+                            'emcef_nim',
+                            'emcef_code_mecef',
+                            'emcef_qr_code',
+                            'emcef_counters',
+                            'emcef_status',
+                            'emcef_certified_at',
+                            'emcef_error',
+                        ]);
+                        $creditNote->type = 'credit_note';
+                        $creditNote->parent_id = $record->id;
+                        $creditNote->status = 'completed';
+                        $creditNote->notes = "Avoir annulant la facture n°{$record->invoice_number}";
+                        $creditNote->total = -abs($record->total);
+                        $creditNote->total_ht = -abs($record->total_ht ?? 0);
+                        $creditNote->total_vat = -abs($record->total_vat ?? 0);
+                        $creditNote->emcef_status = $company?->emcef_enabled ? 'pending' : null;
+                        $creditNote->save();
+
+                        // 2. Dupliquer les articles avec les mêmes taux TVA
+                        foreach ($record->items as $item) {
+                            $creditNote->items()->create([
+                                'product_id' => $item->product_id,
+                                'quantity' => $item->quantity,
+                                'unit_price' => $item->unit_price, // Prix positif
+                                'total_price' => $item->quantity * $item->unit_price, // Total positif (le type credit_note indique l'inversion)
+                                'vat_rate' => $item->vat_rate ?? 18,
+                                'vat_category' => $item->vat_category ?? 'A',
+                            ]);
+                        }
+                        
+                        // 3. Certifier automatiquement l'avoir si e-MCeF activé
+                        if ($company?->emcef_enabled) {
+                            $emcefService = new \App\Services\EmcefService($company);
+                            $result = $emcefService->submitInvoice($creditNote);
+                            
+                            if ($result['success']) {
                                 \Filament\Notifications\Notification::make()
-                                    ->title('Statut mis à jour')
-                                    ->body('Statut: ' . $record->fresh()->ppf_status)
+                                    ->title('Avoir créé et certifié !')
+                                    ->body('NIM: ' . $creditNote->fresh()->emcef_nim . ' | Réf. facture: ' . $record->emcef_code_mecef)
                                     ->success()
                                     ->send();
                             } else {
                                 \Filament\Notifications\Notification::make()
-                                    ->title('Facture non trouvée')
-                                    ->body('La facture n\'a pas encore été traitée par Chorus Pro')
+                                    ->title('Avoir créé mais erreur e-MCeF')
+                                    ->body($result['error'] ?? 'Erreur inconnue. Vous pouvez réessayer manuellement.')
                                     ->warning()
                                     ->send();
                             }
-                        } catch (\Exception $e) {
+                        } else {
                             \Filament\Notifications\Notification::make()
-                                ->title('Erreur lors de la synchronisation')
-                                ->body($e->getMessage())
-                                ->danger()
+                                ->title('Avoir créé')
+                                ->body('L\'avoir ' . $creditNote->invoice_number . ' a été créé.')
+                                ->success()
                                 ->send();
-                        }
-                    })
-                    ->visible(fn (Sale $record) => $record->ppf_id !== null),
-                Tables\Actions\Action::make('credit_note')
-                    ->label('Générer un avoir')
-                    ->icon('heroicon-o-arrow-path')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Générer un avoir')
-                    ->modalDescription('Voulez-vous vraiment générer un avoir pour cette facture ? Cela créera une nouvelle facture négative et réintégrera le stock.')
-                    ->action(function (Sale $record) {
-                        // 1. Dupliquer la vente
-                        $creditNote = $record->replicate(['invoice_number', 'security_hash', 'previous_hash', 'created_at', 'updated_at']);
-                        $creditNote->type = 'credit_note';
-                        $creditNote->parent_id = $record->id;
-                        $creditNote->status = 'completed'; // L'avoir est validé immédiatement
-                        $creditNote->notes = "Avoir annulant la facture n°{$record->invoice_number}";
-                        $creditNote->total = -$record->total; // Montant négatif
-                        $creditNote->save();
-
-                        // 2. Dupliquer les articles avec quantités inversées (pour l'affichage)
-                        // Note: SaleItem observer gère le stock.
-                        // Pour un avoir, on veut que le stock augmente.
-                        // Dans SaleItem observer:
-                        // Si type = credit_note, multiplier = 1.
-                        // Donc quantity * 1 = entrée en stock.
-                        // On garde la quantité positive dans la base pour l'affichage, mais le total_price sera négatif ?
-                        // Non, généralement un avoir a des quantités positives mais un total négatif, ou l'inverse.
-                        // Pour simplifier et rester cohérent avec Factur-X, un avoir a souvent des lignes positives mais le code document 381 indique que c'est un avoir.
-                        // Cependant, pour que le total soit négatif dans notre système actuel, il faut ruser.
-                        // Option A: Quantité négative.
-                        // Option B: Prix unitaire négatif.
-                        // Option C: Quantité positive, Prix positif, mais le type 'credit_note' inverse le signe comptable.
-                        
-                        // Ici, on va garder les valeurs positives pour la quantité et le prix, 
-                        // mais on va s'assurer que le total de la vente est stocké en négatif pour la compta.
-                        // ATTENTION: SaleItem calcule total_price = quantity * unit_price.
-                        // Si on veut un total négatif, il faut l'un des deux négatif.
-                        // Pour la clarté, on met le prix unitaire en négatif sur l'avoir.
-                        
-                        foreach ($record->items as $item) {
-                            $creditNote->items()->create([
-                                'product_id' => $item->product_id,
-                                'quantity' => $item->quantity, // On garde la quantité positive (ex: retour de 5 articles)
-                                'unit_price' => -$item->unit_price, // Prix négatif pour inverser le montant
-                                'total_price' => -($item->quantity * $item->unit_price),
-                            ]);
                         }
                         
                         // Redirection vers l'avoir créé
@@ -521,3 +711,4 @@ class SaleResource extends Resource
         ];
     }
 }
+

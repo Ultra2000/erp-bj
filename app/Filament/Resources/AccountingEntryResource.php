@@ -22,7 +22,12 @@ class AccountingEntryResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? true;
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
     }
 
     protected static ?string $navigationLabel = 'Grand Livre';

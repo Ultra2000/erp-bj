@@ -229,7 +229,7 @@ class AccountingReports extends Page implements HasForms
 
     public function getCurrency(): string
     {
-        return Filament::getTenant()->currency ?? 'EUR';
+        return Filament::getTenant()->currency ?? 'XOF';
     }
 
     protected function getHeaderActions(): array
@@ -261,3 +261,4 @@ class AccountingReports extends Page implements HasForms
         ];
     }
 }
+

@@ -207,6 +207,24 @@ class WarehouseResource extends Resource
                             ->rows(3)
                             ->columnSpanFull(),
                     ])->collapsed(),
+
+                Forms\Components\Section::make('Utilisateurs assignés')
+                    ->description('Les utilisateurs assignés à cet entrepôt ne verront que les données de cet entrepôt.')
+                    ->schema([
+                        Forms\Components\Select::make('users')
+                            ->label('Utilisateurs')
+                            ->relationship(
+                                name: 'users',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn ($query) => $query->where('is_super_admin', false)
+                            )
+                            ->multiple()
+                            ->preload()
+                            ->searchable()
+                            ->helperText('Les admins et super admins ont accès à tous les entrepôts par défaut.')
+                            ->columnSpanFull(),
+                    ])
+                    ->visible(fn ($record) => $record !== null), // Seulement en édition
             ]);
     }
 

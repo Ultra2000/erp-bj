@@ -39,13 +39,9 @@ class EditCompanyProfile extends EditTenantProfile
                         TextInput::make('website')
                             ->label('Site Web')
                             ->url(),
-                        TextInput::make('tax_number')
-                            ->label('Numéro Fiscal (TVA Intra)'),
                         TextInput::make('registration_number')
-                            ->label('SIREN (9 chiffres)'),
-                        TextInput::make('siret')
-                            ->label('SIRET (14 chiffres)')
-                            ->helperText('Requis pour Factur-X / PPF'),
+                            ->label('IFU (Identifiant Fiscal Unique)')
+                            ->helperText('13 chiffres'),
                         FileUpload::make('logo_path')
                             ->label('Logo')
                             ->image()
@@ -55,22 +51,9 @@ class EditCompanyProfile extends EditTenantProfile
                         Select::make('currency')
                             ->label('Devise')
                             ->options([
-                                'XOF' => 'XOF - Franc CFA (Afrique de l\'Ouest)',
-                                'XAF' => 'XAF - Franc CFA (Afrique Centrale)',
-                                'USD' => 'USD - Dollar Américain',
-                                'EUR' => 'EUR - Euro',
-                                'GBP' => 'GBP - Livre Sterling',
-                                'CHF' => 'CHF - Franc Suisse',
-                                'CAD' => 'CAD - Dollar Canadien',
-                                'AUD' => 'AUD - Dollar Australien',
-                                'JPY' => 'JPY - Yen Japonais',
-                                'CNY' => 'CNY - Yuan Chinois',
-                                'INR' => 'INR - Roupie Indienne',
-                                'BRL' => 'BRL - Real Brésilien',
-                                'MXN' => 'MXN - Peso Mexicain',
+                                'XOF' => 'XOF - Franc CFA (FCFA)',
                             ])
-                            ->default('EUR')
-                            ->helperText('Détectée automatiquement par votre localisation IP'),
+                            ->default('XOF'),
                     ]),
 
                 Section::make('Fonctionnalités')

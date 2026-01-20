@@ -22,7 +22,7 @@ class AccountingExport extends Page implements HasForms
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? true;
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
     }
 
     protected static string $view = 'filament.pages.accounting-export';

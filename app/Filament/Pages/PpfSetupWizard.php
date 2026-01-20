@@ -459,11 +459,20 @@ class PpfSetupWizard extends Page implements Forms\Contracts\HasForms
 
     public static function shouldRegisterNavigation(): bool
     {
-        // Masquer si déjà configuré
         $company = Filament::getTenant();
         if (!$company) return false;
 
+        // Vérifier d'abord si le module est activé
+        if (!$company->isModuleEnabled('e_invoicing')) return false;
+
+        // Masquer si déjà configuré
         $integration = $company->integrations()->where('service_name', 'ppf')->first();
         return !($integration && $integration->is_active && !empty($integration->settings['fournisseur_login']));
+    }
+
+    public static function canAccess(): bool
+    {
+        $company = Filament::getTenant();
+        return $company?->isModuleEnabled('e_invoicing') ?? false;
     }
 }

@@ -21,28 +21,28 @@ class VatSummaryWidget extends BaseWidget
     protected function getStats(): array
     {
         $companyId = Filament::getTenant()?->id;
-        $currency = Filament::getTenant()->currency ?? 'EUR';
+        $currency = Filament::getTenant()->currency ?? 'XOF';
         
         // Vérifier si l'entreprise est en franchise de TVA
         $isVatFranchise = AccountingSetting::isVatFranchise($companyId);
         
         if ($isVatFranchise) {
-            // Mode Franchise TVA : afficher un seul bloc informatif
+            // Mode Exonération TVA : afficher un seul bloc informatif
             return [
-                Stat::make('Régime fiscal', 'Franchise en base de TVA')
-                    ->description('Art. 293 B du CGI - TVA non applicable')
+                Stat::make('Régime fiscal', 'Exonéré de TVA')
+                    ->description('Entreprise exonérée de TVA')
                     ->descriptionIcon('heroicon-m-check-badge')
                     ->color('success')
                     ->extraAttributes([
                         'class' => 'border-2 border-green-500/30',
                     ]),
                 
-                Stat::make('TVA Collectée', '0,00 ' . $currency)
-                    ->description('Non applicable en franchise')
+                Stat::make('TVA Collectée', '0 ' . $currency)
+                    ->description('Non applicable')
                     ->descriptionIcon('heroicon-m-minus-circle')
                     ->color('gray'),
                 
-                Stat::make('TVA à reverser', '0,00 ' . $currency)
+                Stat::make('TVA à reverser', '0 ' . $currency)
                     ->description('Aucune déclaration TVA requise')
                     ->descriptionIcon('heroicon-m-check-circle')
                     ->color('gray'),
@@ -126,7 +126,11 @@ class VatSummaryWidget extends BaseWidget
 
     public static function canView(): bool
     {
-        return Filament::getTenant() !== null;
+        $tenant = Filament::getTenant();
+        if (!$tenant) {
+            return false;
+        }
+        return $tenant->isModuleEnabled('accounting');
     }
 
     public function getHeading(): ?string

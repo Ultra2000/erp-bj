@@ -236,8 +236,14 @@ class CashRegisterPage extends Page
             return ['success' => false, 'message' => 'Veuillez ouvrir une session de caisse'];
         }
 
+        $company = Filament::getTenant();
+        
+        // Déterminer le taux de TVA par défaut selon le pays
+        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+        $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
+
         try {
-            $saleId = DB::transaction(function () use ($payload, $companyId, $session) {
+            $result = DB::transaction(function () use ($payload, $companyId, $session, $company, $defaultVatRate, $defaultVatCategory) {
                 $sale = new Sale();
                 $sale->company_id = $companyId;
                 $sale->cash_session_id = $session->id;
@@ -266,9 +272,17 @@ class CashRegisterPage extends Page
                 $sale->discount_percent = $payload['discount_percent'] ?? 0;
                 $sale->tax_percent = $payload['tax_percent'] ?? 0;
                 $sale->status = 'completed';
+                
+                // Préparer le statut e-MCeF si activé
+                if ($company?->emcef_enabled) {
+                    $sale->emcef_status = 'pending';
+                }
+                
                 $sale->save();
 
-                $subtotal = 0;
+                $totalHt = 0;
+                $totalVat = 0;
+                
                 foreach ($payload['items'] as $line) {
                     $product = Product::where('company_id', $companyId)
                         ->lockForUpdate()
@@ -281,8 +295,18 @@ class CashRegisterPage extends Page
                         throw new \RuntimeException('Stock insuffisant pour ' . $product->name);
                     }
 
-                    $unit = $line['unit_price'] ?? $product->price;
-                    $subtotal += ($qty * $unit);
+                    $unitPrice = $line['unit_price'] ?? $product->price;
+                    $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
+                    $vatCategory = $product->vat_category ?? $defaultVatCategory;
+                    
+                    // Calcul HT et TVA
+                    $lineHt = $qty * $unitPrice;
+                    $lineVat = round($lineHt * ($vatRate / 100), 2);
+                    $lineTtc = $lineHt + $lineVat;
+                    
+                    $totalHt += $lineHt;
+                    $totalVat += $lineVat;
+                    
                     $product->stock -= $qty;
                     $product->save();
 
@@ -290,24 +314,53 @@ class CashRegisterPage extends Page
                         'sale_id' => $sale->id,
                         'product_id' => $product->id,
                         'quantity' => $qty,
-                        'unit_price' => $unit,
-                        'total_price' => $qty * $unit,
+                        'unit_price' => $unitPrice,
+                        'unit_price_ht' => $unitPrice,
+                        'vat_rate' => $vatRate,
+                        'vat_category' => $vatCategory,
+                        'vat_amount' => $lineVat,
+                        'total_price_ht' => $lineHt,
+                        'total_price' => $lineTtc,
                     ]);
                 }
 
-                $discount = $subtotal * (($sale->discount_percent ?? 0) / 100);
-                $afterDiscount = $subtotal - $discount;
-                $tax = $afterDiscount * (($sale->tax_percent ?? 0) / 100);
-                $sale->total = round($afterDiscount + $tax, 2);
+                // Appliquer la remise sur le total
+                $discount = $totalHt * (($sale->discount_percent ?? 0) / 100);
+                $totalHtAfterDiscount = $totalHt - $discount;
+                $totalVatAfterDiscount = round($totalHtAfterDiscount * ($defaultVatRate / 100), 2);
+                
+                $sale->total_ht = round($totalHtAfterDiscount, 2);
+                $sale->total_vat = round($totalVatAfterDiscount, 2);
+                $sale->total = round($totalHtAfterDiscount + $totalVatAfterDiscount, 2);
                 $sale->save();
 
                 // Mettre à jour la session
                 $session->recalculate();
 
-                return $sale->id;
+                return $sale;
             });
 
-            return ['success' => true, 'sale_id' => $saleId];
+            // Certification e-MCeF automatique si activé
+            $emcefResult = null;
+            if ($company?->emcef_enabled && $result) {
+                try {
+                    $emcefService = new \App\Services\EmcefService($company);
+                    $emcefResult = $emcefService->submitInvoice($result);
+                } catch (\Exception $e) {
+                    \Log::error('POS e-MCeF Error', ['sale_id' => $result->id, 'error' => $e->getMessage()]);
+                }
+            }
+
+            return [
+                'success' => true, 
+                'sale_id' => $result->id,
+                'emcef' => $emcefResult ? [
+                    'success' => $emcefResult['success'] ?? false,
+                    'nim' => $result->fresh()->emcef_nim,
+                    'code' => $result->fresh()->emcef_code_mecef,
+                    'error' => $emcefResult['error'] ?? null,
+                ] : null,
+            ];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }

@@ -8,7 +8,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         @page {
-            margin: 25mm 22mm 30mm 22mm;
+            margin: 30mm 35mm 35mm 35mm;
         }
         
         * {
@@ -409,7 +409,7 @@
 </head>
 <body>
 @php
-    $currency = $company->currency ?? 'EUR';
+    $currency = $company->currency ?? 'XOF';
     $status = $sale->status;
     $statusClass = 'status-' . ($status ?: 'pending');
     $discountPercent = $sale->discount_percent ?? 0;
@@ -641,6 +641,57 @@
                     <span style="font-size:7px;word-break:break-all;">{{ $verificationUrl }}</span>
                 </div>
                 <span class="verification-code">{{ $verificationCode }}</span>
+            </td>
+        </tr>
+    </table>
+</div>
+@endif
+
+{{-- Section e-MCeF (Certification DGI Bénin) --}}
+@if($sale->emcef_status === 'certified' && $sale->emcef_qr_code)
+<div class="verification-section" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; margin-top: 10px;">
+    <table class="verification-table">
+        <tr>
+            <td class="qr-cell">
+                <div class="qr-box" style="background: white; padding: 5px; border-radius: 6px;">
+                    @php
+                        try {
+                            $emcefQrSvg = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(65)->generate($sale->emcef_qr_code);
+                            $emcefQrBase64 = base64_encode($emcefQrSvg);
+                        } catch (\Throwable $e) {
+                            $emcefQrBase64 = null;
+                        }
+                    @endphp
+                    @if($emcefQrBase64)
+                        <img src="data:image/svg+xml;base64,{{ $emcefQrBase64 }}" alt="QR Code e-MCeF">
+                    @else
+                        <div style="width:65px;height:65px;background:#f1f5f9;"></div>
+                    @endif
+                </div>
+            </td>
+            <td class="verification-info">
+                <div class="verification-title" style="color: #047857;">🏛️ Facture certifiée DGI Bénin</div>
+                <div class="verification-text" style="color: #065f46;">
+                    <strong>NIM :</strong> {{ $sale->emcef_nim }}<br>
+                    <strong>Code MECeF :</strong> {{ $sale->emcef_code_mecef }}<br>
+                    <strong>Certifiée le :</strong> {{ $sale->emcef_certified_at?->format('d/m/Y H:i') }}
+                </div>
+                @if($sale->emcef_counters)
+                    <span class="verification-code" style="background: #047857;">{{ $sale->emcef_counters }}</span>
+                @endif
+            </td>
+        </tr>
+    </table>
+</div>
+@elseif(isset($company) && $company->emcef_enabled && $sale->emcef_status === 'pending')
+<div class="verification-section" style="background: #fffbeb; border: 1px solid #fcd34d; margin-top: 10px;">
+    <table class="verification-table">
+        <tr>
+            <td class="verification-info" style="width: 100%;">
+                <div class="verification-title" style="color: #b45309;">⏳ Certification e-MCeF en cours</div>
+                <div class="verification-text" style="color: #92400e;">
+                    Cette facture est en attente de certification par la DGI Bénin.
+                </div>
             </td>
         </tr>
     </table>

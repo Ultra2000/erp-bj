@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -26,8 +27,27 @@ class SuperadminPanelProvider extends PanelProvider
             ->id('superadmin')
             ->path('system')
             ->login()
+            ->brandName('GestStock - Super Admin')
             ->colors([
                 'primary' => Color::Red,
+                'danger' => Color::Rose,
+                'success' => Color::Emerald,
+                'warning' => Color::Amber,
+                'info' => Color::Sky,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                    ->label('Tableau de Bord')
+                    ->icon('heroicon-o-home')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Gestion')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->collapsed(false),
+                NavigationGroup::make()
+                    ->label('Système')
+                    ->icon('heroicon-o-server-stack')
+                    ->collapsed(false),
             ])
             ->discoverResources(in: app_path('Filament/Superadmin/Resources'), for: 'App\\Filament\\Superadmin\\Resources')
             ->discoverPages(in: app_path('Filament/Superadmin/Pages'), for: 'App\\Filament\\Superadmin\\Pages')
@@ -37,7 +57,6 @@ class SuperadminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Superadmin/Widgets'), for: 'App\\Filament\\Superadmin\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -53,6 +72,8 @@ class SuperadminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 \App\Http\Middleware\VerifyIsSuperAdmin::class,
-            ]);
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->darkMode(true);
     }
 }

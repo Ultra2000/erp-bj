@@ -40,24 +40,28 @@ class CustomerResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\TextInput::make('registration_number')
-                            ->label('SIREN (9 chiffres)')
-                            ->maxLength(9),
-                        Forms\Components\TextInput::make('siret')
-                            ->label('SIRET (14 chiffres)')
-                            ->maxLength(14),
-                        Forms\Components\TextInput::make('tax_number')
-                            ->label('Numéro TVA Intra')
-                            ->maxLength(255),
+                            ->label('IFU (Identifiant Fiscal Unique)')
+                            ->maxLength(13)
+                            ->helperText('13 chiffres - Obligatoire pour facturation e-MCeF B2B')
+                            ->placeholder('0000000000000'),
+                        Forms\Components\Select::make('customer_type')
+                            ->label('Type de client')
+                            ->options([
+                                'B2B' => 'Professionnel (B2B)',
+                                'B2C' => 'Particulier (B2C)',
+                            ])
+                            ->default('B2C')
+                            ->helperText('B2B = IFU obligatoire pour e-MCeF'),
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
                             ->email()
-                            ->required()
                             ->maxLength(255),
                         Forms\Components\TextInput::make('phone')
                             ->label('Téléphone')
                             ->tel()
                             ->required()
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->placeholder('+229 XX XX XX XX'),
                     ])->columns(3),
                 Forms\Components\Section::make('Adresse')
                     ->schema([
@@ -66,19 +70,21 @@ class CustomerResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->columnSpanFull(),
-                        Forms\Components\TextInput::make('zip_code')
-                            ->label('Code Postal')
-                            ->maxLength(10),
                         Forms\Components\TextInput::make('city')
                             ->label('Ville')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->default('Cotonou'),
+                        Forms\Components\TextInput::make('zip_code')
+                            ->label('Code Postal')
+                            ->maxLength(10)
+                            ->placeholder('Optionnel'),
                         Forms\Components\TextInput::make('country')
                             ->label('Pays')
-                            ->default('France')
+                            ->default('Bénin')
                             ->maxLength(255),
                         Forms\Components\TextInput::make('country_code')
                             ->label('Code Pays (ISO)')
-                            ->default('FR')
+                            ->default('BJ')
                             ->maxLength(2),
                     ])->columns(2),
                 Forms\Components\Section::make('Notes')
@@ -97,29 +103,53 @@ class CustomerResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nom')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('customer_type')
+                    ->label('Type')
+                    ->badge()
+                    ->color(fn (?string $state) => match ($state) {
+                        'B2B' => 'info',
+                        'B2C' => 'success',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'B2B' => 'Professionnel',
+                        'B2C' => 'Particulier',
+                        default => $state ?? 'Particulier',
+                    }),
+                Tables\Columns\TextColumn::make('registration_number')
+                    ->label('IFU')
+                    ->searchable()
+                    ->placeholder('Non renseigné')
+                    ->copyable(),
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Téléphone')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('address')
-                    ->label('Adresse')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('city')
+                    ->label('Ville')
+                    ->searchable()
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Mis à jour le')
-                    ->dateTime()
+                    ->dateTime('d/m/Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('customer_type')
+                    ->label('Type de client')
+                    ->options([
+                        'B2B' => 'Professionnel (B2B)',
+                        'B2C' => 'Particulier (B2C)',
+                    ]),
+                Tables\Filters\Filter::make('has_ifu')
+                    ->label('Avec IFU')
+                    ->query(fn (Builder $query): Builder => $query->whereNotNull('registration_number')->where('registration_number', '!=', '')),
             ])
             ->deferLoading() // Optimisation: Chargement différé via AJAX
             ->defaultSort('name', 'asc')

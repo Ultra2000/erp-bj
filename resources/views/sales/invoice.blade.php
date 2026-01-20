@@ -511,7 +511,7 @@
 </head>
 <body>
 @php
-    $currency = $company->currency ?? 'EUR';
+    $currency = $company->currency ?? 'XOF';
     $status = $sale->status;
     $statusClass = 'status-' . ($status ?: 'pending');
     $discountPercent = $sale->discount_percent ?? 0;
@@ -737,10 +737,64 @@
         </div>
     @endif
 
+    {{-- Section e-MCeF (Certification DGI Bénin) --}}
+    @if($sale->emcef_status === 'certified' && $sale->emcef_qr_code)
+        <div class="verification-section" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0;">
+            <div class="qr-code" style="background: white; padding: 8px; border-radius: 8px;">
+                @php
+                    try {
+                        // Le emcef_qr_code contient les données textuelles, on génère l'image QR
+                        $emcefQr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(100)->margin(0)->generate($sale->emcef_qr_code));
+                    } catch (\Throwable $e) { 
+                        $emcefQr = null; 
+                    }
+                @endphp
+                @if($emcefQr)
+                    <img src="data:image/svg+xml;base64,{{ $emcefQr }}" alt="QR Code e-MCeF" style="width: 100px; height: 100px;">
+                @else
+                    <div style="width:100px;height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;">QR indisponible</div>
+                @endif
+            </div>
+            <div class="verification-info">
+                <h4 style="color: #047857;">🏛️ Facture certifiée DGI Bénin</h4>
+                <p style="color: #065f46;">
+                    Cette facture a été certifiée conformément à la réglementation fiscale béninoise (e-MCeF).<br>
+                    <strong>NIM :</strong> {{ $sale->emcef_nim }}<br>
+                    <strong>Code MECeF :</strong> {{ $sale->emcef_code_mecef }}<br>
+                    <strong>Date de certification :</strong> {{ $sale->emcef_certified_at?->format('d/m/Y à H:i') }}
+                </p>
+                @if($sale->emcef_counters)
+                    <span class="verification-code" style="background: #047857;">
+                        {{ $sale->emcef_counters }}
+                    </span>
+                @endif
+            </div>
+        </div>
+    @elseif($sale->emcef_status === 'error')
+        <div class="verification-section" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color: #fca5a5;">
+            <div class="verification-info" style="width: 100%;">
+                <h4 style="color: #b91c1c;">⚠️ Certification e-MCeF en erreur</h4>
+                <p style="color: #991b1b;">
+                    Cette facture n'a pas pu être certifiée par la DGI.<br>
+                    <strong>Erreur :</strong> {{ $sale->emcef_error ?? 'Erreur inconnue' }}
+                </p>
+            </div>
+        </div>
+    @elseif($company->emcef_enabled && $sale->emcef_status === 'pending')
+        <div class="verification-section" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fcd34d;">
+            <div class="verification-info" style="width: 100%;">
+                <h4 style="color: #b45309;">⏳ Certification e-MCeF en cours</h4>
+                <p style="color: #92400e;">
+                    Cette facture est en attente de certification par la DGI Bénin.
+                </p>
+            </div>
+        </div>
+    @endif
+
     <footer class="invoice-footer">
         @if($isVatFranchise)
             <p style="font-weight: 600; color: var(--gray-700); margin-bottom: 8px; padding: 8px 16px; background: var(--gray-100); border-radius: 6px; display: inline-block;">
-                TVA non applicable, art. 293 B du CGI
+                Exonéré de TVA
             </p><br>
         @endif
         @if($company->footer_text)

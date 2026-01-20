@@ -538,11 +538,38 @@
                 </div>
                 
                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Vente Enregistrée!</h3>
-                <p class="text-gray-500 dark:text-gray-400 mb-6">Transaction effectuée avec succès</p>
+                <p class="text-gray-500 dark:text-gray-400 mb-4">Transaction effectuée avec succès</p>
+                
+                {{-- Badge e-MCeF si certifié --}}
+                <template x-if="lastEmcefResult && lastEmcefResult.success">
+                    <div class="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-xl p-3 mb-4">
+                        <div class="flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            <span class="font-semibold text-sm">Certifiée e-MCeF DGI</span>
+                        </div>
+                        <div class="text-xs text-emerald-600 dark:text-emerald-300 mt-1" x-text="'NIM: ' + lastEmcefResult.nim"></div>
+                    </div>
+                </template>
+                
+                {{-- Alerte si erreur e-MCeF --}}
+                <template x-if="lastEmcefResult && !lastEmcefResult.success && lastEmcefResult.error">
+                    <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3 mb-4">
+                        <div class="flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span class="font-semibold text-sm">Erreur e-MCeF</span>
+                        </div>
+                        <div class="text-xs text-amber-600 dark:text-amber-300 mt-1" x-text="lastEmcefResult.error"></div>
+                    </div>
+                </template>
                 
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 mb-6">
                     <p class="text-sm text-gray-500 dark:text-gray-400">Montant encaissé</p>
                     <p class="text-3xl font-bold text-green-600" x-text="formatPrice(lastSaleAmount)"></p>
+                    <p class="text-xs text-gray-400 mt-1" x-text="lastInvoiceNumber ? 'Facture: ' + lastInvoiceNumber : ''"></p>
                 </div>
                 
                 <button @click="showSuccessModal = false" 
@@ -908,6 +935,8 @@
                 showSuccessModal: false,
                 showReportModal: false,
                 lastSaleAmount: 0,
+                lastInvoiceNumber: null,
+                lastEmcefResult: null,
 
                 // Données du rapport
                 reportData: null,
@@ -1325,6 +1354,8 @@
                         if (data.success) {
                             this.playSuccess();
                             this.lastSaleAmount = this.cartTotal;
+                            this.lastInvoiceNumber = data.invoice_number || null;
+                            this.lastEmcefResult = data.emcef || null;
                             this.showSuccessModal = true;
                             this.cart = [];
                             this.receivedAmount = '';
@@ -1332,6 +1363,7 @@
                             await this.loadProducts(); // Rafraîchir les stocks
                         } else {
                             this.playError();
+                            alert(data.message || 'Erreur lors de l\'enregistrement');
                         }
                     } catch (error) {
                         this.playError();
@@ -1345,7 +1377,7 @@
                 formatPrice(amount) {
                     return new Intl.NumberFormat('fr-FR', {
                         style: 'currency',
-                        currency: 'EUR'
+                        currency: 'XOF'
                     }).format(amount || 0);
                 },
                 

@@ -447,32 +447,62 @@ class Product extends Model
     }
 
     /**
-     * Catégories TVA pour Chorus Pro / Factur-X
+     * Catégories TVA pour e-MCeF (Bénin)
+     * A = TVA 18% (standard)
+     * B = Exonéré 0%
+     * C = Exportation de produits taxables
+     * D = Régime fiscal particulier
+     * E = Taxe spécifique
+     * F = Autre taxe
      */
     public static function getVatCategories(): array
     {
+        $company = \Filament\Facades\Filament::getTenant();
+        
+        // Si e-MCeF est activé, utiliser les catégories béninoises
+        if ($company?->emcef_enabled) {
+            return [
+                'A' => 'A - TVA 18% (standard)',
+                'B' => 'B - Exonéré (0%)',
+                'C' => 'C - Exportation taxable',
+                'D' => 'D - Régime fiscal particulier',
+                'E' => 'E - Taxe spécifique',
+                'F' => 'F - Autre taxe',
+            ];
+        }
+        
+        // Catégories par défaut
         return [
             'S' => 'Standard (taux normal)',
             'AA' => 'Taux réduit',
             'Z' => 'Taux zéro',
             'E' => 'Exonéré de TVA',
-            'AE' => 'Autoliquidation (reverse charge)',
-            'K' => 'Intracommunautaire',
-            'G' => 'Export hors UE',
             'O' => 'Non soumis à TVA',
         ];
     }
 
     /**
-     * Taux de TVA courants en France
+     * Taux de TVA courants
+     * Bénin: 18% standard, 0% exonéré
      */
     public static function getCommonVatRates(): array
     {
+        $company = \Filament\Facades\Filament::getTenant();
+        
+        // Si e-MCeF est activé (Bénin), utiliser les taux béninois
+        if ($company?->emcef_enabled) {
+            return [
+                18.00 => '18% - TVA standard (Groupe A)',
+                0.00 => '0% - Exonéré (Groupe B)',
+            ];
+        }
+        
+        // Taux par défaut (internationaux)
         return [
             20.00 => '20% - Taux normal',
+            18.00 => '18% - TVA standard',
             10.00 => '10% - Taux intermédiaire',
             5.50 => '5,5% - Taux réduit',
-            2.10 => '2,1% - Taux super-réduit',
             0.00 => '0% - Exonéré',
         ];
     }

@@ -191,4 +191,149 @@ class User extends Authenticatable implements FilamentUser, HasTenants
                $this->hasPermission("{$module}.manage") || 
                $this->isAdmin();
     }
+
+    // ============================================
+    // GESTION DES ENTREPÔTS / BOUTIQUES
+    // ============================================
+
+    /**
+     * Les entrepôts/boutiques auxquels l'utilisateur a accès
+     */
+    public function warehouses(): BelongsToMany
+    {
+        return $this->belongsToMany(Warehouse::class, 'user_warehouse')
+            ->withPivot('is_default')
+            ->withTimestamps();
+    }
+
+    /**
+     * Récupère l'entrepôt par défaut de l'utilisateur pour l'entreprise courante
+     */
+    public function defaultWarehouse(): ?Warehouse
+    {
+        $companyId = filament()->getTenant()?->id;
+        
+        if (!$companyId) {
+            return null;
+        }
+
+        // D'abord chercher l'entrepôt marqué par défaut
+        $default = $this->warehouses()
+            ->where('company_id', $companyId)
+            ->wherePivot('is_default', true)
+            ->first();
+
+        if ($default) {
+            return $default;
+        }
+
+        // Sinon retourner le premier entrepôt assigné
+        return $this->warehouses()
+            ->where('company_id', $companyId)
+            ->first();
+    }
+
+    /**
+     * Récupère l'ID de l'entrepôt courant (pour le scope)
+     * Retourne null si admin (pas de restriction)
+     */
+    public function currentWarehouseId(): ?int
+    {
+        // Les admins et super admins voient tout
+        if ($this->is_super_admin || $this->isAdmin()) {
+            return null;
+        }
+
+        return $this->defaultWarehouse()?->id;
+    }
+
+    /**
+     * Récupère les IDs de tous les entrepôts accessibles
+     * Retourne null si admin (pas de restriction)
+     */
+    public function accessibleWarehouseIds(): ?array
+    {
+        // Les admins et super admins voient tout
+        if ($this->is_super_admin || $this->isAdmin()) {
+            return null;
+        }
+
+        $companyId = filament()->getTenant()?->id;
+        
+        if (!$companyId) {
+            return [];
+        }
+
+        return $this->warehouses()
+            ->where('company_id', $companyId)
+            ->pluck('warehouses.id')
+            ->toArray();
+    }
+
+    /**
+     * Vérifie si l'utilisateur a accès à un entrepôt spécifique
+     */
+    public function hasAccessToWarehouse(int $warehouseId): bool
+    {
+        // Les admins ont accès à tous les entrepôts
+        if ($this->is_super_admin || $this->isAdmin()) {
+            return true;
+        }
+
+        return $this->warehouses()->where('warehouses.id', $warehouseId)->exists();
+    }
+
+    /**
+     * Vérifie si l'utilisateur est restreint à des entrepôts spécifiques
+     */
+    public function hasWarehouseRestriction(): bool
+    {
+        // Les admins n'ont pas de restriction
+        if ($this->is_super_admin || $this->isAdmin()) {
+            return false;
+        }
+
+        // Si l'utilisateur a des entrepôts assignés, il est restreint
+        $companyId = filament()->getTenant()?->id;
+        
+        if (!$companyId) {
+            return false;
+        }
+
+        return $this->warehouses()
+            ->where('company_id', $companyId)
+            ->exists();
+    }
+
+    /**
+     * Définit l'entrepôt par défaut pour l'utilisateur
+     */
+    public function setDefaultWarehouse(int $warehouseId): void
+    {
+        // Retirer le flag par défaut des autres entrepôts
+        $this->warehouses()->updateExistingPivot(
+            $this->warehouses()->pluck('warehouses.id')->toArray(),
+            ['is_default' => false]
+        );
+
+        // Définir le nouveau par défaut
+        if ($this->warehouses()->where('warehouses.id', $warehouseId)->exists()) {
+            $this->warehouses()->updateExistingPivot($warehouseId, ['is_default' => true]);
+        }
+    }
+
+    /**
+     * Retourne le nom d'affichage pour l'opérateur e-MCeF
+     * Format: "Nom Utilisateur - Boutique"
+     */
+    public function getEmcefOperatorName(): string
+    {
+        $warehouse = $this->defaultWarehouse();
+        
+        if ($warehouse) {
+            return "{$this->name} - {$warehouse->name}";
+        }
+
+        return $this->name;
+    }
 }

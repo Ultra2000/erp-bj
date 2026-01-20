@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToCompany;
+use App\Models\Traits\HasWarehouseScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Inventory extends Model
 {
-    use BelongsToCompany, SoftDeletes;
+    use BelongsToCompany, SoftDeletes, HasWarehouseScope;
 
     protected $fillable = [
         'company_id',

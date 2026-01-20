@@ -22,7 +22,6 @@ class Dashboard extends Page
     {
         return [
             StatsOverview::class,
-            \App\Filament\Widgets\UrssafOverviewWidget::class,
             SalesChart::class,
             StockAlert::class,
         ];

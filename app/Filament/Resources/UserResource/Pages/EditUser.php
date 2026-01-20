@@ -42,5 +42,27 @@ class EditUser extends EditRecord
         foreach ($roleIds as $roleId) {
             $this->record->roles()->attach($roleId, ['company_id' => $tenant->id]);
         }
+
+        // Synchroniser les entrepôts pour cette entreprise
+        $warehouseIds = $this->data['user_warehouses'] ?? [];
+        $defaultWarehouseId = $this->data['default_warehouse'] ?? null;
+        
+        // Récupérer les entrepôts actuels de l'entreprise
+        $currentWarehouseIds = $this->record->warehouses()
+            ->where('company_id', $tenant->id)
+            ->pluck('warehouses.id')
+            ->toArray();
+        
+        // Retirer les entrepôts de cette entreprise
+        if (!empty($currentWarehouseIds)) {
+            $this->record->warehouses()->detach($currentWarehouseIds);
+        }
+        
+        // Ajouter les nouveaux entrepôts
+        foreach ($warehouseIds as $warehouseId) {
+            $this->record->warehouses()->attach($warehouseId, [
+                'is_default' => $warehouseId == $defaultWarehouseId,
+            ]);
+        }
     }
 }

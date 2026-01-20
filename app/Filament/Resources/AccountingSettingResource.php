@@ -19,7 +19,12 @@ class AccountingSettingResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? true;
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
     }
 
     protected static ?string $navigationLabel = 'Paramètres Comptables';
@@ -40,8 +45,8 @@ class AccountingSettingResource extends Resource
                     ->icon('heroicon-o-scale')
                     ->schema([
                         Forms\Components\Toggle::make('is_vat_franchise')
-                            ->label('Franchise en base de TVA')
-                            ->helperText('Activez cette option si vous êtes en "Franchise en base de TVA" (Auto-entrepreneur, micro-entreprise). GestStock appliquera automatiquement un taux à 0% et ajoutera la mention obligatoire "Art. 293 B du CGI" sur tous vos documents.')
+                            ->label('Exonération de TVA')
+                            ->helperText('Activez cette option si votre entreprise est exonérée de TVA. GestStock appliquera automatiquement un taux à 0% sur tous vos documents.')
                             ->onIcon('heroicon-m-check')
                             ->offIcon('heroicon-m-x-mark')
                             ->onColor('success')
@@ -50,8 +55,8 @@ class AccountingSettingResource extends Resource
                             ->afterStateUpdated(function ($state) {
                                 if ($state) {
                                     \Filament\Notifications\Notification::make()
-                                        ->title('Mode Franchise TVA activé')
-                                        ->body('Toutes vos factures et devis afficheront désormais TVA 0% avec la mention légale Art. 293 B du CGI.')
+                                        ->title('Mode Exonération TVA activé')
+                                        ->body('Toutes vos factures et devis afficheront désormais TVA 0%.')
                                         ->success()
                                         ->duration(5000)
                                         ->send();
@@ -65,7 +70,7 @@ class AccountingSettingResource extends Resource
                             ->required()
                             ->visible(fn ($get) => !$get('is_vat_franchise'))
                             ->helperText('Détermine QUAND la TVA devient exigible')
-                            ->hint('Très important pour les prestataires de services')
+                            ->hint('Important pour les prestataires de services')
                             ->hintIcon('heroicon-o-exclamation-triangle')
                             ->hintColor('warning'),
 
@@ -80,10 +85,10 @@ class AccountingSettingResource extends Resource
                                         <li><strong>TVA sur les débits (facturation)</strong> : La TVA est due dès l\'émission de la facture. 
                                             <br><span class="text-gray-500 ml-6">→ Pour la vente de biens/marchandises (cas le plus courant)</span></li>
                                         <li><strong>TVA sur les encaissements (paiement)</strong> : La TVA est due uniquement au moment où le client paie.
-                                            <br><span class="text-gray-500 ml-6">→ Pour les prestataires de services (avocats, consultants, agences...)</span></li>
+                                            <br><span class="text-gray-500 ml-6">→ Pour les prestataires de services</span></li>
                                     </ul>
                                     <p class="mt-3 text-amber-600 dark:text-amber-400 text-xs">
-                                        💡 En cas de doute, consultez votre expert-comptable. Un mauvais choix peut entraîner une déclaration de TVA erronée.
+                                        💡 En cas de doute, consultez votre expert-comptable ou la Direction Générale des Impôts (DGI).
                                     </p>
                                 </div>
                             '))
@@ -98,13 +103,13 @@ class AccountingSettingResource extends Resource
                                         <span class="mr-1">ℹ️</span> Quand activer cette option ?
                                     </p>
                                     <ul class="list-disc list-inside space-y-1 ml-2">
-                                        <li><strong>Micro-entrepreneurs & Freelances</strong> : Si vous ne dépassez pas les plafonds de CA et ne facturez pas de TVA</li>
+                                        <li><strong>Entreprises exonérées</strong> : Selon les dispositions du Code Général des Impôts du Bénin</li>
                                         <li><strong>Associations</strong> : Pour les activités non lucratives exonérées</li>
                                     </ul>
                                     <p class="mt-3 font-semibold text-blue-700 dark:text-blue-300 mb-2">Ce que GestStock automatise :</p>
                                     <ul class="list-disc list-inside space-y-1 ml-2">
                                         <li><strong>Ventes & POS</strong> : Prix traités en "Net à payer", sans TVA</li>
-                                        <li><strong>PDF</strong> : Mention légale "TVA non applicable, art. 293 B du CGI"</li>
+                                        <li><strong>PDF</strong> : Mention "Exonéré de TVA"</li>
                                         <li><strong>Dashboard</strong> : Widget TVA masqué (non applicable)</li>
                                     </ul>
                                 </div>
@@ -115,19 +120,18 @@ class AccountingSettingResource extends Resource
                     ->collapsed(fn ($record) => !$record?->is_vat_franchise),
 
                 Forms\Components\Section::make('Informations de l\'entreprise')
-                    ->description('Le SIREN et la raison sociale sont récupérés automatiquement depuis les paramètres de l\'entreprise')
+                    ->description('L\'IFU et la raison sociale sont récupérés automatiquement depuis les paramètres de l\'entreprise')
                     ->schema([
-                        Forms\Components\Placeholder::make('auto_siren')
-                            ->label('SIREN (automatique)')
+                        Forms\Components\Placeholder::make('auto_ifu')
+                            ->label('IFU (automatique)')
                             ->content(function () {
                                 $company = filament()->getTenant();
-                                if ($company && $company->siret) {
-                                    $siren = substr(preg_replace('/[^0-9]/', '', $company->siret), 0, 9);
-                                    return $siren . ' (extrait du SIRET: ' . $company->siret . ')';
+                                if ($company && $company->registration_number) {
+                                    return $company->registration_number . ' (Identifiant Fiscal Unique)';
                                 }
-                                return 'Non configuré - Veuillez renseigner le SIRET dans les paramètres de l\'entreprise';
+                                return 'Non configuré - Veuillez renseigner l\'IFU dans les paramètres de l\'entreprise';
                             })
-                            ->helperText('Le SIREN est automatiquement extrait des 9 premiers chiffres du SIRET'),
+                            ->helperText('L\'IFU est l\'identifiant fiscal unique de votre entreprise au Bénin (13 chiffres)'),
 
                         Forms\Components\Placeholder::make('auto_company_name')
                             ->label('Raison sociale (automatique)')

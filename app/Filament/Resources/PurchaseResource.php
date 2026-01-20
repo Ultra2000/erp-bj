@@ -106,14 +106,14 @@ class PurchaseResource extends Resource
                             }),
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
-                            ->content(fn (?Purchase $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'EUR') : '-'),
+                            ->content(fn (?Purchase $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
                         Forms\Components\Placeholder::make('total_vat_display')
                             ->label('TVA Déductible')
-                            ->content(fn (?Purchase $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'EUR') : '-'),
+                            ->content(fn (?Purchase $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
                         Forms\Components\TextInput::make('total')
                             ->label('Total TTC')
                             ->numeric()
-                            ->suffix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                            ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                             ->disabled(),
                     ])->columns(4),
 
@@ -171,7 +171,7 @@ class PurchaseResource extends Resource
                                     ->label('P.U. HT')
                                     ->required()
                                     ->numeric()
-                                    ->prefix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                                    ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $quantity = $get('quantity') ?? 0;
@@ -199,7 +199,7 @@ class PurchaseResource extends Resource
                                 Forms\Components\TextInput::make('total_price')
                                     ->label('Total TTC')
                                     ->numeric()
-                                    ->prefix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                                    ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->disabled()
                                     ->dehydrated(true)
                                     ->columnSpan(1),

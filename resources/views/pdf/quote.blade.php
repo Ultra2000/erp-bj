@@ -401,7 +401,7 @@
 
         @if($isVatFranchise)
         <div style="text-align: center; padding: 10px 15px; background: #f1f5f9; border-radius: 5px; margin-bottom: 15px; font-size: 10px; font-weight: 600; color: #475569;">
-            TVA non applicable, art. 293 B du CGI
+            Exonéré de TVA
         </div>
         @endif
 
@@ -453,3 +453,4 @@
     </div>
 </body>
 </html>
+

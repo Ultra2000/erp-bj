@@ -23,7 +23,12 @@ class BalanceGenerale extends Page implements HasTable
 
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? true;
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
     }
 
     protected static string $view = 'filament.pages.balance-generale';

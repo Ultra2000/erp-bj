@@ -89,7 +89,7 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->live(onBlur: true)
-                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $vatRate = (float) ($get('vat_rate_purchase') ?? 20);
                                         $pricesTtc = $get('prices_include_vat');
@@ -106,7 +106,7 @@ class ProductResource extends Resource
                                 Forms\Components\Select::make('vat_rate_purchase')
                                     ->label('TVA Achat')
                                     ->options(Product::getCommonVatRates())
-                                    ->default(20.00)
+                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $price = (float) ($get('purchase_price') ?? 0);
@@ -126,7 +126,7 @@ class ProductResource extends Resource
                                         $price = (float) ($get('purchase_price') ?? 0);
                                         $vatRate = (float) ($get('vat_rate_purchase') ?? 20);
                                         $pricesTtc = $get('prices_include_vat');
-                                        $currency = Filament::getTenant()->currency ?? 'EUR';
+                                        $currency = Filament::getTenant()->currency ?? 'XOF';
                                         
                                         if ($pricesTtc) {
                                             $ht = $vatRate > 0 ? round($price / (1 + $vatRate / 100), 2) : $price;
@@ -147,7 +147,7 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->default(0)
                                     ->live(onBlur: true)
-                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'EUR')
+                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $vatRate = (float) ($get('vat_rate_sale') ?? 20);
                                         $pricesTtc = $get('prices_include_vat');
@@ -162,7 +162,7 @@ class ProductResource extends Resource
                                 Forms\Components\Select::make('vat_rate_sale')
                                     ->label('TVA Vente')
                                     ->options(Product::getCommonVatRates())
-                                    ->default(20.00)
+                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $price = (float) ($get('price') ?? 0);
@@ -182,7 +182,7 @@ class ProductResource extends Resource
                                         $price = (float) ($get('price') ?? 0);
                                         $vatRate = (float) ($get('vat_rate_sale') ?? 20);
                                         $pricesTtc = $get('prices_include_vat');
-                                        $currency = Filament::getTenant()->currency ?? 'EUR';
+                                        $currency = Filament::getTenant()->currency ?? 'XOF';
                                         
                                         if ($pricesTtc) {
                                             $ht = $vatRate > 0 ? round($price / (1 + $vatRate / 100), 2) : $price;
@@ -194,12 +194,15 @@ class ProductResource extends Resource
                                     }),
                             ])->columns(3),
 
-                        // Catégorie TVA pour Chorus Pro
+                        // Catégorie TVA pour facturation électronique
                         Forms\Components\Select::make('vat_category')
-                            ->label('Catégorie TVA (Chorus Pro)')
+                            ->label(fn () => Filament::getTenant()?->emcef_enabled ? 'Groupe TVA e-MCeF' : 'Catégorie TVA')
                             ->options(Product::getVatCategories())
-                            ->default('S')
-                            ->helperText('Utilisé pour la facturation électronique')
+                            ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S')
+                            ->helperText(fn () => Filament::getTenant()?->emcef_enabled 
+                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%)' 
+                                : 'Utilisé pour la facturation électronique')
+                            ->visible(fn () => (Filament::getTenant()?->isModuleEnabled('e_invoicing') ?? false) || (Filament::getTenant()?->emcef_enabled ?? false))
                             ->columnSpan(1),
 
                         // Affichage de la marge
@@ -211,7 +214,7 @@ class ProductResource extends Resource
                                 $vatPurchase = (float) ($get('vat_rate_purchase') ?? 20);
                                 $vatSale = (float) ($get('vat_rate_sale') ?? 20);
                                 $pricesTtc = $get('prices_include_vat');
-                                $currency = Filament::getTenant()->currency ?? 'EUR';
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
                                 
                                 // Calculer les prix HT
                                 if ($pricesTtc) {
@@ -261,11 +264,44 @@ class ProductResource extends Resource
                             ->label('Stock total (tous entrepôts)')
                             ->content(fn ($record) => $record ? number_format($record->total_stock, 0, ',', ' ') . ' ' . ($record->unit ?? 'unités') : '-')
                             ->visibleOn('edit'),
-                        Forms\Components\TextInput::make('unit')
-                            ->label('Unité')
+                        Forms\Components\Select::make('unit')
+                            ->label('Unité de mesure')
+                            ->options([
+                                // Unités de quantité
+                                'pièce' => 'Pièce',
+                                'unité' => 'Unité',
+                                'paquet' => 'Paquet',
+                                'boîte' => 'Boîte',
+                                'carton' => 'Carton',
+                                'lot' => 'Lot',
+                                'palette' => 'Palette',
+                                // Unités de poids
+                                'g' => 'Gramme (g)',
+                                'kg' => 'Kilogramme (kg)',
+                                'tonne' => 'Tonne',
+                                // Unités de volume
+                                'ml' => 'Millilitre (ml)',
+                                'cl' => 'Centilitre (cl)',
+                                'l' => 'Litre (L)',
+                                // Unités de longueur
+                                'm' => 'Mètre (m)',
+                                'cm' => 'Centimètre (cm)',
+                                'm²' => 'Mètre carré (m²)',
+                                'm³' => 'Mètre cube (m³)',
+                                // Autres
+                                'sachet' => 'Sachet',
+                                'bouteille' => 'Bouteille',
+                                'bidon' => 'Bidon',
+                                'sac' => 'Sac',
+                                'rouleau' => 'Rouleau',
+                                'feuille' => 'Feuille',
+                                'heure' => 'Heure',
+                                'jour' => 'Jour',
+                                'service' => 'Service',
+                            ])
                             ->required()
                             ->default('pièce')
-                            ->maxLength(255),
+                            ->searchable(),
                         Forms\Components\TextInput::make('min_stock')
                             ->label('Stock minimum (alerte)')
                             ->required()
@@ -490,3 +526,4 @@ class ProductResource extends Resource
         ];
     }
 }
+

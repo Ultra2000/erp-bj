@@ -8,6 +8,7 @@ use App\Models\SaleItem;
 use App\Models\Customer;
 use App\Models\CashSession;
 use App\Models\Company;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Filament\Facades\Filament;
@@ -44,6 +45,43 @@ class CaisseController extends Controller
             return $user->company_id;
         }
         
+        return null;
+    }
+
+    /**
+     * Récupère l'entrepôt de l'utilisateur pour le POS
+     */
+    protected function getUserWarehouse(Request $request): ?Warehouse
+    {
+        $companyId = $this->getCompanyId($request);
+        $user = auth()->user();
+        
+        if (!$companyId || !$user) {
+            return null;
+        }
+
+        // Si l'utilisateur a un entrepôt par défaut, l'utiliser
+        $userWarehouse = $user->warehouses()
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->orderByPivot('is_default', 'desc')
+            ->first();
+
+        if ($userWarehouse) {
+            return $userWarehouse;
+        }
+
+        // Si l'utilisateur est admin, prendre l'entrepôt POS par défaut de l'entreprise
+        if ($user->is_super_admin || $user->isAdmin()) {
+            return Warehouse::where('company_id', $companyId)
+                ->where('is_active', true)
+                ->where(function($q) {
+                    $q->where('is_pos_location', true)
+                      ->orWhere('is_default', true);
+                })
+                ->first();
+        }
+
         return null;
     }
 
@@ -174,20 +212,41 @@ class CaisseController extends Controller
             return response()->json([]);
         }
 
-        $products = Product::where('company_id', $companyId)
-            ->where('stock', '>', 0)
-            ->orderBy('name')
-            ->limit(50)
-            ->get(['id', 'name', 'code', 'price', 'stock'])
-            ->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'code' => $p->code,
-                    'selling_price' => $p->price,
-                    'quantity' => $p->stock,
-                ];
-            });
+        $warehouse = $this->getUserWarehouse($request);
+        
+        // Si l'utilisateur a un entrepôt assigné, filtrer les produits par stock de cet entrepôt
+        if ($warehouse) {
+            $products = $warehouse->products()
+                ->where('product_warehouse.quantity', '>', 0)
+                ->orderBy('name')
+                ->limit(50)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'code' => $p->code,
+                        'selling_price' => $p->price,
+                        'quantity' => $p->pivot->quantity, // Stock de l'entrepôt
+                    ];
+                });
+        } else {
+            // Fallback: stock global
+            $products = Product::where('company_id', $companyId)
+                ->where('stock', '>', 0)
+                ->orderBy('name')
+                ->limit(50)
+                ->get(['id', 'name', 'code', 'price', 'stock'])
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'code' => $p->code,
+                        'selling_price' => $p->price,
+                        'quantity' => $p->stock,
+                    ];
+                });
+        }
 
         return response()->json($products);
     }
@@ -202,24 +261,49 @@ class CaisseController extends Controller
             return response()->json([]);
         }
 
-        $products = Product::where('company_id', $companyId)
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('code', 'like', "%{$query}%");
-            })
-            ->where('stock', '>', 0)
-            ->orderBy('name')
-            ->limit(25)
-            ->get(['id', 'name', 'code', 'price', 'stock'])
-            ->map(function ($p) {
-                return [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'code' => $p->code,
-                    'selling_price' => $p->price,
-                    'quantity' => $p->stock,
-                ];
-            });
+        $warehouse = $this->getUserWarehouse($request);
+        
+        if ($warehouse) {
+            // Recherche dans le stock de l'entrepôt
+            $products = $warehouse->products()
+                ->where(function ($q) use ($query) {
+                    $q->where('products.name', 'like', "%{$query}%")
+                      ->orWhere('products.code', 'like', "%{$query}%");
+                })
+                ->where('product_warehouse.quantity', '>', 0)
+                ->orderBy('products.name')
+                ->limit(25)
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'code' => $p->code,
+                        'selling_price' => $p->price,
+                        'quantity' => $p->pivot->quantity,
+                    ];
+                });
+        } else {
+            // Fallback: recherche globale
+            $products = Product::where('company_id', $companyId)
+                ->where(function ($q) use ($query) {
+                    $q->where('name', 'like', "%{$query}%")
+                      ->orWhere('code', 'like', "%{$query}%");
+                })
+                ->where('stock', '>', 0)
+                ->orderBy('name')
+                ->limit(25)
+                ->get(['id', 'name', 'code', 'price', 'stock'])
+                ->map(function ($p) {
+                    return [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'code' => $p->code,
+                        'selling_price' => $p->price,
+                        'quantity' => $p->stock,
+                    ];
+                });
+        }
 
         return response()->json($products);
     }
@@ -232,21 +316,43 @@ class CaisseController extends Controller
             return response()->json(['error' => 'No company'], 400);
         }
 
-        $product = Product::where('company_id', $companyId)
-            ->where('code', $code)
-            ->first(['id', 'name', 'code', 'price', 'stock']);
+        $warehouse = $this->getUserWarehouse($request);
+        
+        if ($warehouse) {
+            // Chercher dans le stock de l'entrepôt
+            $product = $warehouse->products()
+                ->where('products.code', $code)
+                ->first();
 
-        if (!$product) {
-            return response()->json(['error' => 'Product not found'], 404);
+            if (!$product) {
+                return response()->json(['error' => 'Product not found in warehouse'], 404);
+            }
+
+            return response()->json([
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'selling_price' => $product->price,
+                'quantity' => $product->pivot->quantity,
+            ]);
+        } else {
+            // Fallback: recherche globale
+            $product = Product::where('company_id', $companyId)
+                ->where('code', $code)
+                ->first(['id', 'name', 'code', 'price', 'stock']);
+
+            if (!$product) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+
+            return response()->json([
+                'id' => $product->id,
+                'name' => $product->name,
+                'code' => $product->code,
+                'selling_price' => $product->price,
+                'quantity' => $product->stock,
+            ]);
         }
-
-        return response()->json([
-            'id' => $product->id,
-            'name' => $product->name,
-            'code' => $product->code,
-            'selling_price' => $product->price,
-            'quantity' => $product->stock,
-        ]);
     }
 
     // Enregistrer une vente
@@ -279,8 +385,14 @@ class CaisseController extends Controller
             ], 400);
         }
 
+        // Récupérer l'entreprise et l'entrepôt de l'utilisateur
+        $company = Company::find($companyId);
+        $warehouse = $this->getUserWarehouse($request);
+        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+        $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
+
         try {
-            $sale = DB::transaction(function () use ($items, $paymentMethod, $total, $companyId, $session) {
+            $sale = DB::transaction(function () use ($items, $paymentMethod, $total, $companyId, $session, $company, $warehouse, $defaultVatRate, $defaultVatCategory) {
                 // Client comptoir par défaut
                 $walkIn = Customer::firstOrCreate(
                     ['email' => 'walkin@example.com', 'company_id' => $companyId],
@@ -295,16 +407,26 @@ class CaisseController extends Controller
                     ]
                 );
 
-                $sale = Sale::create([
+                $sale = new Sale([
                     'company_id' => $companyId,
                     'customer_id' => $walkIn->id,
+                    'warehouse_id' => $warehouse?->id, // Entrepôt de la vente
                     'cash_session_id' => $session->id,
                     'payment_method' => $paymentMethod,
                     'status' => 'completed',
-                    'total' => $total,
                     'discount_percent' => 0,
                     'tax_percent' => 0,
                 ]);
+                
+                // Préparer le statut e-MCeF si activé
+                if ($company?->emcef_enabled) {
+                    $sale->emcef_status = 'pending';
+                }
+                
+                $sale->save();
+
+                $totalHt = 0;
+                $totalVat = 0;
 
                 foreach ($items as $item) {
                     $product = Product::where('company_id', $companyId)
@@ -313,21 +435,64 @@ class CaisseController extends Controller
 
                     $qty = (int) $item['quantity'];
                     $price = floatval($item['price']);
+                    $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
+                    $vatCategory = $product->vat_category ?? $defaultVatCategory;
 
-                    if ($product->stock < $qty) {
-                        throw new \RuntimeException('Stock insuffisant pour ' . $product->name);
+                    // Vérifier et décrémenter le stock de l'entrepôt si défini
+                    if ($warehouse) {
+                        $warehouseStock = DB::table('product_warehouse')
+                            ->where('product_id', $product->id)
+                            ->where('warehouse_id', $warehouse->id)
+                            ->lockForUpdate()
+                            ->first();
+                        
+                        $availableStock = $warehouseStock ? $warehouseStock->quantity : 0;
+                        
+                        if ($availableStock < $qty) {
+                            throw new \RuntimeException("Stock insuffisant pour {$product->name} dans l'entrepôt {$warehouse->name}");
+                        }
+                        
+                        // Décrémenter le stock de l'entrepôt
+                        DB::table('product_warehouse')
+                            ->where('product_id', $product->id)
+                            ->where('warehouse_id', $warehouse->id)
+                            ->decrement('quantity', $qty);
+                    } else {
+                        // Fallback: stock global
+                        if ($product->stock < $qty) {
+                            throw new \RuntimeException('Stock insuffisant pour ' . $product->name);
+                        }
+                        $product->decrement('stock', $qty);
                     }
 
-                    $product->decrement('stock', $qty);
+                    // Calcul HT et TVA
+                    $lineHt = $qty * $price;
+                    $lineVat = round($lineHt * ($vatRate / 100), 2);
+                    $lineTtc = $lineHt + $lineVat;
+                    
+                    $totalHt += $lineHt;
+                    $totalVat += $lineVat;
 
                     SaleItem::create([
                         'sale_id' => $sale->id,
                         'product_id' => $product->id,
                         'quantity' => $qty,
                         'unit_price' => $price,
-                        'total_price' => $qty * $price,
+                        'unit_price_ht' => $price,
+                        'vat_rate' => $vatRate,
+                        'vat_category' => $vatCategory,
+                        'vat_amount' => $lineVat,
+                        'total_price_ht' => $lineHt,
+                        'total_price' => $lineTtc,
                     ]);
                 }
+
+                // Mettre à jour les totaux de la vente
+                $sale->update([
+                    'total_ht' => round($totalHt, 2),
+                    'total_vat' => round($totalVat, 2),
+                    'total' => round($totalHt + $totalVat, 2),
+                ]);
 
                 // Mettre à jour la session
                 $session->recalculate();
@@ -337,9 +502,28 @@ class CaisseController extends Controller
 
             $session->refresh();
 
+            // Certification e-MCeF automatique si activé
+            $emcefResult = null;
+            if ($company?->emcef_enabled && $sale) {
+                try {
+                    $emcefService = new \App\Services\EmcefService($company);
+                    $emcefResult = $emcefService->submitInvoice($sale);
+                    $sale->refresh();
+                } catch (\Exception $e) {
+                    \Log::error('POS e-MCeF Error', ['sale_id' => $sale->id, 'error' => $e->getMessage()]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'sale_id' => $sale->id,
+                'invoice_number' => $sale->invoice_number,
+                'emcef' => $emcefResult ? [
+                    'success' => $emcefResult['success'] ?? false,
+                    'nim' => $sale->emcef_nim,
+                    'code' => $sale->emcef_code_mecef,
+                    'error' => $emcefResult['error'] ?? null,
+                ] : null,
                 'session' => [
                     'id' => $session->id,
                     'opening_amount' => $session->opening_amount,

@@ -92,6 +92,16 @@ class Warehouse extends Model
         return $this->hasMany(Inventory::class);
     }
 
+    /**
+     * Les utilisateurs assignés à cet entrepôt/boutique
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_warehouse')
+            ->withPivot('is_default')
+            ->withTimestamps();
+    }
+
     // Accessors
     public function getFullAddressAttribute(): string
     {

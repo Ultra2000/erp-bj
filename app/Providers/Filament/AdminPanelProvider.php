@@ -38,7 +38,8 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->registration(Register::class)
             ->tenant(\App\Models\Company::class, slugAttribute: 'slug')
-            ->tenantRegistration(\App\Filament\Pages\Tenancy\RegisterCompany::class)
+            // Inscription entreprise désactivée - uniquement via Super Admin
+            // ->tenantRegistration(\App\Filament\Pages\Tenancy\RegisterCompany::class)
             ->tenantProfile(\App\Filament\Pages\Tenancy\EditCompanyProfile::class)
             ->brandName('FRECORP')
             ->brandLogo(fn () => view('filament.brand-logo'))

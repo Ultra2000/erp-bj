@@ -91,6 +91,56 @@ class UserResource extends Resource
                             })
                             ->helperText('Sélectionnez un ou plusieurs rôles pour cet utilisateur'),
                     ]),
+
+                Forms\Components\Section::make('Entrepôts / Boutiques')
+                    ->description('Restreindre l\'utilisateur à des entrepôts spécifiques. Les admins ont accès à tous les entrepôts.')
+                    ->schema([
+                        Forms\Components\Select::make('user_warehouses')
+                            ->label('Entrepôts assignés')
+                            ->options(function () use ($tenant) {
+                                if (!$tenant) return [];
+                                return \App\Models\Warehouse::where('company_id', $tenant->id)
+                                    ->where('is_active', true)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->multiple()
+                            ->preload()
+                            ->searchable()
+                            ->afterStateHydrated(function (Forms\Components\Select $component, ?User $record) use ($tenant) {
+                                if ($record && $tenant) {
+                                    $warehouseIds = $record->warehouses()
+                                        ->where('company_id', $tenant->id)
+                                        ->pluck('warehouses.id')
+                                        ->toArray();
+                                    $component->state($warehouseIds);
+                                }
+                            })
+                            ->helperText('Laisser vide pour que l\'utilisateur puisse voir tous les entrepôts (si admin) ou aucun (si non-admin).'),
+                        Forms\Components\Select::make('default_warehouse')
+                            ->label('Entrepôt par défaut')
+                            ->options(function () use ($tenant) {
+                                if (!$tenant) return [];
+                                return \App\Models\Warehouse::where('company_id', $tenant->id)
+                                    ->where('is_active', true)
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->afterStateHydrated(function (Forms\Components\Select $component, ?User $record) use ($tenant) {
+                                if ($record && $tenant) {
+                                    $defaultWarehouse = $record->warehouses()
+                                        ->where('company_id', $tenant->id)
+                                        ->wherePivot('is_default', true)
+                                        ->first();
+                                    if ($defaultWarehouse) {
+                                        $component->state($defaultWarehouse->id);
+                                    }
+                                }
+                            })
+                            ->helperText('Entrepôt utilisé par défaut pour les nouvelles ventes.'),
+                    ])
+                    ->columns(2),
             ]);
     }
 
