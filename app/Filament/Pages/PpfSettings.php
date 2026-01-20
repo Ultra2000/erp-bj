@@ -24,13 +24,25 @@ class PpfSettings extends Page implements Forms\Contracts\HasForms
 
     public static function shouldRegisterNavigation(): bool
     {
+        // Cacher pour les utilisateurs non-admin
+        $user = auth()->user();
+        if ($user?->hasWarehouseRestriction()) {
+            return false;
+        }
+        
         // Toujours afficher dans le menu pour la version Bénin
         return true;
     }
 
     public static function canAccess(): bool
     {
-        // Toujours accessible
+        // Cacher pour les utilisateurs non-admin
+        $user = auth()->user();
+        if ($user?->hasWarehouseRestriction()) {
+            return false;
+        }
+        
+        // Toujours accessible pour les admins
         return true;
     }
 
