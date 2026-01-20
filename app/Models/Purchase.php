@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToCompany;
+use App\Models\Traits\HasWarehouseScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ use Spatie\Activitylog\LogOptions;
 
 class Purchase extends Model
 {
-    use HasFactory, BelongsToCompany, LogsActivity;
+    use HasFactory, BelongsToCompany, LogsActivity, HasWarehouseScope;
 
     protected $fillable = [
         'company_id',

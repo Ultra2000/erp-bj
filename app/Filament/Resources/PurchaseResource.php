@@ -28,6 +28,7 @@ class PurchaseResource extends Resource
 
     /**
      * Optimisation: Eager loading des relations pour éviter N+1
+     * Le scope WarehouseScope est appliqué automatiquement via le modèle Purchase
      */
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
@@ -35,9 +36,34 @@ class PurchaseResource extends Resource
             ->with(['supplier', 'warehouse', 'bankAccount']);
     }
 
+    /**
+     * Récupère les entrepôts accessibles pour l'utilisateur courant
+     */
+    protected static function getAccessibleWarehouses(): \Illuminate\Database\Eloquent\Builder
+    {
+        $companyId = Filament::getTenant()?->id;
+        $user = auth()->user();
+        
+        $query = Warehouse::where('company_id', $companyId)
+            ->where('is_active', true);
+        
+        // Si l'utilisateur est restreint à des entrepôts spécifiques
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                $query->whereIn('id', $warehouseIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query;
+    }
+
     public static function form(Form $form): Form
     {
         $companyId = Filament::getTenant()?->id;
+        $user = auth()->user();
 
         return $form
             ->schema([
@@ -55,9 +81,8 @@ class PurchaseResource extends Resource
                             ->required(),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Entrepôt de réception')
-                            ->options(fn () => Warehouse::where('company_id', $companyId)
-                                ->where('is_active', true)
-                                ->pluck('name', 'id'))
+                            ->options(fn () => static::getAccessibleWarehouses()->pluck('name', 'id'))
+                            ->default(fn () => $user?->defaultWarehouse()?->id)
                             ->default(fn () => Warehouse::getDefault($companyId)?->id)
                             ->required()
                             ->searchable(),

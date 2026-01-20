@@ -285,24 +285,18 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     /**
      * Vérifie si l'utilisateur est restreint à des entrepôts spécifiques
+     * Un utilisateur non-admin est TOUJOURS restreint (même sans entrepôt assigné)
      */
     public function hasWarehouseRestriction(): bool
     {
-        // Les admins n'ont pas de restriction
+        // Les admins et super admins n'ont pas de restriction
         if ($this->is_super_admin || $this->isAdmin()) {
             return false;
         }
 
-        // Si l'utilisateur a des entrepôts assignés, il est restreint
-        $companyId = filament()->getTenant()?->id;
-        
-        if (!$companyId) {
-            return false;
-        }
-
-        return $this->warehouses()
-            ->where('company_id', $companyId)
-            ->exists();
+        // Tous les autres utilisateurs sont restreints
+        // S'ils n'ont pas d'entrepôt assigné, ils ne voient rien
+        return true;
     }
 
     /**

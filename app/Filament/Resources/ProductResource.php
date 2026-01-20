@@ -31,11 +31,29 @@ class ProductResource extends Resource
 
     /**
      * Optimisation: Eager loading des relations pour éviter N+1
+     * + Filtrage par entrepôt pour les utilisateurs restreints
      */
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
-        return parent::getEloquentQuery()
+        $query = parent::getEloquentQuery()
             ->with(['supplier', 'warehouses']);
+        
+        // Appliquer le filtrage par entrepôt si l'utilisateur est restreint
+        $user = auth()->user();
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                // Ne montrer que les produits qui ont du stock dans les entrepôts de l'utilisateur
+                $query->whereHas('warehouses', function ($q) use ($warehouseIds) {
+                    $q->whereIn('warehouses.id', $warehouseIds);
+                });
+            } else {
+                // Pas d'entrepôt assigné = aucun produit visible
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query;
     }
 
     public static function form(Form $form): Form

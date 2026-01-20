@@ -26,8 +26,24 @@ class WarehouseResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
+        // Cacher pour les utilisateurs non-admin
+        $user = auth()->user();
+        if ($user && $user->hasWarehouseRestriction()) {
+            return false;
+        }
         return Filament::getTenant()?->isModuleEnabled('stock') ?? true;
     }
+    
+    /**
+     * Restreindre l'accès aux entrepôts pour les utilisateurs non-admin
+     */
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        // Seuls les admins peuvent voir la liste des entrepôts
+        return !$user?->hasWarehouseRestriction();
+    }
+
     protected static ?string $navigationLabel = 'Entrepôts';
     protected static ?string $modelLabel = 'Entrepôt';
     protected static ?string $pluralModelLabel = 'Entrepôts';
