@@ -152,9 +152,18 @@ class PurchaseResource extends Resource
                             ->schema([
                                 Forms\Components\Select::make('product_id')
                                     ->label('Produit')
-                                    ->options(fn () => Product::where('company_id', Filament::getTenant()?->id)
-                                        ->orderBy('name')
-                                        ->pluck('name', 'id'))
+                                    ->options(function () {
+                                        $user = auth()->user();
+                                        $query = Product::where('company_id', Filament::getTenant()?->id);
+                                        
+                                        // Filtrer par entrepôts accessibles si restriction
+                                        if ($user && $user->hasWarehouseRestriction()) {
+                                            $warehouseIds = $user->accessibleWarehouseIds();
+                                            $query->whereHas('warehouses', fn ($q) => $q->whereIn('warehouses.id', $warehouseIds));
+                                        }
+                                        
+                                        return $query->orderBy('name')->pluck('name', 'id');
+                                    })
                                     ->searchable()
                                     ->preload()
                                     ->required()

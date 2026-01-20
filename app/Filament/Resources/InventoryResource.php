@@ -32,6 +32,50 @@ class InventoryResource extends Resource
         return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('stock') ?? true;
     }
 
+    /**
+     * Filtrage par entrepôts accessibles à l'utilisateur
+     */
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery()
+            ->with(['warehouse', 'createdByUser']);
+        
+        $user = auth()->user();
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                $query->whereIn('warehouse_id', $warehouseIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query;
+    }
+
+    /**
+     * Récupère les entrepôts accessibles pour l'utilisateur courant
+     */
+    protected static function getAccessibleWarehouses(): \Illuminate\Database\Eloquent\Builder
+    {
+        $companyId = \Filament\Facades\Filament::getTenant()?->id;
+        $user = auth()->user();
+        
+        $query = Warehouse::where('company_id', $companyId)
+            ->where('is_active', true);
+        
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                $query->whereIn('id', $warehouseIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -51,10 +95,8 @@ class InventoryResource extends Resource
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Entrepôt')
                             ->required()
-                            ->options(fn () => Warehouse::query()
-                                ->where('company_id', filament()->getTenant()->id)
-                                ->where('is_active', true)
-                                ->pluck('name', 'id'))
+                            ->options(fn () => static::getAccessibleWarehouses()->pluck('name', 'id'))
+                            ->default(fn () => auth()->user()?->defaultWarehouse()?->id)
                             ->searchable(),
                         Forms\Components\Select::make('type')
                             ->label('Type d\'inventaire')

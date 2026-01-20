@@ -392,13 +392,31 @@ class ProductResource extends Resource
                     ->getStateUsing(fn ($record) => $record->margin_percent ?? 0)
                     ->formatStateUsing(fn ($state) => number_format($state, 1) . '%')
                     ->color(fn ($state) => $state > 0 ? 'success' : ($state < 0 ? 'danger' : 'gray')),
-                Tables\Columns\TextColumn::make('total_stock')
+                Tables\Columns\TextColumn::make('warehouse_stock')
                     ->label('Stock')
+                    ->getStateUsing(function ($record) {
+                        $user = auth()->user();
+                        if ($user && $user->hasWarehouseRestriction()) {
+                            // Afficher le stock dans les entrepôts de l'utilisateur
+                            $warehouseIds = $user->accessibleWarehouseIds();
+                            return $record->warehouses()
+                                ->whereIn('warehouses.id', $warehouseIds)
+                                ->sum('product_warehouse.quantity');
+                        }
+                        return $record->total_stock;
+                    })
                     ->numeric()
-                    ->sortable()
+                    ->sortable(query: fn ($query, $direction) => $query->orderBy('stock', $direction))
                     ->badge()
-                    ->color(fn ($record) => $record && $record->total_stock <= $record->min_stock ? 'danger' : 'success')
-                    ->tooltip(fn ($record) => $record && $record->total_stock <= $record->min_stock ? 'Stock faible!' : null),
+                    ->color(fn ($state, $record) => $state <= ($record->min_stock ?? 0) ? 'danger' : 'success')
+                    ->tooltip(function ($record) {
+                        $user = auth()->user();
+                        if ($user && $user->hasWarehouseRestriction()) {
+                            $warehouse = $user->defaultWarehouse();
+                            return $warehouse ? 'Stock dans: ' . $warehouse->name : 'Stock entrepôt';
+                        }
+                        return 'Stock total tous entrepôts';
+                    }),
                 Tables\Columns\TextColumn::make('unit')
                     ->label('Unité')
                     ->toggleable(isToggledHiddenByDefault: true),

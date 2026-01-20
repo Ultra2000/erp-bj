@@ -33,12 +33,74 @@ class StockTransferResource extends Resource
         return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('stock') ?? true;
     }
 
+    /**
+     * Filtrage par entrepôts accessibles à l'utilisateur
+     */
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery()
+            ->with(['sourceWarehouse', 'destinationWarehouse', 'createdByUser']);
+        
+        $user = auth()->user();
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                // Transferts où l'utilisateur est source ou destination
+                $query->where(function($q) use ($warehouseIds) {
+                    $q->whereIn('source_warehouse_id', $warehouseIds)
+                      ->orWhereIn('destination_warehouse_id', $warehouseIds);
+                });
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query;
+    }
+
+    /**
+     * Récupère les entrepôts accessibles pour l'utilisateur courant
+     */
+    protected static function getAccessibleWarehouses(): \Illuminate\Database\Eloquent\Builder
+    {
+        $companyId = \Filament\Facades\Filament::getTenant()?->id;
+        $user = auth()->user();
+        
+        $query = Warehouse::where('company_id', $companyId)
+            ->where('is_active', true);
+        
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                $query->whereIn('id', $warehouseIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query;
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        $count = StockTransfer::query()
-            ->whereIn('status', ['pending', 'approved', 'in_transit'])
-            ->count();
-
+        $user = auth()->user();
+        $query = StockTransfer::query()
+            ->whereIn('status', ['pending', 'approved', 'in_transit']);
+        
+        // Filtrer par entrepôts accessibles
+        if ($user && $user->hasWarehouseRestriction()) {
+            $warehouseIds = $user->accessibleWarehouseIds();
+            if (!empty($warehouseIds)) {
+                $query->where(function($q) use ($warehouseIds) {
+                    $q->whereIn('source_warehouse_id', $warehouseIds)
+                      ->orWhereIn('destination_warehouse_id', $warehouseIds);
+                });
+            } else {
+                return null;
+            }
+        }
+        
+        $count = $query->count();
         return $count > 0 ? (string) $count : null;
     }
 
@@ -61,19 +123,15 @@ class StockTransferResource extends Resource
                         Forms\Components\Select::make('source_warehouse_id')
                             ->label('Entrepôt source')
                             ->required()
-                            ->options(fn () => Warehouse::query()
-                                ->where('company_id', filament()->getTenant()->id)
-                                ->where('is_active', true)
-                                ->pluck('name', 'id'))
+                            ->options(fn () => static::getAccessibleWarehouses()->pluck('name', 'id'))
+                            ->default(fn () => auth()->user()?->defaultWarehouse()?->id)
                             ->searchable()
                             ->reactive()
                             ->afterStateUpdated(fn (Forms\Set $set) => $set('items', [])),
                         Forms\Components\Select::make('destination_warehouse_id')
                             ->label('Entrepôt destination')
                             ->required()
-                            ->options(fn (Forms\Get $get) => Warehouse::query()
-                                ->where('company_id', filament()->getTenant()->id)
-                                ->where('is_active', true)
+                            ->options(fn (Forms\Get $get) => static::getAccessibleWarehouses()
                                 ->where('id', '!=', $get('source_warehouse_id'))
                                 ->pluck('name', 'id'))
                             ->searchable()
