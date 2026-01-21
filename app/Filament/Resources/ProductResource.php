@@ -445,7 +445,24 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('low_stock')
+                    ->label('Stock bas')
+                    ->placeholder('Tous les produits')
+                    ->trueLabel('Stock bas uniquement')
+                    ->falseLabel('Stock OK')
+                    ->queries(
+                        true: fn (Builder $query) => $query->whereColumn('stock', '<=', 'min_stock')->where('min_stock', '>', 0),
+                        false: fn (Builder $query) => $query->where(function ($q) {
+                            $q->whereColumn('stock', '>', 'min_stock')
+                              ->orWhere('min_stock', '<=', 0);
+                        }),
+                        blank: fn (Builder $query) => $query,
+                    ),
+                Tables\Filters\SelectFilter::make('supplier_id')
+                    ->label('Fournisseur')
+                    ->relationship('supplier', 'name')
+                    ->searchable()
+                    ->preload(),
             ])
             ->deferLoading() // Optimisation: Chargement différé via AJAX
             ->defaultSort('created_at', 'desc')
