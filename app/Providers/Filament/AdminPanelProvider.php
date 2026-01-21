@@ -81,26 +81,32 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()
                     ->label('Ventes')
                     ->icon('heroicon-o-shopping-cart')
+                    ->collapsible()
                     ->collapsed(false),
                 NavigationGroup::make()
                     ->label('Stocks & Achats')
                     ->icon('heroicon-o-cube')
+                    ->collapsible()
                     ->collapsed(false),
                 NavigationGroup::make()
                     ->label('Point de Vente')
                     ->icon('heroicon-o-computer-desktop')
+                    ->collapsible()
                     ->collapsed(false),
                 NavigationGroup::make()
                     ->label('RH')
                     ->icon('heroicon-o-users')
+                    ->collapsible()
                     ->collapsed(false),
                 NavigationGroup::make()
                     ->label('Comptabilité')
                     ->icon('heroicon-o-calculator')
+                    ->collapsible()
                     ->collapsed(false),
                 NavigationGroup::make()
                     ->label('Administration')
                     ->icon('heroicon-o-cog-6-tooth')
+                    ->collapsible()
                     ->collapsed(true),
             ])
             ->sidebarCollapsibleOnDesktop()
