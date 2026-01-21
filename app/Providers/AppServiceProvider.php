@@ -18,6 +18,8 @@ use App\Observers\AuditObserver;
 use App\Observers\CompanyObserver;
 use App\Observers\ActivityObserver;
 use App\Observers\SaleObserver;
+use App\Observers\PaymentObserver;
+use App\Models\Payment;
 use App\Policies\CustomerPolicy;
 use App\Policies\InvitationPolicy;
 use App\Policies\ProductPolicy;
@@ -81,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
         // Audit Trail Observers
         Sale::observe(AuditObserver::class);
         Sale::observe(SaleObserver::class); // e-MCeF auto-certification
+        Payment::observe(PaymentObserver::class);
         Purchase::observe(AuditObserver::class);
         Product::observe(AuditObserver::class);
         StockMovement::observe(AuditObserver::class);

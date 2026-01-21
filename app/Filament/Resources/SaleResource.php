@@ -376,10 +376,28 @@ class SaleResource extends Resource
                         'cancelled' => 'Annulée',
                         default => 'En attente',
                     }),
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->label('Paiement')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'paid' => 'success',
+                        'partial' => 'warning',
+                        default => 'danger',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'paid' => 'Payé',
+                        'partial' => 'Partiel',
+                        default => 'Non payé',
+                    }),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
                     ->sortable(),
+                Tables\Columns\TextColumn::make('amount_paid')
+                    ->label('Payé')
+                    ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
+                    ->color('success')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 // e-MCeF (Bénin)
                 Tables\Columns\TextColumn::make('emcef_status')
                     ->label('e-MCeF')
@@ -425,16 +443,80 @@ class SaleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('warehouse_id')
+                    ->label('Boutique')
+                    ->relationship('warehouse', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn () => auth()->user()?->isAdmin() || auth()->user()?->is_super_admin),
+                Tables\Filters\SelectFilter::make('payment_status')
+                    ->label('Statut paiement')
+                    ->options([
+                        'pending' => 'Non payé',
+                        'partial' => 'Paiement partiel',
+                        'paid' => 'Payé',
+                    ]),
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Statut vente')
+                    ->options([
+                        'pending' => 'En attente',
+                        'completed' => 'Terminée',
+                        'cancelled' => 'Annulée',
+                    ]),
             ])
             ->deferLoading() // Optimisation: Chargement différé via AJAX
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('Voir'),
                 Tables\Actions\EditAction::make()
                     ->label('Modifier')
                     ->hidden(fn (Sale $record) => $record->status === 'completed'),
+                Tables\Actions\Action::make('add_payment')
+                    ->label('Paiement')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->hidden(fn (Sale $record) => $record->payment_status === 'paid')
+                    ->form([
+                        Forms\Components\DatePicker::make('payment_date')
+                            ->label('Date')
+                            ->default(now())
+                            ->required(),
+                        Forms\Components\Select::make('payment_method')
+                            ->label('Mode de paiement')
+                            ->options(\App\Models\Payment::METHODS)
+                            ->required()
+                            ->default('cash'),
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Montant')
+                            ->numeric()
+                            ->required()
+                            ->prefix('FCFA')
+                            ->default(fn (Sale $record) => $record->total - $record->amount_paid),
+                        Forms\Components\TextInput::make('reference')
+                            ->label('Référence'),
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Notes'),
+                    ])
+                    ->action(function (Sale $record, array $data) {
+                        $record->payments()->create([
+                            'company_id' => $record->company_id,
+                            'amount' => $data['amount'],
+                            'payment_method' => $data['payment_method'],
+                            'payment_date' => $data['payment_date'],
+                            'reference' => $data['reference'] ?? null,
+                            'account_number' => \App\Models\Payment::ACCOUNTS[$data['payment_method']] ?? '512000',
+                            'notes' => $data['notes'] ?? null,
+                            'created_by' => auth()->id(),
+                        ]);
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Paiement enregistré')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->label('Supprimer')
                     ->hidden(fn (Sale $record) => $record->status === 'completed'),
@@ -723,6 +805,7 @@ class SaleResource extends Resource
     {
         return [
             RelationManagers\ItemsRelationManager::class,
+            RelationManagers\PaymentsRelationManager::class,
         ];
     }
 
@@ -731,6 +814,7 @@ class SaleResource extends Resource
         return [
             'index' => Pages\ListSales::route('/'),
             'create' => Pages\CreateSale::route('/create'),
+            'view' => Pages\ViewSale::route('/{record}'),
             'edit' => Pages\EditSale::route('/{record}/edit'),
         ];
     }

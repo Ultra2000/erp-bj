@@ -10,8 +10,18 @@ use Filament\Facades\Filament;
 
 class SaleInvoiceController extends Controller
 {
-    public function generate(Sale $sale, FacturXService $facturXService)
+    /**
+     * Récupère la vente sans les scopes globaux (company, warehouse)
+     */
+    protected function findSale(int $id): Sale
     {
+        return Sale::withoutGlobalScopes()->findOrFail($id);
+    }
+
+    public function generate(int $sale, FacturXService $facturXService)
+    {
+        $sale = $this->findSale($sale);
+        
         if ($sale->company) {
             Filament::setTenant($sale->company);
         }
@@ -39,8 +49,10 @@ class SaleInvoiceController extends Controller
             ->header('Content-Disposition', 'attachment; filename="facture-vente-' . $sale->invoice_number . '.pdf"');
     }
 
-    public function preview(Sale $sale, FacturXService $facturXService)
+    public function preview(int $sale, FacturXService $facturXService)
     {
+        $sale = $this->findSale($sale);
+        
         if ($sale->company) {
             Filament::setTenant($sale->company);
         }

@@ -81,18 +81,33 @@ Route::get('/purchases/{purchase}/invoice', [PurchaseInvoiceController::class, '
     ->middleware('auth')
     ->name('purchases.invoice');
 
+// IMPORTANT: La route preview doit être AVANT la route invoice pour éviter les conflits
+Route::get('/sales/{sale}/invoice/preview', [SaleInvoiceController::class, 'preview'])
+    ->middleware('auth')
+    ->name('sales.invoice.preview');
+
 Route::get('/sales/{sale}/invoice', [SaleInvoiceController::class, 'generate'])
     ->middleware('auth')
     ->name('sales.invoice');
+
+// Reçu de paiement (document interne non fiscal)
+Route::get('/payments/{payment}/receipt', function (\App\Models\Payment $payment) {
+    $sale = $payment->payable;
+    $company = $sale->company;
+    
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('payments.receipt', [
+        'payment' => $payment,
+        'sale' => $sale,
+        'company' => $company,
+    ]);
+    
+    return $pdf->stream("recu-paiement-{$payment->id}.pdf");
+})->middleware('auth')->name('payments.receipt');
 
 // Prévisualisation (HTML) avant téléchargement PDF
 Route::get('/purchases/{purchase}/invoice/preview', [PurchaseInvoiceController::class, 'preview'])
     ->middleware('auth')
     ->name('purchases.invoice.preview');
-
-Route::get('/sales/{sale}/invoice/preview', [SaleInvoiceController::class, 'preview'])
-    ->middleware('auth')
-    ->name('sales.invoice.preview');
 
 // Routes pour les devis (PDF)
 Route::get('/quotes/{quote}/pdf', [QuotePdfController::class, 'download'])

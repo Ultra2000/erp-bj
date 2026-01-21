@@ -414,11 +414,17 @@
     $statusClass = 'status-' . ($status ?: 'pending');
     $discountPercent = $sale->discount_percent ?? 0;
     
+    // Vérifier si l'entreprise est en franchise de TVA
+    $isVatFranchise = \App\Models\AccountingSetting::isVatFranchise($company->id);
+
     // Calculs TVA
     $totalHt = $sale->total_ht ?? $sale->items->sum('total_price_ht');
-    $totalVat = $sale->total_vat ?? $sale->items->sum('vat_amount');
-    $grandTotal = $sale->total ?? ($totalHt + $totalVat);
-    $effectiveVatRate = $totalHt > 0 ? round(($totalVat / $totalHt) * 100, 1) : 0;
+    $totalVat = $isVatFranchise ? 0 : ($sale->total_vat ?? $sale->items->sum('vat_amount'));
+    // Si franchise, le total est le HT, sinon TTC (calculé ou stocké)
+    $grandTotal = $isVatFranchise ? $totalHt : ($sale->total ?? ($totalHt + $totalVat));
+    
+    $effectiveVatRate = $isVatFranchise ? 0 : ($totalHt > 0 ? round(($totalVat / $totalHt) * 100, 1) : 0);
+    
     $totalAvantRemise = $sale->items->sum('total_price');
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
     
@@ -584,7 +590,7 @@
                         <table class="totals-row-table">
                             <tr>
                                 <td class="totals-label">TVA ({{ number_format($effectiveVatRate, 1) }}%)</td>
-                                <td class="totals-value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</td>
+                                <td class="totals-value">{{ number_format($totalVat, 2, ',', ' ') }}</td>
                             </tr>
                         </table>
                     </div>

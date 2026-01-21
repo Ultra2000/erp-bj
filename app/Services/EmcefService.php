@@ -487,13 +487,8 @@ class EmcefService
             'name' => $operatorName,
         ];
         
-        // Préparer le paiement
-        $payments = [
-            [
-                'name' => $this->mapPaymentMethod($sale->payment_method),
-                'amount' => (int) round($sale->total),
-            ],
-        ];
+        // Préparer le paiement (split payment si paiement partiel)
+        $payments = $this->buildPaymentArray($sale);
         
         return [
             'ifu' => $this->company->tax_number,
@@ -596,6 +591,58 @@ class EmcefService
             'credit' => 'CREDIT',
             default => 'AUTRE',
         };
+    }
+
+    /**
+     * Construit le tableau des paiements pour l'API e-MCeF
+     * Gère automatiquement le split payment (paiement mixte) si paiement partiel
+     * 
+     * Exemple: Client achète 500.000 F mais ne paie que 100.000 F
+     * => [
+     *      ['name' => 'ESPECES', 'amount' => 100000],
+     *      ['name' => 'CREDIT', 'amount' => 400000]
+     *    ]
+     */
+    protected function buildPaymentArray(Sale $sale): array
+    {
+        $total = (int) round($sale->total);
+        $amountPaid = (int) round($sale->amount_paid ?? 0);
+        
+        // Si paiement complet ou pas de montant payé spécifié
+        if ($amountPaid <= 0 || $amountPaid >= $total) {
+            return [
+                [
+                    'name' => $this->mapPaymentMethod($sale->payment_method),
+                    'amount' => $total,
+                ],
+            ];
+        }
+        
+        // Split payment : partie payée + partie à crédit
+        $payments = [];
+        
+        // Partie payée (espèces, carte, etc.)
+        $payments[] = [
+            'name' => $this->mapPaymentMethod($sale->payment_method),
+            'amount' => $amountPaid,
+        ];
+        
+        // Partie restante à crédit
+        $creditAmount = $total - $amountPaid;
+        $payments[] = [
+            'name' => 'CREDIT',
+            'amount' => $creditAmount,
+        ];
+        
+        Log::info('e-MCeF Split Payment', [
+            'sale_id' => $sale->id,
+            'total' => $total,
+            'paid' => $amountPaid,
+            'credit' => $creditAmount,
+            'payments' => $payments,
+        ]);
+        
+        return $payments;
     }
 
     /**

@@ -171,7 +171,21 @@ class SaleItem extends Model
             $this->total_price = $this->total_price_ht;
         } else {
             // Régime normal : calculer la TVA
-            $vatRate = $this->vat_rate ?? 20;
+            // Priorité: 1) taux défini sur l'item, 2) taux du produit, 3) défaut selon e-MCeF
+            $vatRate = $this->vat_rate;
+            
+            if ($vatRate === null || $vatRate === '') {
+                // Récupérer le taux du produit si disponible
+                $product = $this->product ?? ($this->product_id ? Product::find($this->product_id) : null);
+                $vatRate = $product?->vat_rate_sale;
+            }
+            
+            if ($vatRate === null || $vatRate === '') {
+                // Défaut: 18% (taux standard TVA Bénin)
+                $vatRate = 18;
+            }
+            
+            $this->vat_rate = $vatRate;
             $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
             $this->total_price = $this->total_price_ht + $this->vat_amount;
         }
@@ -182,7 +196,7 @@ class SaleItem extends Model
      */
     public function getUnitPriceTtcAttribute(): float
     {
-        $vatRate = $this->vat_rate ?? 20;
+        $vatRate = $this->vat_rate ?? 18;
         return round($this->unit_price_ht * (1 + $vatRate / 100), 2);
     }
 }
