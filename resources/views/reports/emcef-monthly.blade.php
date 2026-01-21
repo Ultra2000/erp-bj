@@ -219,9 +219,8 @@
                         <div class="stats-label">Opérations nettes</div>
                         <div class="stats-detail">
                             <div>HT Net: {{ number_format($stats['net_ht'], 0, ',', ' ') }} FCFA</div>
-                            <div class="highlight">
-                                <div class="highlight-label">TVA nette à reverser</div>
-                                <div class="highlight-value">{{ number_format($stats['net_vat'], 0, ',', ' ') }} FCFA</div>
+                            <div style="margin-top:5px;">
+                                <strong>TVA Collectée: {{ number_format($stats['net_vat'], 0, ',', ' ') }} FCFA</strong>
                             </div>
                         </div>
                     </div>
@@ -229,6 +228,106 @@
             </div>
         </div>
     </div>
+
+    {{-- TVA Déductible (Achats) --}}
+    <div class="section">
+        <div class="section-header" style="background:#fff7ed; color:#c2410c;">📥 TVA Déductible (Achats)</div>
+        <div class="section-content">
+            <div class="stats-grid">
+                <div class="stats-row">
+                    <div class="stats-cell">
+                        <div class="stats-number" style="color:#ea580c;">{{ $stats['total_purchases'] }}</div>
+                        <div class="stats-label">Achats du mois</div>
+                        <div class="stats-detail">
+                            <div>HT: {{ number_format($stats['purchases_ht'], 0, ',', ' ') }} FCFA</div>
+                            <div>TVA déductible: {{ number_format($stats['purchases_vat'], 0, ',', ' ') }} FCFA</div>
+                            <div class="font-bold">TTC: {{ number_format($stats['purchases_ttc'], 0, ',', ' ') }} FCFA</div>
+                        </div>
+                    </div>
+                    <div class="stats-cell" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white;">
+                        <div style="font-size:10px; margin-bottom:15px;">💰 TVA NETTE DUE</div>
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:9px; opacity:0.8;">TVA Collectée</div>
+                            <div style="font-size:12px;">+ {{ number_format($stats['net_vat'], 0, ',', ' ') }} FCFA</div>
+                        </div>
+                        <div style="margin-bottom:15px;">
+                            <div style="font-size:9px; opacity:0.8;">TVA Déductible</div>
+                            <div style="font-size:12px;">- {{ number_format($stats['purchases_vat'], 0, ',', ' ') }} FCFA</div>
+                        </div>
+                        <div style="border-top:1px solid rgba(255,255,255,0.3); padding-top:10px;">
+                            <div style="font-size:9px; opacity:0.8;">À reverser à la DGI</div>
+                            <div style="font-size:18px; font-weight:bold;">
+                                @if($stats['vat_due'] >= 0)
+                                    {{ number_format($stats['vat_due'], 0, ',', ' ') }} FCFA
+                                @else
+                                    <span style="color:#86efac;">Crédit: {{ number_format(abs($stats['vat_due']), 0, ',', ' ') }} FCFA</span>
+                                @endif
+                            </div>
+                        </div>
+                        @if($stats['vat_due'] < 0)
+                            <div style="margin-top:10px; font-size:8px; background:rgba(255,255,255,0.2); padding:5px; border-radius:4px;">
+                                💡 Crédit reportable sur le mois suivant
+                            </div>
+                        @endif
+                    </div>
+                    <div class="stats-cell">
+                        <div style="font-size:9px; color:#64748b; margin-bottom:10px;">RÉCAPITULATIF</div>
+                        <table style="font-size:9px;">
+                            <tr>
+                                <td style="padding:3px 0;">CA HT (Ventes)</td>
+                                <td style="text-align:right; padding:3px 0;">{{ number_format($stats['net_ht'], 0, ',', ' ') }} FCFA</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:3px 0;">Achats HT</td>
+                                <td style="text-align:right; padding:3px 0;">{{ number_format($stats['purchases_ht'], 0, ',', ' ') }} FCFA</td>
+                            </tr>
+                            <tr style="border-top:1px solid #e2e8f0;">
+                                <td style="padding:5px 0; font-weight:bold;">TVA Collectée</td>
+                                <td style="text-align:right; padding:5px 0; color:#059669;">+ {{ number_format($stats['net_vat'], 0, ',', ' ') }} FCFA</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:3px 0; font-weight:bold;">TVA Déductible</td>
+                                <td style="text-align:right; padding:3px 0; color:#ea580c;">- {{ number_format($stats['purchases_vat'], 0, ',', ' ') }} FCFA</td>
+                            </tr>
+                            <tr style="border-top:2px solid #1e40af; background:#dbeafe;">
+                                <td style="padding:8px 5px; font-weight:bold; color:#1e40af;">TVA Due</td>
+                                <td style="text-align:right; padding:8px 5px; font-weight:bold; color:#1e40af;">{{ number_format($stats['vat_due'], 0, ',', ' ') }} FCFA</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Ventilation TVA Déductible par taux --}}
+    @if(!empty($stats['vat_deductible_breakdown']))
+    <div class="section">
+        <div class="section-header" style="background:#fff7ed; color:#c2410c;">📊 Ventilation TVA déductible par taux</div>
+        <div class="section-content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Taux TVA</th>
+                        <th class="text-center">Nb Achats</th>
+                        <th class="text-right">Base HT</th>
+                        <th class="text-right">TVA Déductible</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($stats['vat_deductible_breakdown'] as $row)
+                        <tr>
+                            <td><span class="badge" style="background:#fed7aa; color:#c2410c;">{{ number_format($row['vat_rate'] ?? 18, 0) }}%</span></td>
+                            <td class="text-center">{{ $row['invoice_count'] }}</td>
+                            <td class="text-right">{{ number_format($row['base_ht'], 0, ',', ' ') }} FCFA</td>
+                            <td class="text-right font-bold" style="color:#ea580c;">{{ number_format($row['vat_amount'], 0, ',', ' ') }} FCFA</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
 
     {{-- Compteurs e-MCeF --}}
     <div class="section">

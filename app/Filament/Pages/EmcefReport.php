@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Sale;
+use App\Models\Purchase;
 use Filament\Pages\Page;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -79,11 +80,11 @@ class EmcefReport extends Page implements HasForms, HasTable
 
         // Ventilation par groupe de taxe (A, B, etc.)
         $vatBreakdown = Sale::withoutGlobalScopes()
-            ->where('company_id', $companyId)
-            ->whereYear('created_at', $this->selectedYear)
-            ->whereMonth('created_at', $this->selectedMonth)
-            ->where('emcef_status', 'certified')
-            ->where('type', '!=', 'credit_note')
+            ->where('sales.company_id', $companyId)
+            ->whereYear('sales.created_at', $this->selectedYear)
+            ->whereMonth('sales.created_at', $this->selectedMonth)
+            ->where('sales.emcef_status', 'certified')
+            ->where('sales.type', '!=', 'credit_note')
             ->join('sale_items', 'sales.id', '=', 'sale_items.sale_id')
             ->select(
                 'sale_items.vat_category',
@@ -120,6 +121,38 @@ class EmcefReport extends Page implements HasForms, HasTable
             ->orderBy('emcef_certified_at', 'desc')
             ->first();
 
+        // ===== TVA DÉDUCTIBLE (Achats) =====
+        $purchaseQuery = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->whereYear('created_at', $this->selectedYear)
+            ->whereMonth('created_at', $this->selectedMonth)
+            ->where('status', 'completed');
+
+        $totalPurchases = (clone $purchaseQuery)->count();
+        $purchasesHT = (clone $purchaseQuery)->sum('total_ht');
+        $purchasesVAT = (clone $purchaseQuery)->sum('total_vat');
+        $purchasesTTC = (clone $purchaseQuery)->sum('total');
+
+        // Ventilation TVA déductible par taux
+        $vatDeductibleBreakdown = Purchase::withoutGlobalScopes()
+            ->where('purchases.company_id', $companyId)
+            ->whereYear('purchases.created_at', $this->selectedYear)
+            ->whereMonth('purchases.created_at', $this->selectedMonth)
+            ->where('purchases.status', 'completed')
+            ->join('purchase_items', 'purchases.id', '=', 'purchase_items.purchase_id')
+            ->select(
+                'purchase_items.vat_rate',
+                DB::raw('SUM(purchase_items.total_price_ht) as base_ht'),
+                DB::raw('SUM(purchase_items.vat_amount) as vat_amount'),
+                DB::raw('COUNT(DISTINCT purchases.id) as invoice_count')
+            )
+            ->groupBy('purchase_items.vat_rate')
+            ->get()
+            ->toArray();
+
+        // ===== TVA NETTE DUE =====
+        $vatDue = $netVAT - $purchasesVAT;
+
         return [
             'period' => $this->getMonthName($this->selectedMonth) . ' ' . $this->selectedYear,
             'total_invoices' => $totalInvoices,
@@ -133,6 +166,15 @@ class EmcefReport extends Page implements HasForms, HasTable
             'net_ht' => $netHT,
             'net_vat' => $netVAT,
             'net_ttc' => $netTTC,
+            // Achats (TVA déductible)
+            'total_purchases' => $totalPurchases,
+            'purchases_ht' => $purchasesHT,
+            'purchases_vat' => $purchasesVAT,
+            'purchases_ttc' => $purchasesTTC,
+            'vat_deductible_breakdown' => $vatDeductibleBreakdown,
+            // TVA nette due
+            'vat_due' => $vatDue,
+            // Autres
             'vat_breakdown' => $vatBreakdown,
             'payment_breakdown' => $paymentBreakdown,
             'first_nim' => $firstInvoice?->emcef_nim,
