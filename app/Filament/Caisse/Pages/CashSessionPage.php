@@ -111,6 +111,7 @@ class CashSessionPage extends Page implements HasForms
         $this->currentSession->refresh();
 
         return [
+            'sales_count' => $this->currentSession->sales_count,
             'total_sales' => $this->currentSession->total_sales,
             'total_cash' => $this->currentSession->total_cash,
             'total_card' => $this->currentSession->total_card,

@@ -92,7 +92,7 @@ class CaisseController extends Controller
 
         return CashSession::where('company_id', $companyId)
             ->where('user_id', auth()->id())
-            ->whereNull('closed_at')
+            ->where('status', 'open')
             ->first();
     }
 
@@ -376,7 +376,6 @@ class CaisseController extends Controller
 
         $items = $request->input('items', []);
         $paymentMethod = $request->input('payment_method', 'cash');
-        $total = floatval($request->input('total', 0));
 
         if (empty($items)) {
             return response()->json([
@@ -385,124 +384,121 @@ class CaisseController extends Controller
             ], 400);
         }
 
-        // Récupérer l'entreprise et l'entrepôt de l'utilisateur
         $company = Company::find($companyId);
         $warehouse = $this->getUserWarehouse($request);
-        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
-        $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
 
         try {
-            $sale = DB::transaction(function () use ($items, $paymentMethod, $total, $companyId, $session, $company, $warehouse, $defaultVatRate, $defaultVatCategory) {
-                // Client comptoir par défaut
+            // 1. PRÉ-CALCULER les totaux AVANT toute opération
+            $itemsToCreate = [];
+            $totalHt = 0;
+            $totalVat = 0;
+            $totalTtc = 0;
+            
+            foreach ($items as $item) {
+                $product = Product::where('company_id', $companyId)->findOrFail($item['product_id']);
+                $qty = (int) $item['quantity'];
+                $price = floatval($item['price']);
+                $vatRate = $product->vat_rate_sale ?? 18;
+                
+                // Vérifier stock
+                if ($warehouse) {
+                    $stock = DB::table('product_warehouse')
+                        ->where('product_id', $product->id)
+                        ->where('warehouse_id', $warehouse->id)
+                        ->sum('quantity') ?? 0;
+                        
+                    if ($stock < $qty) {
+                        throw new \RuntimeException("Stock insuffisant pour {$product->name}");
+                    }
+                }
+                
+                // Calculs
+                $lineHt = $qty * $price;
+                $lineVat = round($lineHt * ($vatRate / 100), 2);
+                $lineTtc = $lineHt + $lineVat;
+                
+                $totalHt += $lineHt;
+                $totalVat += $lineVat;
+                $totalTtc += $lineTtc;
+                
+                $itemsToCreate[] = [
+                    'product_id' => $product->id,
+                    'quantity' => $qty,
+                    'unit_price' => $price,
+                    'unit_price_ht' => $price,
+                    'vat_rate' => $vatRate,
+                    'vat_category' => $product->vat_category ?? 'S',
+                    'vat_amount' => $lineVat,
+                    'total_price_ht' => $lineHt,
+                    'total_price' => $lineTtc,
+                ];
+            }
+            
+            // 2. CRÉER la vente avec totaux pré-calculés
+            $sale = DB::transaction(function () use ($companyId, $session, $warehouse, $company, $paymentMethod, $itemsToCreate, $totalHt, $totalVat, $totalTtc) {
+                
+                // Client par défaut
                 $walkIn = Customer::firstOrCreate(
                     ['email' => 'walkin@example.com', 'company_id' => $companyId],
                     [
                         'name' => 'Client comptoir',
                         'company_id' => $companyId,
-                        'phone' => null,
-                        'address' => null,
-                        'city' => null,
-                        'country' => null,
                         'notes' => 'Client généré automatiquement pour ventes comptoir',
                     ]
                 );
 
-                $sale = new Sale([
+                // Créer vente avec totaux définis
+                $saleData = [
                     'company_id' => $companyId,
                     'customer_id' => $walkIn->id,
-                    'warehouse_id' => $warehouse?->id, // Entrepôt de la vente
+                    'warehouse_id' => $warehouse?->id,
                     'cash_session_id' => $session->id,
                     'payment_method' => $paymentMethod,
                     'status' => 'completed',
                     'discount_percent' => 0,
                     'tax_percent' => 0,
-                ]);
+                    'total_ht' => $totalHt,
+                    'total_vat' => $totalVat,
+                    'total' => $totalTtc,
+                ];
                 
-                // Préparer le statut e-MCeF si activé
                 if ($company?->emcef_enabled) {
-                    $sale->emcef_status = 'pending';
+                    $saleData['emcef_status'] = 'pending';
                 }
                 
-                $sale->save();
-
-                $totalHt = 0;
-                $totalVat = 0;
-
-                foreach ($items as $item) {
-                    $product = Product::where('company_id', $companyId)
-                        ->lockForUpdate()
-                        ->findOrFail($item['product_id']);
-
-                    $qty = (int) $item['quantity'];
-                    $price = floatval($item['price']);
-                    $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
-                    $vatCategory = $product->vat_category ?? $defaultVatCategory;
-
-                    // Vérifier et décrémenter le stock de l'entrepôt si défini
-                    if ($warehouse) {
-                        $warehouseStock = DB::table('product_warehouse')
-                            ->where('product_id', $product->id)
-                            ->where('warehouse_id', $warehouse->id)
-                            ->lockForUpdate()
-                            ->first();
-                        
-                        $availableStock = $warehouseStock ? $warehouseStock->quantity : 0;
-                        
-                        if ($availableStock < $qty) {
-                            throw new \RuntimeException("Stock insuffisant pour {$product->name} dans l'entrepôt {$warehouse->name}");
-                        }
-                        
-                        // Décrémenter le stock de l'entrepôt
-                        DB::table('product_warehouse')
-                            ->where('product_id', $product->id)
-                            ->where('warehouse_id', $warehouse->id)
-                            ->decrement('quantity', $qty);
-                    } else {
-                        // Fallback: stock global
-                        if ($product->stock < $qty) {
-                            throw new \RuntimeException('Stock insuffisant pour ' . $product->name);
-                        }
-                        $product->decrement('stock', $qty);
-                    }
-
-                    // Calcul HT et TVA
-                    $lineHt = $qty * $price;
-                    $lineVat = round($lineHt * ($vatRate / 100), 2);
-                    $lineTtc = $lineHt + $lineVat;
+                $sale = Sale::create($saleData);
+                
+                // Créer les items et gérer le déstockage manuellement
+                foreach ($itemsToCreate as $itemData) {
+                    $itemData['sale_id'] = $sale->id;
+                    $saleItem = new SaleItem($itemData);
+                    $saleItem->save(); // Force les observers à se déclencher
                     
-                    $totalHt += $lineHt;
-                    $totalVat += $lineVat;
-
-                    SaleItem::create([
-                        'sale_id' => $sale->id,
-                        'product_id' => $product->id,
-                        'quantity' => $qty,
-                        'unit_price' => $price,
-                        'unit_price_ht' => $price,
-                        'vat_rate' => $vatRate,
-                        'vat_category' => $vatCategory,
-                        'vat_amount' => $lineVat,
-                        'total_price_ht' => $lineHt,
-                        'total_price' => $lineTtc,
-                    ]);
+                    // Déstockage manuel pour assurer la cohérence
+                    if ($warehouse) {
+                        $warehouse->deductStockFIFO(
+                            $itemData['product_id'],
+                            $itemData['quantity'],
+                            'sale',
+                            "Vente POS " . $sale->invoice_number
+                        );
+                    }
                 }
-
-                // Mettre à jour les totaux de la vente
-                $sale->update([
-                    'total_ht' => round($totalHt, 2),
-                    'total_vat' => round($totalVat, 2),
-                    'total' => round($totalHt + $totalVat, 2),
+                
+                // FORCER le total correct (au cas où les observers l'écrasent)
+                DB::table('sales')->where('id', $sale->id)->update([
+                    'total_ht' => $totalHt,
+                    'total_vat' => $totalVat,
+                    'total' => $totalTtc,
                 ]);
-
-                // Mettre à jour la session
+                
+                // Mettre à jour session
                 $session->recalculate();
-
+                
                 return $sale;
             });
 
-            $session->refresh();
-
-            // Certification e-MCeF automatique si activé
+            // 3. e-MCeF (hors transaction)
             $emcefResult = null;
             if ($company?->emcef_enabled && $sale) {
                 try {
@@ -514,10 +510,13 @@ class CaisseController extends Controller
                 }
             }
 
+            $sale->refresh();
+
             return response()->json([
                 'success' => true,
                 'sale_id' => $sale->id,
                 'invoice_number' => $sale->invoice_number,
+                'total' => $sale->total,
                 'emcef' => $emcefResult ? [
                     'success' => $emcefResult['success'] ?? false,
                     'nim' => $sale->emcef_nim,
@@ -537,6 +536,7 @@ class CaisseController extends Controller
             ]);
 
         } catch (\Throwable $e) {
+            \Log::error('CaisseController Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()

@@ -199,13 +199,27 @@ class Warehouse extends Model
     // Methods
     public function getProductStock(int $productId, ?int $locationId = null): float
     {
-        $query = $this->products()->where('product_id', $productId);
-        
-        if ($locationId) {
-            $query->wherePivot('location_id', $locationId);
+        // Si on demande un emplacement spécifique (y compris null pour stock non affecté)
+        if (func_num_args() > 1) {
+            // Requête directe pour gérer le cas location_id = null
+            $query = \DB::table('product_warehouse')
+                ->where('warehouse_id', $this->id)
+                ->where('product_id', $productId);
+            
+            if ($locationId === null) {
+                $query->whereNull('location_id');
+            } else {
+                $query->where('location_id', $locationId);
+            }
+            
+            return (float) ($query->value('quantity') ?? 0);
         }
         
-        return $query->sum('product_warehouse.quantity') ?? 0;
+        // Sinon, retourner le stock total dans l'entrepôt (tous emplacements confondus)
+        return (float) \DB::table('product_warehouse')
+            ->where('warehouse_id', $this->id)
+            ->where('product_id', $productId)
+            ->sum('quantity') ?? 0;
     }
 
     public function getAvailableStock(int $productId, ?int $locationId = null): float
@@ -236,23 +250,37 @@ class Warehouse extends Model
         }
 
         // Update or create product_warehouse record
-        $pivotData = [
-            'company_id' => $this->company_id,
-            'quantity' => $newStock,
-        ];
+        // On doit gérer le cas où location_id est null
+        $existingRecord = \DB::table('product_warehouse')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $this->id)
+            ->when($locationId === null, fn($q) => $q->whereNull('location_id'), fn($q) => $q->where('location_id', $locationId))
+            ->first();
 
-        if ($locationId) {
-            $pivotData['location_id'] = $locationId;
-        }
-
-        \DB::table('product_warehouse')->updateOrInsert(
-            [
+        if ($existingRecord) {
+            \DB::table('product_warehouse')
+                ->where('product_id', $productId)
+                ->where('warehouse_id', $this->id)
+                ->when($locationId === null, fn($q) => $q->whereNull('location_id'), fn($q) => $q->where('location_id', $locationId))
+                ->update([
+                    'quantity' => $newStock,
+                    'updated_at' => now(),
+                ]);
+        } else {
+            \DB::table('product_warehouse')->insert([
+                'company_id' => $this->company_id,
                 'product_id' => $productId,
                 'warehouse_id' => $this->id,
                 'location_id' => $locationId,
-            ],
-            $pivotData
-        );
+                'quantity' => $newStock,
+                'reserved_quantity' => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // Invalider le cache du stock du produit
+        \Illuminate\Support\Facades\Cache::forget("product.{$productId}.total_stock");
 
         // Create stock movement
         return StockMovement::create([
@@ -364,23 +392,37 @@ class Warehouse extends Model
      */
     protected function deductFromLocation(int $productId, ?int $locationId, float $quantity, string $type, ?string $reason, string $locationLabel): StockMovement
     {
-        $currentStock = \DB::table('product_warehouse')
+        $query = \DB::table('product_warehouse')
             ->where('warehouse_id', $this->id)
-            ->where('product_id', $productId)
-            ->where('location_id', $locationId)
-            ->value('quantity') ?? 0;
-
+            ->where('product_id', $productId);
+        
+        if ($locationId === null) {
+            $query->whereNull('location_id');
+        } else {
+            $query->where('location_id', $locationId);
+        }
+        
+        $currentStock = $query->value('quantity') ?? 0;
         $newStock = $currentStock - $quantity;
 
         // Mettre à jour le stock
-        \DB::table('product_warehouse')
+        $updateQuery = \DB::table('product_warehouse')
             ->where('warehouse_id', $this->id)
-            ->where('product_id', $productId)
-            ->where('location_id', $locationId)
-            ->update([
-                'quantity' => $newStock,
-                'updated_at' => now(),
-            ]);
+            ->where('product_id', $productId);
+        
+        if ($locationId === null) {
+            $updateQuery->whereNull('location_id');
+        } else {
+            $updateQuery->where('location_id', $locationId);
+        }
+        
+        $updateQuery->update([
+            'quantity' => $newStock,
+            'updated_at' => now(),
+        ]);
+
+        // Invalider le cache du stock du produit
+        \Illuminate\Support\Facades\Cache::forget("product.{$productId}.total_stock");
 
         // Créer le mouvement de stock
         return StockMovement::create([

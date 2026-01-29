@@ -65,7 +65,7 @@ class CashSession extends Model
     /**
      * Ouvre une nouvelle session de caisse
      */
-    public static function openSession(int $userId, int $companyId, float $openingAmount = 0): self
+    public static function openSession(int $companyId, int $userId, float $openingAmount = 0): self
     {
         return static::create([
             'company_id' => $companyId,

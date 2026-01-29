@@ -23,6 +23,17 @@ class CompanyIntegrationResource extends Resource
     protected static ?string $modelLabel = 'Intégration';
     protected static ?string $pluralModelLabel = 'Intégrations';
 
+    // Masquer - fonctionnalités françaises (PPF/URSSAF)
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -195,6 +195,64 @@ class SaleResource extends Resource
                             ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF'),
                     ])->columns(4),
 
+                // Section AIB (Bénin uniquement)
+                Forms\Components\Section::make('AIB (Acompte sur Impôt Bénéfices)')
+                    ->description('Prélèvement fiscal obligatoire au Bénin')
+                    ->schema([
+                        Forms\Components\Select::make('aib_rate')
+                            ->label('Taux AIB')
+                            ->options([
+                                'A' => 'Taux A (1%) - Client avec IFU',
+                                'B' => 'Taux B (5%) - Client sans IFU',
+                            ])
+                            ->placeholder('Aucun (exonéré)')
+                            ->live()
+                            ->afterStateUpdated(function ($state, ?Sale $record) {
+                                if ($record) {
+                                    $record->aib_rate = $state;
+                                    $record->aib_amount = $record->calculateAibAmount();
+                                    $record->save();
+                                }
+                            })
+                            ->helperText(function () {
+                                $company = Filament::getTenant();
+                                return match ($company?->aib_mode ?? 'auto') {
+                                    'auto' => '🔄 Mode automatique : calculé selon l\'IFU du client',
+                                    'manual' => '✋ Mode manuel : sélectionnez le taux applicable',
+                                    'disabled' => '⛔ AIB désactivé pour cette entreprise',
+                                };
+                            }),
+                        Forms\Components\Toggle::make('aib_exempt')
+                            ->label('Exonérer cette vente de l\'AIB')
+                            ->live()
+                            ->afterStateUpdated(function ($state, ?Sale $record) {
+                                if ($record) {
+                                    $record->aib_exempt = $state;
+                                    if ($state) {
+                                        $record->aib_rate = null;
+                                        $record->aib_amount = 0;
+                                    } else {
+                                        $record->applyAib();
+                                    }
+                                    $record->save();
+                                }
+                            }),
+                        Forms\Components\Placeholder::make('aib_amount_display')
+                            ->label('Montant AIB')
+                            ->content(fn (?Sale $record) => $record && $record->aib_amount > 0 
+                                ? number_format($record->aib_amount, 0, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF')
+                                : '-'),
+                        Forms\Components\Placeholder::make('total_with_aib_display')
+                            ->label('Net à payer (TTC + AIB)')
+                            ->content(fn (?Sale $record) => $record 
+                                ? number_format($record->total_with_aib, 0, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF')
+                                : '-')
+                            ->extraAttributes(['class' => 'font-bold text-lg']),
+                    ])
+                    ->columns(4)
+                    ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled')
+                    ->collapsed(fn (?Sale $record) => !$record || $record->aib_amount == 0),
+
                 Forms\Components\Section::make('Articles')
                     ->schema([
                         Forms\Components\Repeater::make('items')
@@ -230,17 +288,26 @@ class SaleResource extends Resource
                                                 $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
                                                 $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
                                                 
-                                                // Utiliser le prix de vente HT du produit
-                                                $set('unit_price', $product->price);
+                                                // Utiliser le prix de vente HT du produit (quantité initiale = 1)
+                                                $set('unit_price', $product->sale_price_ht);
                                                 $set('vat_rate', $product->vat_rate_sale ?? $defaultVatRate);
                                                 $set('vat_category', $product->vat_category ?? $defaultVatCategory);
                                                 $set('quantity', 1);
+                                                $set('is_wholesale', false);
+                                                $set('retail_unit_price', null);
                                                 
                                                 // Calculer le total
                                                 $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
-                                                $totalHt = $product->price;
+                                                $totalHt = $product->sale_price_ht;
                                                 $vat = round($totalHt * ($vatRate / 100), 2);
                                                 $set('total_price', $totalHt + $vat);
+                                                
+                                                // Info prix de gros si disponible
+                                                if ($product->hasWholesalePrice()) {
+                                                    $set('wholesale_info', "Prix gros: " . number_format($product->wholesale_price_ht, 0, ',', ' ') . " (≥{$product->min_wholesale_qty})");
+                                                } else {
+                                                    $set('wholesale_info', null);
+                                                }
                                                 
                                                 // Récupérer le stock disponible dans l'entrepôt
                                                 $warehouseId = $get('../../warehouse_id');
@@ -277,13 +344,42 @@ class SaleResource extends Resource
                                     })
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $quantity = $state;
-                                        $unitPrice = $get('unit_price');
-                                        $vatRate = $get('vat_rate') ?? 20;
-                                        if ($quantity && $unitPrice) {
-                                            $totalHt = $quantity * $unitPrice;
-                                            $vat = round($totalHt * ($vatRate / 100), 2);
-                                            $set('total_price', $totalHt + $vat);
+                                        $quantity = (int) $state;
+                                        $productId = $get('product_id');
+                                        $vatRate = $get('vat_rate') ?? 18;
+                                        
+                                        if ($quantity && $productId) {
+                                            $product = Product::find($productId);
+                                            if ($product) {
+                                                // Vérifier si le prix de gros s'applique
+                                                $priceData = SaleItem::calculatePriceForQuantity($product, $quantity);
+                                                
+                                                $unitPrice = $priceData['unit_price'];
+                                                $set('unit_price', $unitPrice);
+                                                $set('is_wholesale', $priceData['is_wholesale']);
+                                                $set('retail_unit_price', $priceData['retail_unit_price']);
+                                                
+                                                // Calculer le total
+                                                $totalHt = $quantity * $unitPrice;
+                                                $vat = round($totalHt * ($vatRate / 100), 2);
+                                                $set('total_price', $totalHt + $vat);
+                                                
+                                                // Message prix de gros
+                                                if ($priceData['is_wholesale']) {
+                                                    $savings = ($priceData['retail_unit_price'] - $unitPrice) * $quantity;
+                                                    $set('wholesale_info', "✅ Prix GROS appliqué! Économie: " . number_format($savings, 0, ',', ' '));
+                                                } elseif ($product->hasWholesalePrice()) {
+                                                    $remaining = $product->min_wholesale_qty - $quantity;
+                                                    $set('wholesale_info', "Encore {$remaining} unité(s) pour le prix gros (-" . $product->getWholesaleDiscountPercent() . "%)");
+                                                }
+                                            }
+                                        } else {
+                                            $unitPrice = $get('unit_price');
+                                            if ($quantity && $unitPrice) {
+                                                $totalHt = $quantity * $unitPrice;
+                                                $vat = round($totalHt * ($vatRate / 100), 2);
+                                                $set('total_price', $totalHt + $vat);
+                                            }
                                         }
                                     }),
                                 Forms\Components\TextInput::make('unit_price')
@@ -323,12 +419,21 @@ class SaleResource extends Resource
                                     }),
                                 Forms\Components\Hidden::make('vat_category')
                                     ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S'),
+                                Forms\Components\Hidden::make('is_wholesale')
+                                    ->default(false),
+                                Forms\Components\Hidden::make('retail_unit_price'),
                                 Forms\Components\TextInput::make('total_price')
                                     ->label('Total TTC')
                                     ->required()
                                     ->numeric()
                                     ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->disabled(),
+                                Forms\Components\Placeholder::make('wholesale_info')
+                                    ->label('')
+                                    ->content(fn (Forms\Get $get) => $get('wholesale_info') 
+                                        ? new \Illuminate\Support\HtmlString("<span class='text-xs text-green-600'>" . $get('wholesale_info') . "</span>")
+                                        : null)
+                                    ->hidden(fn (Forms\Get $get) => empty($get('wholesale_info'))),
                             ])
                             ->columns(6)
                             ->defaultItems(1)
@@ -431,6 +536,26 @@ class SaleResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visible(fn () => Filament::getTenant()?->emcef_enabled ?? false)
                     ->copyable(),
+                Tables\Columns\TextColumn::make('aib_rate')
+                    ->label('AIB')
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'A' => 'success',
+                        'B' => 'warning',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'A' => '1%',
+                        'B' => '5%',
+                        default => '-',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled'),
+                Tables\Columns\TextColumn::make('aib_amount')
+                    ->label('Montant AIB')
+                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled'),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Créé le')
                     ->dateTime()

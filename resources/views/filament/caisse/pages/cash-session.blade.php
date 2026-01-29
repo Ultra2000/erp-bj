@@ -18,10 +18,14 @@
 
                 <div class="p-6">
                     {{-- Statistiques --}}
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                         <div class="bg-gray-50 rounded-xl p-4 text-center">
-                            <div class="text-3xl font-bold text-gray-800" x-text="stats.total_sales"></div>
-                            <div class="text-sm text-gray-500">Ventes</div>
+                            <div class="text-3xl font-bold text-gray-800" x-text="stats.sales_count"></div>
+                            <div class="text-sm text-gray-500">🧾 Tickets</div>
+                        </div>
+                        <div class="bg-indigo-50 rounded-xl p-4 text-center">
+                            <div class="text-3xl font-bold text-indigo-600" x-text="formatPrice(stats.total_sales)"></div>
+                            <div class="text-sm text-gray-500">💰 Total Ventes</div>
                         </div>
                         <div class="bg-emerald-50 rounded-xl p-4 text-center">
                             <div class="text-3xl font-bold text-emerald-600" x-text="formatPrice(stats.total_cash)"></div>
@@ -165,7 +169,10 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm" x-text="new Date(session.closed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></td>
                                 <td class="px-4 py-3 text-sm text-right" x-text="formatPrice(session.opening_amount)"></td>
-                                <td class="px-4 py-3 text-sm text-right font-medium" x-text="session.total_sales + ' (' + formatPrice(parseFloat(session.total_cash) + parseFloat(session.total_card) + parseFloat(session.total_mobile)) + ')'"></td>
+                                <td class="px-4 py-3 text-sm text-right font-medium">
+                                    <div x-text="formatPrice(session.total_sales)"></div>
+                                    <div class="text-xs text-gray-500" x-text="'(' + formatPrice(parseFloat(session.total_cash) + parseFloat(session.total_card) + parseFloat(session.total_mobile)) + ')'"></div>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-right" x-text="formatPrice(session.closing_amount)"></td>
                                 <td class="px-4 py-3 text-sm text-right font-medium" 
                                     :class="parseFloat(session.difference) === 0 ? 'text-emerald-600' : (parseFloat(session.difference) > 0 ? 'text-amber-600' : 'text-red-600')"

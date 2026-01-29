@@ -26,14 +26,15 @@ class AccountingCorrection extends Page implements HasForms
     protected static ?string $navigationGroup = 'Comptabilité';
     protected static ?int $navigationSort = 8;
 
+    // Masquer - fonctionnalité désactivée
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public static function canAccess(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public ?array $data = [];

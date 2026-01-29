@@ -127,7 +127,15 @@
                             Vider (Esc)
                         </button>
                     </div>
-                    <div class="text-emerald-100 text-sm mt-1" x-text="cart.length + ' article(s)'"></div>
+                    
+                    {{-- Stats Session --}}
+                    <div class="mt-2 text-emerald-100 text-xs flex justify-between items-center" x-show="hasSession">
+                        <span x-text="cart.length + ' article(s)'"></span>
+                        <div class="flex gap-3">
+                            <span x-text="sessionStats.sales_count + ' ventes'"></span>
+                            <span class="font-bold" x-text="formatPrice(sessionStats.total_sales)"></span>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Liste articles --}}
@@ -180,9 +188,8 @@
                             <span class="text-gray-600">Remise (%)</span>
                             <input type="number" x-model.number="discount" min="0" max="100" step="0.5" class="w-20 text-right border rounded px-2 py-1 text-sm">
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">TVA (%)</span>
-                            <input type="number" x-model.number="tax" min="0" max="100" step="0.5" class="w-20 text-right border rounded px-2 py-1 text-sm">
+                        <div class="flex justify-between items-center text-xs text-gray-400">
+                            <span>TVA incluse par produit (18%)</span>
                         </div>
                     </div>
 
@@ -312,7 +319,6 @@
                 
                 // Paiement
                 discount: 0,
-                tax: 0,
                 paymentMethod: 'cash',
                 receivedAmount: 0,
                 
@@ -324,6 +330,12 @@
                 // Feedback
                 showSuccess: false,
                 lastSaleId: null,
+                
+                // Session stats
+                sessionStats: {
+                    sales_count: 0,
+                    total_sales: 0
+                },
 
                 init() {
                     this.checkSession();
@@ -333,6 +345,16 @@
                 async checkSession() {
                     const response = await this.$wire.hasOpenSession();
                     this.hasSession = response;
+                    if (this.hasSession) {
+                        this.refreshSessionStats();
+                    }
+                },
+
+                async refreshSessionStats() {
+                    const stats = await this.$wire.getOpenSessionStats();
+                    if (stats) {
+                        this.sessionStats = stats;
+                    }
                 },
 
                 formatPrice(value) {
@@ -420,7 +442,6 @@
                 clearCart() {
                     this.cart = [];
                     this.discount = 0;
-                    this.tax = 0;
                     this.receivedAmount = 0;
                 },
 
@@ -431,8 +452,8 @@
                 get grandTotal() {
                     const discountAmt = this.subtotal * (this.discount / 100);
                     const afterDiscount = this.subtotal - discountAmt;
-                    const taxAmt = afterDiscount * (this.tax / 100);
-                    return Math.round(afterDiscount + taxAmt);
+                    // TVA déjà incluse dans les prix produits (18% par défaut)
+                    return Math.round(afterDiscount);
                 },
 
                 get change() {
@@ -444,6 +465,25 @@
                     
                     this.saving = true;
                     try {
+                        // Vérifier le stock en temps réel avant validation
+                        const stockCheck = await this.$wire.verifyCartStock(this.cart.map(i => ({
+                            product_id: i.id,
+                            quantity: i.quantity
+                        })));
+                        
+                        if (!stockCheck.valid) {
+                            alert('Stock insuffisant pour : ' + stockCheck.errors.join(', '));
+                            // Mettre à jour les stocks locaux
+                            if (stockCheck.updatedStocks) {
+                                for (const [productId, newStock] of Object.entries(stockCheck.updatedStocks)) {
+                                    const item = this.cart.find(i => i.id == productId);
+                                    if (item) item.stock = newStock;
+                                }
+                            }
+                            this.saving = false;
+                            return;
+                        }
+                        
                         const result = await this.$wire.recordSale({
                             items: this.cart.map(i => ({
                                 product_id: i.id,
@@ -451,7 +491,6 @@
                                 unit_price: i.unit_price
                             })),
                             discount_percent: this.discount,
-                            tax_percent: this.tax,
                             payment_method: this.paymentMethod,
                             payment_details: this.paymentMethod === 'mixed' ? { cash: this.receivedAmount } : null
                         });
@@ -461,6 +500,7 @@
                             this.showSuccess = true;
                             setTimeout(() => this.showSuccess = false, 3000);
                             this.clearCart();
+                            this.refreshSessionStats();
                             this.playBeep();
                         } else {
                             alert(result.message || 'Erreur lors de la vente');

@@ -269,6 +269,73 @@ class ProductResource extends Resource
                         Forms\Components\Hidden::make('sale_price_ht'),
                     ])->columns(3),
 
+                // Section Prix de Gros
+                Forms\Components\Section::make('Prix de gros')
+                    ->description('Optionnel - Prix réduit pour les achats en quantité')
+                    ->schema([
+                        Forms\Components\TextInput::make('wholesale_price')
+                            ->label(fn (Forms\Get $get) => $get('prices_include_vat') ? 'Prix de gros TTC' : 'Prix de gros HT')
+                            ->numeric()
+                            ->live(onBlur: true)
+                            ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
+                            ->placeholder('Laisser vide si pas de prix de gros')
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                if (empty($state)) {
+                                    $set('wholesale_price_ht', null);
+                                    return;
+                                }
+                                $vatRate = (float) ($get('vat_rate_sale') ?? 18);
+                                $pricesTtc = $get('prices_include_vat');
+                                
+                                if ($pricesTtc && $vatRate > 0) {
+                                    $ht = round((float)$state / (1 + $vatRate / 100), 2);
+                                    $set('wholesale_price_ht', $ht);
+                                } else {
+                                    $set('wholesale_price_ht', (float)$state);
+                                }
+                            }),
+                        Forms\Components\TextInput::make('min_wholesale_qty')
+                            ->label('Quantité minimum')
+                            ->numeric()
+                            ->default(10)
+                            ->minValue(2)
+                            ->helperText('Quantité min. pour bénéficier du prix de gros')
+                            ->suffix('unités'),
+                        Forms\Components\Placeholder::make('wholesale_info')
+                            ->label('💰 Réduction gros')
+                            ->content(function (Forms\Get $get) {
+                                $retailPrice = (float) ($get('price') ?? 0);
+                                $wholesalePrice = (float) ($get('wholesale_price') ?? 0);
+                                $minQty = (int) ($get('min_wholesale_qty') ?? 10);
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                
+                                if ($wholesalePrice <= 0 || $retailPrice <= 0) {
+                                    return new \Illuminate\Support\HtmlString("<span class='text-gray-400'>Saisissez un prix de gros</span>");
+                                }
+                                
+                                $discount = $retailPrice - $wholesalePrice;
+                                $discountPercent = round(($discount / $retailPrice) * 100, 1);
+                                
+                                if ($discount <= 0) {
+                                    return new \Illuminate\Support\HtmlString("<span class='text-red-500'>⚠️ Le prix de gros doit être inférieur au prix de détail</span>");
+                                }
+                                
+                                return new \Illuminate\Support\HtmlString("
+                                    <div class='text-sm space-y-1'>
+                                        <div class='text-green-600 font-semibold'>
+                                            -{$discountPercent}% soit -" . number_format($discount, 0, ',', ' ') . " {$currency}/unité
+                                        </div>
+                                        <div class='text-gray-500'>
+                                            À partir de {$minQty} unités
+                                        </div>
+                                    </div>
+                                ");
+                            }),
+                        Forms\Components\Hidden::make('wholesale_price_ht'),
+                    ])->columns(3)
+                    ->collapsed()
+                    ->collapsible(),
+
                 Forms\Components\Section::make('Stock')
                     ->schema([
                         Forms\Components\TextInput::make('stock')
@@ -392,6 +459,15 @@ class ProductResource extends Resource
                     ->getStateUsing(fn ($record) => $record->margin_percent ?? 0)
                     ->formatStateUsing(fn ($state) => number_format($state, 1) . '%')
                     ->color(fn ($state) => $state > 0 ? 'success' : ($state < 0 ? 'danger' : 'gray')),
+                Tables\Columns\TextColumn::make('wholesale_price')
+                    ->label('Prix Gros')
+                    ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->placeholder('-')
+                    ->description(fn ($record) => $record->wholesale_price 
+                        ? "≥{$record->min_wholesale_qty} unités (-{$record->getWholesaleDiscountPercent()}%)" 
+                        : null),
                 Tables\Columns\TextColumn::make('warehouse_stock')
                     ->label('Stock')
                     ->getStateUsing(function ($record) {

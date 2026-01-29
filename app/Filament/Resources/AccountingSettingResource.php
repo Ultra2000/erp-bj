@@ -17,14 +17,15 @@ class AccountingSettingResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
+    // Masquer - fonctionnalité désactivée
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public static function canAccess(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     protected static ?string $navigationLabel = 'Paramètres Comptables';

@@ -26,10 +26,15 @@ class BankTransactionResource extends Resource
     protected static ?string $navigationGroup = 'Comptabilité';
     protected static ?int $navigationSort = 2;
 
+    // Masquer - fonctionnalité désactivée
     public static function shouldRegisterNavigation(): bool
     {
-        $tenant = Filament::getTenant();
-        return ($tenant?->isModuleEnabled('accounting') || $tenant?->isModuleEnabled('banking')) ?? false;
+        return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return false;
     }
 
     public static function getEloquentQuery(): Builder

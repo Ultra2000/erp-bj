@@ -20,9 +20,15 @@ class AccountingExport extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-document-arrow-down';
 
+    // Masquer - fonctionnalité française (FEC)
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return false;
     }
 
     protected static string $view = 'filament.pages.accounting-export';
@@ -189,10 +195,5 @@ class AccountingExport extends Page implements HasForms
 
             throw $e;
         }
-    }
-
-    public static function canAccess(): bool
-    {
-        return true; // Ajuster selon vos permissions
     }
 }

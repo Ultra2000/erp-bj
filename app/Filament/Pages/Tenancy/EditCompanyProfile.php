@@ -78,6 +78,43 @@ class EditCompanyProfile extends EditTenantProfile
                                     ->default(true),
                             ]),
                     ]),
+
+                Section::make('e-MCeF (DGI Bénin)')
+                    ->description('Configuration de la facturation électronique certifiée')
+                    ->schema([
+                        Toggle::make('emcef_enabled')
+                            ->label('Activer e-MCeF')
+                            ->helperText('Active la certification des factures auprès de la DGI'),
+                        Toggle::make('emcef_sandbox')
+                            ->label('Mode Sandbox (Test)')
+                            ->helperText('Utiliser l\'environnement de test de la DGI')
+                            ->visible(fn ($get) => $get('emcef_enabled')),
+                        TextInput::make('emcef_nim')
+                            ->label('NIM (Numéro d\'Identification Machine)')
+                            ->helperText('Fourni par la DGI lors de l\'enregistrement')
+                            ->visible(fn ($get) => $get('emcef_enabled')),
+                    ])
+                    ->collapsed(),
+
+                Section::make('AIB (Acompte sur Impôt Bénéfices)')
+                    ->description('Configuration du prélèvement AIB sur les factures (obligatoire au Bénin)')
+                    ->schema([
+                        Select::make('aib_mode')
+                            ->label('Mode de calcul')
+                            ->options([
+                                'auto' => '🔄 Automatique - Calcul selon l\'IFU du client',
+                                'manual' => '✋ Manuel - Saisie manuelle sur chaque vente',
+                                'disabled' => '⛔ Désactivé - Pas d\'AIB',
+                            ])
+                            ->default('auto')
+                            ->helperText('En mode automatique : 1% si le client a un IFU, 5% sinon'),
+                        Toggle::make('aib_exempt_retail')
+                            ->label('Exonérer les ventes au détail')
+                            ->helperText('Ne pas appliquer l\'AIB aux clients sans IFU (ventes au comptoir, particuliers)')
+                            ->default(true)
+                            ->visible(fn ($get) => $get('aib_mode') === 'auto'),
+                    ])
+                    ->collapsed(),
             ]);
     }
 }

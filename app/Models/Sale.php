@@ -27,6 +27,10 @@ class Sale extends Model
         'total',
         'total_ht',
         'total_vat',
+        // AIB (Acompte sur Impôt Bénéfices - Bénin)
+        'aib_rate',
+        'aib_amount',
+        'aib_exempt',
         'status',
         'payment_status',
         'amount_paid',
@@ -58,6 +62,8 @@ class Sale extends Model
         'status' => 'string',
         'payment_status' => 'string',
         'amount_paid' => 'decimal:2',
+        'aib_amount' => 'decimal:2',
+        'aib_exempt' => 'boolean',
         'paid_at' => 'datetime',
         'payment_details' => 'array',
         'ppf_synced_at' => 'datetime',
@@ -141,59 +147,14 @@ class Sale extends Model
         });
 
         // Gérer le cas d'une vente créée directement avec status = 'completed'
+        // IMPORTANT: Pour les ventes POS, le total n'est pas encore calculé à ce stade
+        // (les items sont ajoutés après). Les opérations post-création seront donc
+        // déclenchées dans calculateTotal() une fois le total connu.
         static::created(function ($sale) {
-            // Si la vente est créée avec le statut "completed"
-            if ($sale->status === 'completed') {
-                // Créer la transaction bancaire si compte bancaire lié ET si le total est défini
-                // Note: Le total peut être NULL si les items n'ont pas encore été ajoutés
-                if ($sale->bank_account_id && $sale->total > 0) {
-                    $exists = BankTransaction::where('reference', $sale->invoice_number)->exists();
-                    
-                    if (!$exists) {
-                        BankTransaction::create([
-                            'bank_account_id' => $sale->bank_account_id,
-                            'date' => now(),
-                            'amount' => $sale->total,
-                            'type' => $sale->type === 'credit_note' ? 'debit' : 'credit',
-                            'label' => ($sale->type === 'credit_note' ? "Avoir " : "Vente ") . $sale->invoice_number,
-                            'reference' => $sale->invoice_number,
-                            'status' => 'pending',
-                            'metadata' => ['sale_id' => $sale->id],
-                        ]);
-                    }
-                }
-
-                // Générer les écritures comptables
-                try {
-                    $accountingService = app(\App\Services\AccountingEntryService::class);
-                    
-                    // Si c'est un avoir avec une facture parente, contre-passer les écritures
-                    if ($sale->type === 'credit_note' && $sale->parent_id) {
-                        $originalSale = Sale::find($sale->parent_id);
-                        if ($originalSale) {
-                            $accountingService->reverseEntries($originalSale, $sale);
-                        }
-                    } else {
-                        // Vente normale : créer les écritures standard
-                        $accountingService->createEntriesForSale($sale);
-                    }
-                } catch (\Exception $e) {
-                    \Illuminate\Support\Facades\Log::error(
-                        "Erreur génération écritures comptables {$sale->type} (création) {$sale->invoice_number}: " . $e->getMessage()
-                    );
-                }
-
-                // Enregistrer le paiement POS si payé immédiatement
-                if ($sale->payment_method && $sale->cash_session_id) {
-                    try {
-                        $accountingService = app(\App\Services\AccountingEntryService::class);
-                        $accountingService->registerPosPayment($sale);
-                    } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::error(
-                            "Erreur enregistrement paiement POS {$sale->invoice_number}: " . $e->getMessage()
-                        );
-                    }
-                }
+            // Si la vente est créée avec le statut "completed" ET un total > 0
+            // (cas des ventes Filament, pas POS qui ont un total = 0 à la création)
+            if ($sale->status === 'completed' && $sale->total > 0) {
+                $sale->executePostSaleOperations();
             }
         });
 
@@ -218,6 +179,8 @@ class Sale extends Model
             }
 
             // Générer les écritures comptables quand la vente passe à "completed"
+            // DESACTIVE: Module comptabilité désactivé
+            /*
             if ($sale->wasChanged('status') && $sale->status === 'completed') {
                 try {
                     $accountingService = app(\App\Services\AccountingEntryService::class);
@@ -228,8 +191,11 @@ class Sale extends Model
                     );
                 }
             }
+            */
 
             // Générer les écritures de contre-passation pour un avoir
+            // DESACTIVE: Module comptabilité désactivé
+            /*
             if ($sale->wasChanged('status') && $sale->status === 'completed' && $sale->type === 'credit_note' && $sale->parent_id) {
                 try {
                     $accountingService = app(\App\Services\AccountingEntryService::class);
@@ -243,25 +209,32 @@ class Sale extends Model
                     );
                 }
             }
+            */
         });
 
         static::updating(function ($sale) {
             // Protection NF525 : Vérifier l'intégrité de la chaîne
             if ($sale->security_hash) {
+                // EXCEPTION: Si le total original était 0 (vente POS pas encore finalisée),
+                // on permet la mise à jour du total car la vente n'était pas réellement "scellée"
+                $originalTotal = $sale->getOriginal('total');
+                $isInitialTotalUpdate = ($originalTotal === null || $originalTotal == 0) && $sale->isDirty('total');
+                
                 // Vérifier s'il existe une facture postérieure scellée
                 $nextSaleExists = self::where('company_id', $sale->company_id)
                     ->where('id', '>', $sale->id)
                     ->whereNotNull('security_hash')
                     ->exists();
 
-                if ($nextSaleExists) {
+                if ($nextSaleExists && !$isInitialTotalUpdate) {
                     // Si on essaie de modifier des données critiques d'une facture déjà chaînée
+                    // (sauf si c'est la mise à jour initiale du total d'une vente POS)
                     if ($sale->isDirty(['total', 'invoice_number', 'created_at', 'customer_id'])) {
                         throw new \Exception("Opération illégale (NF525) : Impossible de modifier une facture déjà scellée et chaînée.");
                     }
                 } else {
-                    // C'est la dernière facture, on peut mettre à jour le hash
-                    // uniquement si les données critiques ont changé
+                    // C'est la dernière facture OU c'est une mise à jour initiale du total
+                    // On peut mettre à jour le hash
                     if ($sale->isDirty(['total', 'invoice_number', 'created_at', 'customer_id'])) {
                         $sale->generateSecurityHash();
                     }
@@ -355,6 +328,9 @@ class Sale extends Model
         // Calculer les totaux à partir des lignes (TVA gérée par ligne)
         $totalHt = $this->items()->sum('total_price_ht');
         $totalVat = $this->items()->sum('vat_amount');
+        
+        \Log::info("Sale::calculateTotal id={$this->id}: items_count=" . $this->items()->count() . ", sum_ht={$totalHt}, sum_vat={$totalVat}");
+        
         $subtotal = $totalHt + $totalVat; // Total TTC avant remise
         
         // Appliquer la remise globale (sur TTC)
@@ -364,14 +340,31 @@ class Sale extends Model
         // Note: tax_percent est maintenant obsolète car la TVA est gérée par ligne
         // On le garde pour compatibilité mais il ne devrait plus être utilisé
         
+        $hadNoTotal = !$this->total || $this->total <= 0;
+        
         $this->total_ht = round($totalHt * (1 - $this->discount_percent / 100), 2);
         $this->total_vat = round($totalVat * (1 - $this->discount_percent / 100), 2);
         $this->total = round($afterDiscount, 2);
-        $this->save();
+        
+        // Utiliser saveQuietly() pour éviter de déclencher les events updating/updated
+        // qui pourraient bloquer la sauvegarde (NF525, etc.)
+        $this->saveQuietly();
 
-        // Créer la transaction bancaire si vente completed avec compte bancaire
-        // (exécuté ici car le total est maintenant calculé)
-        if ($this->status === 'completed' && $this->bank_account_id && $this->total > 0) {
+        // Si c'est la première fois que le total est calculé (ventes POS),
+        // exécuter les opérations post-vente maintenant
+        if ($hadNoTotal && $this->total > 0 && $this->status === 'completed') {
+            $this->executePostSaleOperations();
+        }
+    }
+
+    /**
+     * Exécute les opérations post-vente (transactions bancaires, écritures comptables, paiements)
+     * Appelé soit dans created() si le total est déjà connu, soit dans calculateTotal() pour les ventes POS
+     */
+    public function executePostSaleOperations(): void
+    {
+        // Créer la transaction bancaire si compte bancaire lié
+        if ($this->bank_account_id && $this->total > 0) {
             $exists = BankTransaction::where('reference', $this->invoice_number)->exists();
             
             if (!$exists) {
@@ -387,6 +380,44 @@ class Sale extends Model
                 ]);
             }
         }
+
+        // Générer les écritures comptables
+        // DESACTIVE: Module comptabilité désactivé
+        /*
+        try {
+            $accountingService = app(\App\Services\AccountingEntryService::class);
+            
+            // Si c'est un avoir avec une facture parente, contre-passer les écritures
+            if ($this->type === 'credit_note' && $this->parent_id) {
+                $originalSale = Sale::find($this->parent_id);
+                if ($originalSale) {
+                    $accountingService->reverseEntries($originalSale, $this);
+                }
+            } else {
+                // Vente normale : créer les écritures standard
+                $accountingService->createEntriesForSale($this);
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error(
+                "Erreur génération écritures comptables {$this->type} {$this->invoice_number}: " . $e->getMessage()
+            );
+        }
+        */
+
+        // Enregistrer le paiement POS si payé immédiatement
+        // DESACTIVE: Module comptabilité désactivé
+        /*
+        if ($this->payment_method && $this->cash_session_id) {
+            try {
+                $accountingService = app(\App\Services\AccountingEntryService::class);
+                $accountingService->registerPosPayment($this);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error(
+                    "Erreur enregistrement paiement POS {$this->invoice_number}: " . $e->getMessage()
+                );
+            }
+        }
+        */
     }
 
     /**
@@ -455,5 +486,105 @@ class Sale extends Model
         // 3. Générer le hash SHA-256
         $this->previous_hash = $previousHash;
         $this->security_hash = hash('sha256', $dataToSign);
+    }
+
+    // ===========================================
+    // AIB (Acompte sur Impôt Bénéfices - Bénin)
+    // ===========================================
+
+    /**
+     * Détermine automatiquement le taux AIB en fonction du client
+     * - A (1%) : Client avec IFU valide
+     * - B (5%) : Client sans IFU
+     * - null : Exonéré (vente au détail si configuré)
+     */
+    public function determineAibRate(): ?string
+    {
+        // Si exonération manuelle
+        if ($this->aib_exempt) {
+            return null;
+        }
+
+        $company = $this->company ?? Company::find($this->company_id);
+        
+        // Si AIB désactivé
+        if (!$company || $company->aib_mode === 'disabled') {
+            return null;
+        }
+
+        // Mode manuel : ne pas calculer automatiquement
+        if ($company->aib_mode === 'manual' && !$this->aib_rate) {
+            return null;
+        }
+
+        $customer = $this->customer;
+
+        // Si pas de client ou client sans IFU
+        if (!$customer || empty($customer->tax_number)) {
+            // Si vente au détail exonérée
+            if ($company->aib_exempt_retail) {
+                return null;
+            }
+            return 'B'; // 5%
+        }
+
+        // Client avec IFU valide
+        return 'A'; // 1%
+    }
+
+    /**
+     * Calcule le montant AIB
+     * Base de calcul : Montant HT
+     */
+    public function calculateAibAmount(): float
+    {
+        if (!$this->aib_rate) {
+            return 0;
+        }
+
+        $rate = $this->getAibPercentage();
+        return round($this->total_ht * ($rate / 100), 2);
+    }
+
+    /**
+     * Retourne le pourcentage AIB selon le taux
+     */
+    public function getAibPercentage(): float
+    {
+        return match ($this->aib_rate) {
+            'A' => 1,    // 1% pour client avec IFU
+            'B' => 5,    // 5% pour client sans IFU
+            default => 0,
+        };
+    }
+
+    /**
+     * Applique automatiquement l'AIB
+     */
+    public function applyAib(): void
+    {
+        $this->aib_rate = $this->determineAibRate();
+        $this->aib_amount = $this->calculateAibAmount();
+    }
+
+    /**
+     * Retourne le total avec AIB
+     * Total TTC + AIB
+     */
+    public function getTotalWithAibAttribute(): float
+    {
+        return $this->total + ($this->aib_amount ?? 0);
+    }
+
+    /**
+     * Label AIB pour affichage
+     */
+    public function getAibLabelAttribute(): string
+    {
+        return match ($this->aib_rate) {
+            'A' => 'AIB (1%)',
+            'B' => 'AIB (5%)',
+            default => '',
+        };
     }
 }

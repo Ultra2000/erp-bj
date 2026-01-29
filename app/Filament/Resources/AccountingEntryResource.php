@@ -20,14 +20,15 @@ class AccountingEntryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
 
+    // Masquer - fonctionnalité désactivée
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public static function canAccess(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     protected static ?string $navigationLabel = 'Grand Livre';

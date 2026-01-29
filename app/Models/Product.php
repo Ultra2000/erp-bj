@@ -40,6 +40,10 @@ class Product extends Model
         'vat_rate_sale',
         'vat_category',
         'prices_include_vat',
+        // Prix de gros
+        'wholesale_price',
+        'wholesale_price_ht',
+        'min_wholesale_qty',
         'stock',
         'unit',
         'min_stock',
@@ -53,6 +57,9 @@ class Product extends Model
         'purchase_price_ht' => 'decimal:2',
         'price' => 'decimal:2',
         'sale_price_ht' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
+        'wholesale_price_ht' => 'decimal:2',
+        'min_wholesale_qty' => 'integer',
         'vat_rate_purchase' => 'decimal:2',
         'vat_rate_sale' => 'decimal:2',
         'prices_include_vat' => 'boolean',
@@ -444,6 +451,112 @@ class Product extends Model
     public function getVatAmountSaleAttribute(): float
     {
         return round($this->sale_price_ttc - $this->sale_price_ht, 2);
+    }
+
+    // ========================================
+    // GESTION PRIX DE GROS
+    // ========================================
+
+    /**
+     * Vérifie si un prix de gros est configuré
+     */
+    public function hasWholesalePrice(): bool
+    {
+        return $this->wholesale_price !== null && $this->wholesale_price > 0;
+    }
+
+    /**
+     * Retourne le prix de gros HT
+     */
+    public function getWholesalePriceHtAttribute(): float
+    {
+        if ($this->attributes['wholesale_price_ht'] ?? null) {
+            return (float) $this->attributes['wholesale_price_ht'];
+        }
+        
+        // Si pas de prix HT stocké, calculer depuis le prix TTC
+        $price = (float) ($this->attributes['wholesale_price'] ?? 0);
+        $vatRate = (float) ($this->attributes['vat_rate_sale'] ?? 18);
+        
+        if ($this->prices_include_vat && $vatRate > 0) {
+            return round($price / (1 + $vatRate / 100), 2);
+        }
+        
+        return $price;
+    }
+
+    /**
+     * Retourne le prix de gros TTC
+     */
+    public function getWholesalePriceTtcAttribute(): float
+    {
+        $priceHt = $this->wholesale_price_ht;
+        $vatRate = (float) ($this->vat_rate_sale ?? 18);
+        
+        return round($priceHt * (1 + $vatRate / 100), 2);
+    }
+
+    /**
+     * Détermine si une quantité bénéficie du prix de gros
+     */
+    public function qualifiesForWholesale(int $quantity): bool
+    {
+        if (!$this->hasWholesalePrice()) {
+            return false;
+        }
+        
+        return $quantity >= ($this->min_wholesale_qty ?? 10);
+    }
+
+    /**
+     * Retourne le prix unitaire applicable selon la quantité
+     * @param int $quantity Quantité commandée
+     * @param bool $includingVat Si true, retourne le prix TTC, sinon HT
+     * @return float Prix unitaire
+     */
+    public function getApplicablePrice(int $quantity = 1, bool $includingVat = true): float
+    {
+        if ($this->qualifiesForWholesale($quantity)) {
+            return $includingVat ? $this->wholesale_price_ttc : $this->wholesale_price_ht;
+        }
+        
+        return $includingVat ? $this->sale_price_ttc : $this->sale_price_ht;
+    }
+
+    /**
+     * Retourne le type de prix applicable (retail/wholesale)
+     */
+    public function getPriceType(int $quantity = 1): string
+    {
+        return $this->qualifiesForWholesale($quantity) ? 'wholesale' : 'retail';
+    }
+
+    /**
+     * Calcule l'économie réalisée avec le prix de gros
+     */
+    public function getWholesaleSavings(int $quantity): float
+    {
+        if (!$this->qualifiesForWholesale($quantity)) {
+            return 0;
+        }
+        
+        $retailTotal = $quantity * $this->sale_price_ttc;
+        $wholesaleTotal = $quantity * $this->wholesale_price_ttc;
+        
+        return round($retailTotal - $wholesaleTotal, 2);
+    }
+
+    /**
+     * Calcule le pourcentage de réduction du prix de gros
+     */
+    public function getWholesaleDiscountPercent(): float
+    {
+        if (!$this->hasWholesalePrice() || $this->sale_price_ht <= 0) {
+            return 0;
+        }
+        
+        $discount = $this->sale_price_ht - $this->wholesale_price_ht;
+        return round(($discount / $this->sale_price_ht) * 100, 2);
     }
 
     /**

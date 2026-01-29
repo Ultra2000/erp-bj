@@ -531,6 +531,14 @@
     $totalAvantRemise = $sale->items->sum('total_price');
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
     
+    // Calculer les économies prix de gros
+    $wholesaleSavings = $sale->items->sum(function($item) {
+        if ($item->is_wholesale && $item->retail_unit_price) {
+            return ($item->retail_unit_price - $item->unit_price) * $item->quantity;
+        }
+        return 0;
+    });
+    
     function amountToWordsFr($number, $currency = 'EUR') {
         $fmt = new \NumberFormatter('fr_FR', \NumberFormatter::SPELLOUT);
         $euros = floor($number);
@@ -662,9 +670,19 @@
             <tbody>
                 @forelse($sale->items as $item)
                     <tr>
-                        <td><span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span></td>
+                        <td>
+                            <span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span>
+                            @if($item->is_wholesale)
+                                <span style="display: inline-block; background: #d1fae5; color: #047857; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">PRIX GROS</span>
+                            @endif
+                        </td>
                         <td>{{ $item->quantity }}</td>
-                        <td class="text-right text-muted">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}</td>
+                        <td class="text-right text-muted">
+                            {{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}
+                            @if($item->is_wholesale && $item->retail_unit_price)
+                                <br><small style="color: #9ca3af; text-decoration: line-through;">{{ number_format($item->retail_unit_price, 2, ',', ' ') }}</small>
+                            @endif
+                        </td>
                         <td class="text-right">{{ number_format($item->vat_rate ?? 0, 0) }}%</td>
                         <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
                     </tr>
@@ -685,6 +703,14 @@
                 <span class="label">Total HT</span>
                 <span class="value">{{ number_format($totalHt, 2, ',', ' ') }} {{ $currency }}</span>
             </div>
+            @if($wholesaleSavings > 0)
+                <div class="totals-row" style="background: #ecfdf5; margin: 4px -12px; padding: 6px 12px;">
+                    <span class="label" style="color: #047857;">
+                        🏷️ Économie prix de gros
+                    </span>
+                    <span class="value" style="color: #047857;">- {{ number_format($wholesaleSavings, 0, ',', ' ') }} {{ $currency }}</span>
+                </div>
+            @endif
             @if($discountPercent > 0)
                 <div class="totals-row discount">
                     <span class="label">Remise ({{ number_format($discountPercent, 1, ',', ' ') }}%)</span>
@@ -706,8 +732,22 @@
                 <span class="label">Total {{ $isVatFranchise ? 'Net' : 'TTC' }}</span>
                 <span class="value">{{ number_format($grandTotal, 2, ',', ' ') }} {{ $currency }}</span>
             </div>
+            {{-- AIB (Acompte sur Impôt Bénéfices) - Bénin --}}
+            @if($sale->aib_rate && $sale->aib_amount > 0)
+                <div class="totals-row" style="background: #fff7ed; margin: 8px -12px; padding: 8px 12px;">
+                    <span class="label" style="color: #c2410c;">
+                        AIB {{ $sale->aib_rate === 'A' ? '(1%)' : '(5%)' }}
+                        <small style="display:block;font-size:9px;color:#9a3412;">Acompte sur Impôt Bénéfices</small>
+                    </span>
+                    <span class="value" style="color: #c2410c;">{{ number_format($sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
+                </div>
+                <div class="totals-row grand-total" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; margin: 8px -12px; padding: 12px;">
+                    <span class="label" style="color: white;">NET À PAYER</span>
+                    <span class="value" style="color: white; font-size: 1.3em;">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
+                </div>
+            @endif
             <div class="amount-words">
-                {{ amountToWordsFr($grandTotal, $currency) }}
+                {{ amountToWordsFr($sale->aib_amount > 0 ? ($grandTotal + $sale->aib_amount) : $grandTotal, $currency) }}
             </div>
         </div>
     </div>

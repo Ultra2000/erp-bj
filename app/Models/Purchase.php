@@ -107,6 +107,8 @@ class Purchase extends Model
                 }
 
                 // Générer les écritures comptables
+                // DESACTIVE: Module comptabilité désactivé
+                /*
                 try {
                     $accountingService = app(\App\Services\AccountingEntryService::class);
                     $accountingService->createEntriesForPurchase($purchase);
@@ -115,6 +117,7 @@ class Purchase extends Model
                         "Erreur génération écritures comptables achat (création) {$purchase->invoice_number}: " . $e->getMessage()
                     );
                 }
+                */
             }
         });
 
@@ -139,6 +142,8 @@ class Purchase extends Model
             }
 
             // Générer les écritures comptables quand l'achat passe à "completed"
+            // DESACTIVE: Module comptabilité désactivé
+            /*
             if ($purchase->wasChanged('status') && $purchase->status === 'completed') {
                 try {
                     $accountingService = app(\App\Services\AccountingEntryService::class);
@@ -149,6 +154,7 @@ class Purchase extends Model
                     );
                 }
             }
+            */
 
             if ($purchase->isDirty('status')) {
                 $oldStatus = $purchase->getOriginal('status');

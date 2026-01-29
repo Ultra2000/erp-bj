@@ -21,14 +21,15 @@ class BalanceGenerale extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-scale';
 
+    // Masquer - fonctionnalité désactivée
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public static function canAccess(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     protected static string $view = 'filament.pages.balance-generale';

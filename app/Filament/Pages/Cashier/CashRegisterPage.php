@@ -71,7 +71,7 @@ class CashRegisterPage extends Page
             return ['success' => false, 'message' => 'Une session est déjà ouverte'];
         }
 
-        $session = CashSession::openSession(auth()->id(), $companyId, $openingAmount);
+        $session = CashSession::openSession($companyId, auth()->id(), $openingAmount);
         
         return ['success' => true, 'session' => $session];
     }

@@ -34,6 +34,9 @@ class Company extends Model
         'emcef_token_expires_at',
         'emcef_enabled',
         'emcef_sandbox',
+        // AIB (Acompte sur Impôt Bénéfices)
+        'aib_mode',
+        'aib_exempt_retail',
     ];
 
     protected $casts = [
@@ -42,6 +45,7 @@ class Company extends Model
         'emcef_enabled' => 'boolean',
         'emcef_sandbox' => 'boolean',
         'emcef_token_expires_at' => 'datetime',
+        'aib_exempt_retail' => 'boolean',
     ];
 
     protected static function boot()

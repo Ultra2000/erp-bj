@@ -543,20 +543,23 @@ class EmcefService
 
     /**
      * Détermine le groupe AIB (Acompte sur Impôt sur les Bénéfices)
-     * A = 1% AIB
-     * B = 5% AIB
+     * A = 1% AIB (client avec IFU)
+     * B = 5% AIB (client sans IFU)
+     * null = Exonéré
      */
     protected function getAibGroup(Sale $sale): ?string
     {
-        // Par défaut, pas d'AIB (peut être configuré selon le type de client)
-        // A = pour les entreprises soumises à l'impôt BIC
-        // B = pour les autres cas
-        
-        if ($sale->customer && $sale->customer->is_professional) {
-            return 'A';
+        // Utiliser le taux AIB calculé sur la vente
+        if ($sale->aib_rate) {
+            return $sale->aib_rate; // 'A' ou 'B'
         }
         
-        return null;
+        // Fallback : déterminer selon le client (rétrocompatibilité)
+        if ($sale->customer && !empty($sale->customer->tax_number)) {
+            return 'A'; // Client avec IFU = 1%
+        }
+        
+        return null; // Pas d'AIB
     }
 
     /**

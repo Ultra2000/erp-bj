@@ -9,12 +9,33 @@ use Illuminate\Support\Facades\Log;
 class SaleObserver
 {
     /**
+     * Handle the Sale "creating" event.
+     * Appliquer l'AIB avant la création
+     */
+    public function creating(Sale $sale): void
+    {
+        $this->applyAibIfNeeded($sale);
+    }
+
+    /**
      * Handle the Sale "created" event.
      */
     public function created(Sale $sale): void
     {
         // Soumettre à e-MCeF si la vente est complète et l'entreprise a e-MCeF activé
         $this->submitToEmcefIfNeeded($sale);
+    }
+
+    /**
+     * Handle the Sale "updating" event.
+     * Recalculer l'AIB si le client ou le total change
+     */
+    public function updating(Sale $sale): void
+    {
+        // Recalculer l'AIB si le client change ou si total_ht change
+        if ($sale->isDirty(['customer_id', 'total_ht'])) {
+            $this->applyAibIfNeeded($sale);
+        }
     }
 
     /**
@@ -26,6 +47,35 @@ class SaleObserver
         if ($sale->wasChanged('status') && $sale->status === 'completed') {
             $this->submitToEmcefIfNeeded($sale);
         }
+    }
+
+    /**
+     * Applique l'AIB automatiquement si le mode est "auto"
+     */
+    protected function applyAibIfNeeded(Sale $sale): void
+    {
+        // Ne pas recalculer si exonération manuelle
+        if ($sale->aib_exempt) {
+            $sale->aib_rate = null;
+            $sale->aib_amount = 0;
+            return;
+        }
+
+        $company = $sale->company ?? \App\Models\Company::find($sale->company_id);
+        
+        if (!$company) {
+            return;
+        }
+
+        // Appliquer AIB selon le mode
+        if ($company->aib_mode === 'auto') {
+            $sale->aib_rate = $sale->determineAibRate();
+            $sale->aib_amount = $sale->calculateAibAmount();
+        } elseif ($company->aib_mode === 'disabled') {
+            $sale->aib_rate = null;
+            $sale->aib_amount = 0;
+        }
+        // En mode 'manual', on laisse la valeur saisie par l'utilisateur
     }
 
     /**

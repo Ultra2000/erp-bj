@@ -30,14 +30,15 @@ class PaymentResource extends Resource
 
     protected static ?int $navigationSort = 15;
 
+    // Masquer - fonctionnalité désactivée
     public static function shouldRegisterNavigation(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public static function canAccess(): bool
     {
-        return Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
+        return false;
     }
 
     public static function form(Form $form): Form

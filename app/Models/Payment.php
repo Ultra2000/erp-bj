@@ -98,7 +98,20 @@ class Payment extends Model
         parent::boot();
 
         static::created(function (Payment $payment) {
+            // DESACTIVE: Module comptabilité désactivé
+            /*
             try {
+                // Charger le document payé explicitement sans global scopes
+                // pour éviter les problèmes de tenant dans les contextes non-Filament
+                $payableClass = $payment->payable_type;
+                if ($payableClass && $payment->payable_id) {
+                    $payable = $payableClass::withoutGlobalScopes()->find($payment->payable_id);
+                    if ($payable) {
+                        // Mettre en relation pour que createEntriesForPayment puisse l'utiliser
+                        $payment->setRelation('payable', $payable);
+                    }
+                }
+                
                 $accountingService = app(\App\Services\AccountingEntryService::class);
                 $accountingService->createEntriesForPayment($payment);
             } catch (\Exception $e) {
@@ -106,6 +119,7 @@ class Payment extends Model
                     "Erreur génération écritures paiement : " . $e->getMessage()
                 );
             }
+            */
         });
     }
 

@@ -21,6 +21,17 @@ class PpfSetupWizard extends Page implements Forms\Contracts\HasForms
     protected static ?string $navigationGroup = 'Administration';
     protected static ?int $navigationSort = 4;
 
+    // Masquer - fonctionnalité française (PPF/Chorus Pro)
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     protected static string $view = 'filament.pages.ppf-setup-wizard';
 
     public int $currentStep = 1;
@@ -455,24 +466,5 @@ class PpfSetupWizard extends Page implements Forms\Contracts\HasForms
     public function goToSales(): void
     {
         $this->redirect(route('filament.admin.resources.sales.index', ['tenant' => Filament::getTenant()->slug]));
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        $company = Filament::getTenant();
-        if (!$company) return false;
-
-        // Vérifier d'abord si le module est activé
-        if (!$company->isModuleEnabled('e_invoicing')) return false;
-
-        // Masquer si déjà configuré
-        $integration = $company->integrations()->where('service_name', 'ppf')->first();
-        return !($integration && $integration->is_active && !empty($integration->settings['fournisseur_login']));
-    }
-
-    public static function canAccess(): bool
-    {
-        $company = Filament::getTenant();
-        return $company?->isModuleEnabled('e_invoicing') ?? false;
     }
 }
