@@ -30,6 +30,7 @@ class Product extends Model
         'company_id',
         'name',
         'code',
+        'barcode',
         'barcode_type',
         'description',
         'purchase_price',

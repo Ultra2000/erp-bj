@@ -67,12 +67,18 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\TextInput::make('code')
-                            ->label('Code')
+                            ->label('Code interne')
                             ->maxLength(255)
                             ->helperText('Généré automatiquement à la création')
                             ->disabled()
                             ->dehydrated(false)
                             ->visibleOn('edit'),
+                        Forms\Components\TextInput::make('barcode')
+                            ->label('Code-barres')
+                            ->maxLength(255)
+                            ->helperText('Code-barres scannable (EAN-13, Code 128, etc.)')
+                            ->placeholder('Scannez ou saisissez le code-barres')
+                            ->suffixIcon('heroicon-o-qr-code'),
                         Forms\Components\Select::make('barcode_type')
                             ->label('Type code-barres')
                             ->options([
@@ -428,7 +434,14 @@ class ProductResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('code')
                     ->label('Code')
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('barcode')
+                    ->label('Code-barres')
+                    ->searchable()
+                    ->placeholder('—')
+                    ->icon('heroicon-o-qr-code')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\ViewColumn::make('barcode_preview')
                     ->label('Aperçu')
                     ->view('tables.columns.barcode-preview')

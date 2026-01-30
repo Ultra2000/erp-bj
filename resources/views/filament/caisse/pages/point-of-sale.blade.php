@@ -7,6 +7,7 @@
         @keydown.f3.window="focusBarcode()"
         @keydown.f12.window="submitSale()"
         @keydown.escape.window="clearCart()"
+        @keydown.window="handleBarcodeScanner($event)"
     >
         {{-- Barre d'état session --}}
         <template x-if="!hasSession">
@@ -304,6 +305,35 @@
                 </div>
             </div>
         </template>
+        
+        {{-- Indicateur de scan douchette --}}
+        <template x-if="scannerBuffer.length > 0">
+            <div class="fixed top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2">
+                <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                </svg>
+                <span class="font-mono" x-text="'Scan: ' + scannerBuffer"></span>
+            </div>
+        </template>
+        
+        {{-- Message de scan (succès/erreur) --}}
+        <template x-if="showScanMessage">
+            <div 
+                class="fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg shadow-xl z-50 flex items-center gap-3 font-medium text-lg transition-all"
+                :class="{
+                    'bg-emerald-600 text-white': scanMessageType === 'success',
+                    'bg-red-600 text-white': scanMessageType === 'error'
+                }"
+            >
+                <svg x-show="scanMessageType === 'success'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <svg x-show="scanMessageType === 'error'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span x-text="scanMessage"></span>
+            </div>
+        </template>
     </div>
 
     <script>
@@ -326,6 +356,16 @@
                 showCameraModal: false,
                 lastScannedCode: '',
                 codeReader: null,
+                
+                // Détection douchette automatique
+                scannerBuffer: '',
+                scannerTimeout: null,
+                scannerLastKeyTime: 0,
+                
+                // Feedback scan
+                scanMessage: '',
+                scanMessageType: '', // 'success' ou 'error'
+                showScanMessage: false,
                 
                 // Feedback
                 showSuccess: false,
@@ -368,6 +408,61 @@
                 focusBarcode() {
                     this.$refs.barcodeInput?.focus();
                 },
+                
+                /**
+                 * Détection automatique de la douchette USB
+                 * Les scanners laser comme DST X-9100 envoient les caractères très rapidement (<50ms entre chaque)
+                 * puis un Enter. Cette fonction capture cette séquence.
+                 */
+                handleBarcodeScanner(event) {
+                    // Ignorer si on tape dans un input/textarea
+                    const target = event.target;
+                    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+                        return;
+                    }
+                    
+                    // Ignorer les touches de fonction et modificateurs
+                    if (event.ctrlKey || event.altKey || event.metaKey || event.key.length > 1 && event.key !== 'Enter') {
+                        return;
+                    }
+                    
+                    const now = Date.now();
+                    const timeSinceLastKey = now - this.scannerLastKeyTime;
+                    
+                    // Si Enter et on a des données dans le buffer
+                    if (event.key === 'Enter' && this.scannerBuffer.length > 0) {
+                        event.preventDefault();
+                        const scannedCode = this.scannerBuffer.trim();
+                        this.scannerBuffer = '';
+                        
+                        // Traiter le code-barres scanné
+                        if (scannedCode.length >= 3) { // Code-barres minimum 3 caractères
+                            this.scanBarcode(scannedCode);
+                        }
+                        return;
+                    }
+                    
+                    // Reset du buffer si trop de temps entre les touches (>100ms = saisie humaine)
+                    if (timeSinceLastKey > 100) {
+                        this.scannerBuffer = '';
+                    }
+                    
+                    // Accumuler les caractères si saisie rapide (<50ms = scanner)
+                    if (event.key.length === 1 && timeSinceLastKey < 100) {
+                        event.preventDefault();
+                        this.scannerBuffer += event.key;
+                        this.scannerLastKeyTime = now;
+                        
+                        // Safety timeout: traiter le buffer après 200ms d'inactivité
+                        clearTimeout(this.scannerTimeout);
+                        this.scannerTimeout = setTimeout(() => {
+                            if (this.scannerBuffer.length >= 3) {
+                                this.scanBarcode(this.scannerBuffer.trim());
+                            }
+                            this.scannerBuffer = '';
+                        }, 200);
+                    }
+                },
 
                 async searchProducts() {
                     if (!this.searchQuery.trim()) {
@@ -384,12 +479,19 @@
 
                 async scanBarcode(code) {
                     if (!code.trim()) return;
+                    
+                    console.log('🔍 Recherche code-barres:', code);
+                    
                     const product = await this.$wire.getProductByBarcode(code.trim());
                     if (product) {
                         this.addToCart(product);
-                        this.playBeep();
+                        this.playBeep(true); // Beep succès
+                        
+                        // Flash visuel de succès
+                        this.showScanSuccess(product.name);
                     } else {
-                        alert('Produit non trouvé: ' + code);
+                        this.playBeep(false); // Beep échec
+                        this.showScanError('Produit non trouvé: ' + code);
                     }
                 },
 
@@ -569,9 +671,50 @@
                     });
                 },
 
-                playBeep() {
-                    if (navigator.vibrate) navigator.vibrate(50);
-                    // Audio beep could be added here
+                playBeep(success = true) {
+                    // Vibration si disponible
+                    if (navigator.vibrate) {
+                        navigator.vibrate(success ? 50 : [100, 50, 100]);
+                    }
+                    
+                    // Beep audio
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.value = success ? 800 : 400; // Fréquence plus haute pour succès
+                        oscillator.type = 'sine';
+                        
+                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + 0.1);
+                    } catch (e) {
+                        console.log('Audio not available');
+                    }
+                },
+                
+                showScanSuccess(productName) {
+                    this.scanMessage = '✓ ' + productName + ' ajouté';
+                    this.scanMessageType = 'success';
+                    this.showScanMessage = true;
+                    setTimeout(() => {
+                        this.showScanMessage = false;
+                    }, 2000);
+                },
+                
+                showScanError(message) {
+                    this.scanMessage = '✗ ' + message;
+                    this.scanMessageType = 'error';
+                    this.showScanMessage = true;
+                    setTimeout(() => {
+                        this.showScanMessage = false;
+                    }, 3000);
                 }
             };
         }
