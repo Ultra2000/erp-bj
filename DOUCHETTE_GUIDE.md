@@ -44,14 +44,18 @@ Lors du scan, vous verrez :
 ### Vérifier/Modifier les codes-barres
 1. Allez dans **Produits** > Liste des produits
 2. Éditez un produit
-3. Remplissez le champ **"Code"** avec le code-barres du produit
+3. Remplissez le champ **"Code-barres"** avec le code-barres physique du produit
+   - Le champ **"Code interne"** est généré automatiquement par le système
+   - Le champ **"Code-barres"** doit contenir le code-barres de l'étiquette physique
 4. Types de codes-barres supportés :
-   - EAN-13 (codes-barres européens)
+   - EAN-13 (codes-barres européens standards)
    - EAN-8
    - Code 128
-   - UPC
+   - UPC-A / UPC-E
    - Code 39
    - et autres formats standards
+
+> 💡 **Astuce** : Vous pouvez utiliser votre douchette pour scanner directement dans le champ "Code-barres" lors de l'édition d'un produit !
 
 ### Générer des codes-barres
 Si vos produits n'ont pas de code-barres :
@@ -68,7 +72,8 @@ Si vos produits n'ont pas de code-barres :
 - ✅ Ne cliquez pas dans un champ de saisie avant de scanner
 
 ### Les produits ne sont pas trouvés
-- ✅ Vérifiez que le champ "Code" du produit correspond au code-barres scanné
+- ✅ Vérifiez que le champ **"Code-barres"** du produit correspond au code scanné
+- ✅ Le champ "Code interne" (généré automatiquement) est différent du "Code-barres"
 - ✅ Le code doit être exact (respecter les espaces et caractères)
 - ✅ Consultez les logs : ouvrez la console navigateur (F12) pour voir le code scanné
 
