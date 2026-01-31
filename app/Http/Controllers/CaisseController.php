@@ -386,6 +386,13 @@ class CaisseController extends Controller
 
         $company = Company::find($companyId);
         $warehouse = $this->getUserWarehouse($request);
+        
+        \Log::info('POS Sale Start', [
+            'company_id' => $companyId,
+            'warehouse' => $warehouse ? ['id' => $warehouse->id, 'name' => $warehouse->name] : null,
+            'user' => auth()->user()?->email,
+            'items_count' => count($items)
+        ]);
 
         try {
             // 1. PRÉ-CALCULER les totaux AVANT toute opération
@@ -476,12 +483,25 @@ class CaisseController extends Controller
                     
                     // Déstockage manuel pour assurer la cohérence
                     if ($warehouse) {
+                        \Log::info('POS Stock Deduction', [
+                            'warehouse_id' => $warehouse->id,
+                            'warehouse_name' => $warehouse->name,
+                            'product_id' => $itemData['product_id'],
+                            'quantity' => $itemData['quantity'],
+                            'sale' => $sale->invoice_number
+                        ]);
+                        
                         $warehouse->deductStockFIFO(
                             $itemData['product_id'],
                             $itemData['quantity'],
                             'sale',
                             "Vente POS " . $sale->invoice_number
                         );
+                    } else {
+                        \Log::warning('POS No Warehouse', [
+                            'sale' => $sale->invoice_number,
+                            'product_id' => $itemData['product_id'],
+                        ]);
                     }
                 }
                 
