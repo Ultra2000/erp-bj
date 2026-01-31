@@ -25,12 +25,26 @@ class AttendanceQrDisplay extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return !static::isCashierUser();
+        if (static::isCashierUser()) {
+            return false;
+        }
+        $tenant = \Filament\Facades\Filament::getTenant();
+        if (!$tenant?->isModuleEnabled('hr')) {
+            return false;
+        }
+        return auth()->user()?->isAdmin() || auth()->user()?->isManager();
     }
 
     public static function canAccess(): bool
     {
-        return !static::isCashierUser();
+        if (static::isCashierUser()) {
+            return false;
+        }
+        $tenant = \Filament\Facades\Filament::getTenant();
+        if (!$tenant?->isModuleEnabled('hr')) {
+            return false;
+        }
+        return auth()->user()?->isAdmin() || auth()->user()?->isManager();
     }
 
     public ?int $warehouseId = null;
@@ -104,16 +118,5 @@ class AttendanceQrDisplay extends Page
         }
 
         return max(0, $this->currentToken->expires_at->diffInSeconds(now()));
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        $tenant = \Filament\Facades\Filament::getTenant();
-        if (!$tenant?->isModuleEnabled('hr')) {
-            return false;
-        }
-        
-        // Afficher uniquement pour les admins/managers
-        return auth()->user()?->isAdmin() || auth()->user()?->isManager();
     }
 }
