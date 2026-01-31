@@ -279,12 +279,8 @@
                         </button>
                     </div>
                     <div class="p-4">
-                        <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
-                            <video x-ref="cameraVideo" class="w-full h-full object-cover" playsinline autoplay muted></video>
-                            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div class="w-64 h-32 border-2 border-emerald-400 rounded-lg"></div>
-                            </div>
-                        </div>
+                        {{-- Container pour Html5QrcodeScanner --}}
+                        <div id="qr-reader" style="width: 100%; min-height: 300px;"></div>
                         <div class="mt-4 text-center text-sm text-gray-500" x-text="lastScannedCode ? 'Dernier code: ' + lastScannedCode : 'Placez le code-barres dans le cadre'"></div>
                     </div>
                 </div>
@@ -355,7 +351,7 @@
                 // Scanner
                 showCameraModal: false,
                 lastScannedCode: '',
-                codeReader: null,
+                html5QrcodeScanner: null,
                 
                 // Détection douchette automatique
                 scannerBuffer: '',
@@ -615,6 +611,7 @@
                 // Scanner caméra
                 async openCameraScanner() {
                     this.showCameraModal = true;
+                    this.cameraLoading = true;
                     await this.$nextTick();
                     this.startCamera();
                 },
@@ -625,83 +622,93 @@
                 },
 
                 async startCamera() {
-                    const video = this.$refs.cameraVideo;
+                    // Charger la bibliothèque Html5Qrcode
+                    if (!window.Html5Qrcode) {
+                        await this.loadHtml5QrCode();
+                    }
                     
                     try {
-                        // Demander l'accès à la caméra directement
-                        const stream = await navigator.mediaDevices.getUserMedia({
-                            video: {
-                                facingMode: 'environment', // Caméra arrière
-                                width: { ideal: 1280 },
-                                height: { ideal: 720 }
-                            }
-                        });
+                        const self = this;
                         
-                        video.srcObject = stream;
-                        await video.play();
-                        
-                        // Charger ZXing pour la détection
-                        if (!window.ZXing) {
-                            await this.loadZxing();
-                        }
-                        
-                        // Scanner en continu
-                        this.codeReader = new window.ZXing.BrowserMultiFormatReader();
-                        this.scanInterval = setInterval(async () => {
-                            if (!this.showCameraModal) {
-                                clearInterval(this.scanInterval);
-                                return;
+                        // Configuration du scanner
+                        const config = {
+                            fps: 10,
+                            qrbox: { width: 250, height: 150 },
+                            aspectRatio: 1.777778,
+                            // Forcer la caméra arrière par défaut
+                            videoConstraints: {
+                                facingMode: { ideal: "environment" }
                             }
-                            
-                            try {
-                                const result = await this.codeReader.decodeFromVideoElement(video);
-                                if (result) {
-                                    this.lastScannedCode = result.getText();
-                                    this.scanBarcode(this.lastScannedCode);
-                                    this.closeCameraScanner();
-                                }
-                            } catch (e) {
-                                // Pas de code détecté, continuer à scanner
+                        };
+                        
+                        // Créer le scanner
+                        this.html5QrcodeScanner = new Html5Qrcode("qr-reader");
+                        
+                        // Démarrer le scan avec la caméra arrière
+                        await this.html5QrcodeScanner.start(
+                            { facingMode: "environment" },
+                            config,
+                            (decodedText, decodedResult) => {
+                                // Code détecté !
+                                self.lastScannedCode = decodedText;
+                                self.playBeep(true);
+                                self.scanBarcode(decodedText);
+                                self.closeCameraScanner();
+                            },
+                            (errorMessage) => {
+                                // Pas de code détecté (normal, continuer à scanner)
                             }
-                        }, 500);
+                        );
                         
                     } catch (e) {
                         console.error('Camera error:', e);
-                        alert('Erreur caméra: ' + e.message + '\n\nAssurez-vous que:\n- Vous utilisez HTTPS\n- Vous avez autorisé l\'accès à la caméra');
+                        
+                        // Si la caméra arrière échoue, essayer n'importe quelle caméra
+                        try {
+                            const cameras = await Html5Qrcode.getCameras();
+                            if (cameras && cameras.length > 0) {
+                                const self = this;
+                                await this.html5QrcodeScanner.start(
+                                    cameras[cameras.length - 1].id, // Dernière caméra (souvent arrière)
+                                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                                    (decodedText) => {
+                                        self.lastScannedCode = decodedText;
+                                        self.playBeep(true);
+                                        self.scanBarcode(decodedText);
+                                        self.closeCameraScanner();
+                                    },
+                                    () => {}
+                                );
+                            } else {
+                                throw new Error('Aucune caméra disponible');
+                            }
+                        } catch (e2) {
+                            alert('Erreur caméra: ' + e.message + '\n\nAssurez-vous que:\n- Vous utilisez HTTPS\n- Vous avez autorisé l\'accès à la caméra');
+                        }
                     }
                 },
 
                 stopCamera() {
-                    if (this.scanInterval) {
-                        clearInterval(this.scanInterval);
-                    }
-                    if (this.codeReader) {
-                        this.codeReader.reset();
-                    }
-                    const video = this.$refs.cameraVideo;
-                    if (video?.srcObject) {
-                        video.srcObject.getTracks().forEach(t => t.stop());
-                        video.srcObject = null;
+                    if (this.html5QrcodeScanner) {
+                        try {
+                            this.html5QrcodeScanner.stop().then(() => {
+                                this.html5QrcodeScanner.clear();
+                            }).catch(err => console.log('Scanner stop error:', err));
+                        } catch (e) {
+                            console.log('Scanner cleanup error:', e);
+                        }
+                        this.html5QrcodeScanner = null;
                     }
                 },
 
-                loadZxing() {
+                loadHtml5QrCode() {
                     return new Promise((resolve, reject) => {
-                        if (window.ZXing) return resolve();
+                        if (window.Html5Qrcode) return resolve();
+                        
                         const script = document.createElement('script');
-                        script.src = 'https://unpkg.com/@aspect/browser@0.1.4/umd/index.min.js';
-                        script.onload = () => {
-                            // Fallback si la bibliothèque n'est pas disponible
-                            if (!window.ZXing) {
-                                window.ZXing = window.ZXingBrowser || { BrowserMultiFormatReader: class { decodeFromVideoElement() { return null; } reset() {} } };
-                            }
-                            resolve();
-                        };
-                        script.onerror = () => {
-                            // Créer un mock si le chargement échoue
-                            window.ZXing = { BrowserMultiFormatReader: class { decodeFromVideoElement() { return null; } reset() {} } };
-                            resolve();
-                        };
+                        script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+                        script.onload = () => resolve();
+                        script.onerror = () => reject(new Error('Impossible de charger la bibliothèque de scan'));
                         document.head.appendChild(script);
                     });
                 },
