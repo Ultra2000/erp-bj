@@ -278,9 +278,26 @@
                     </button>
                 </div>
                 <div class="p-4">
-                    {{-- Container pour Html5QrcodeScanner --}}
-                    <div id="qr-reader" style="width: 100%; min-height: 300px; background: #000;"></div>
+                    {{-- Vidéo native --}}
+                    <div class="relative bg-black rounded-lg overflow-hidden" style="min-height: 300px;">
+                        <video x-ref="cameraVideo" 
+                            class="w-full h-full object-cover"
+                            style="min-height: 300px;"
+                            autoplay 
+                            muted 
+                            playsinline></video>
+                        {{-- Cadre de scan --}}
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div class="w-64 h-32 border-2 border-emerald-400 rounded-lg"></div>
+                        </div>
+                        {{-- Message d'état --}}
+                        <div x-show="cameraStatus" class="absolute bottom-2 left-2 right-2 bg-black/70 text-white text-xs p-2 rounded" x-text="cameraStatus"></div>
+                    </div>
                     <div class="mt-4 text-center text-sm text-gray-500" x-text="lastScannedCode ? 'Dernier code: ' + lastScannedCode : 'Placez le code-barres dans le cadre'"></div>
+                    {{-- Bouton pour changer de caméra --}}
+                    <button @click="switchCameraFacing()" class="mt-2 w-full py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">
+                        🔄 Changer de caméra (Frontale/Dorsale)
+                    </button>
                 </div>
             </div>
         </div>
@@ -349,7 +366,9 @@
                 // Scanner
                 showCameraModal: false,
                 lastScannedCode: '',
-                html5QrcodeScanner: null,
+                cameraStatus: '',
+                cameraStream: null,
+                useFrontCamera: false,
                 
                 // Détection douchette automatique
                 scannerBuffer: '',
@@ -610,121 +629,118 @@
                 async openCameraScanner() {
                     console.log('openCameraScanner called');
                     this.showCameraModal = true;
+                    this.cameraStatus = 'Démarrage de la caméra...';
                     await this.$nextTick();
-                    this.startCamera();
+                    await this.startCamera();
                 },
 
                 closeCameraScanner() {
                     this.stopCamera();
                     this.showCameraModal = false;
+                    this.cameraStatus = '';
                 },
 
                 async startCamera() {
-                    console.log('startCamera called');
+                    const video = this.$refs.cameraVideo;
                     
-                    // Charger la bibliothèque Html5Qrcode
-                    if (!window.Html5Qrcode) {
-                        console.log('Loading Html5Qrcode library...');
-                        await this.loadHtml5QrCode();
-                        console.log('Html5Qrcode loaded:', !!window.Html5Qrcode);
-                    }
-                    
-                    // Attendre que le DOM soit prêt
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                    const readerElement = document.getElementById('qr-reader');
-                    if (!readerElement) {
-                        console.error('qr-reader element not found!');
-                        alert('Erreur: élément scanner non trouvé');
+                    if (!video) {
+                        console.error('Video element not found');
+                        this.cameraStatus = 'Erreur: élément vidéo non trouvé';
                         return;
                     }
-                    console.log('qr-reader element found, size:', readerElement.offsetWidth, 'x', readerElement.offsetHeight);
+                    
+                    console.log('Video element:', video);
+                    
+                    // Vérifier si getUserMedia est disponible
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        this.cameraStatus = 'Caméra non supportée par ce navigateur';
+                        alert('Votre navigateur ne supporte pas l\'accès à la caméra.\nUtilisez Chrome ou Firefox avec HTTPS.');
+                        return;
+                    }
                     
                     try {
-                        const self = this;
+                        this.cameraStatus = 'Demande d\'accès à la caméra...';
                         
-                        // Créer le scanner
-                        this.html5QrcodeScanner = new Html5Qrcode("qr-reader");
-                        console.log('Html5Qrcode instance created');
-                        
-                        // Lister les caméras disponibles
-                        const cameras = await Html5Qrcode.getCameras();
-                        console.log('Cameras found:', cameras.length, cameras);
-                        
-                        if (!cameras || cameras.length === 0) {
-                            throw new Error('Aucune caméra détectée');
-                        }
-                        
-                        // Trouver la caméra arrière
-                        let cameraId = cameras[0].id;
-                        for (const camera of cameras) {
-                            const label = camera.label.toLowerCase();
-                            if (label.includes('back') || label.includes('rear') || label.includes('arrière') || label.includes('environment')) {
-                                cameraId = camera.id;
-                                break;
-                            }
-                        }
-                        // Sur mobile, la dernière caméra est souvent la caméra arrière
-                        if (cameras.length > 1) {
-                            cameraId = cameras[cameras.length - 1].id;
-                        }
-                        
-                        console.log('Using camera:', cameraId);
-                        
-                        // Configuration
-                        const config = {
-                            fps: 10,
-                            qrbox: { width: 250, height: 150 },
-                            aspectRatio: 1.333333
+                        // Contraintes vidéo
+                        const constraints = {
+                            video: {
+                                facingMode: this.useFrontCamera ? 'user' : 'environment',
+                                width: { ideal: 1280 },
+                                height: { ideal: 720 }
+                            },
+                            audio: false
                         };
                         
-                        // Démarrer le scan
-                        await this.html5QrcodeScanner.start(
-                            cameraId,
-                            config,
-                            (decodedText, decodedResult) => {
-                                console.log('Code detected:', decodedText);
-                                self.lastScannedCode = decodedText;
-                                self.playBeep(true);
-                                self.scanBarcode(decodedText);
-                                self.closeCameraScanner();
-                            },
-                            (errorMessage) => {
-                                // Pas de code détecté - normal
+                        console.log('Requesting camera with constraints:', constraints);
+                        
+                        // Demander l'accès à la caméra
+                        this.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                        
+                        console.log('Got stream:', this.cameraStream);
+                        console.log('Video tracks:', this.cameraStream.getVideoTracks());
+                        
+                        // Assigner le flux à la vidéo
+                        video.srcObject = this.cameraStream;
+                        
+                        // Attendre que la vidéo soit prête
+                        video.onloadedmetadata = () => {
+                            console.log('Video metadata loaded, playing...');
+                            video.play().then(() => {
+                                console.log('Video playing!');
+                                this.cameraStatus = 'Caméra active - Scannez un code-barres';
+                            }).catch(err => {
+                                console.error('Play error:', err);
+                                this.cameraStatus = 'Erreur lecture vidéo: ' + err.message;
+                            });
+                        };
+                        
+                    } catch (err) {
+                        console.error('Camera error:', err);
+                        
+                        let message = 'Erreur caméra: ' + err.message;
+                        if (err.name === 'NotAllowedError') {
+                            message = 'Accès à la caméra refusé. Autorisez l\'accès dans les paramètres du navigateur.';
+                        } else if (err.name === 'NotFoundError') {
+                            message = 'Aucune caméra trouvée sur cet appareil.';
+                        } else if (err.name === 'NotReadableError') {
+                            message = 'La caméra est utilisée par une autre application.';
+                        } else if (err.name === 'OverconstrainedError') {
+                            // Essayer sans contraintes spécifiques
+                            try {
+                                this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                                video.srcObject = this.cameraStream;
+                                video.onloadedmetadata = () => video.play();
+                                this.cameraStatus = 'Caméra active (mode basique)';
+                                return;
+                            } catch (e2) {
+                                message = 'Impossible d\'accéder à la caméra: ' + e2.message;
                             }
-                        );
+                        }
                         
-                        console.log('Scanner started successfully');
-                        
-                    } catch (e) {
-                        console.error('Camera error:', e);
-                        alert('Erreur caméra: ' + e.message + '\n\nAssurez-vous que:\n- Vous utilisez HTTPS\n- Vous avez autorisé l\'accès à la caméra\n- Une caméra est disponible');
+                        this.cameraStatus = message;
+                        alert(message);
                     }
+                },
+                
+                async switchCameraFacing() {
+                    this.useFrontCamera = !this.useFrontCamera;
+                    this.stopCamera();
+                    await this.startCamera();
                 },
 
                 stopCamera() {
-                    if (this.html5QrcodeScanner) {
-                        try {
-                            this.html5QrcodeScanner.stop().then(() => {
-                                this.html5QrcodeScanner.clear();
-                            }).catch(err => console.log('Scanner stop error:', err));
-                        } catch (e) {
-                            console.log('Scanner cleanup error:', e);
-                        }
-                        this.html5QrcodeScanner = null;
+                    if (this.cameraStream) {
+                        this.cameraStream.getTracks().forEach(track => {
+                            track.stop();
+                            console.log('Track stopped:', track.label);
+                        });
+                        this.cameraStream = null;
                     }
-                },
-
-                loadHtml5QrCode() {
-                    return new Promise((resolve, reject) => {
-                        if (window.Html5Qrcode) return resolve();
-                        
-                        const script = document.createElement('script');
-                        script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-                        script.onload = () => resolve();
-                        script.onerror = () => reject(new Error('Impossible de charger la bibliothèque de scan'));
-                        document.head.appendChild(script);
-                    });
+                    
+                    const video = this.$refs.cameraVideo;
+                    if (video) {
+                        video.srcObject = null;
+                    }
                 },
 
                 playBeep(success = true) {
