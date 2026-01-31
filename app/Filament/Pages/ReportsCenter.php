@@ -32,12 +32,22 @@ class ReportsCenter extends Page implements HasForms
 
     public static function shouldRegisterNavigation(): bool
     {
-        return !static::isCashierUser();
+        if (static::isCashierUser()) {
+            return false;
+        }
+        $company = Filament::getTenant();
+        if (!$company) return true;
+        return $company->isModuleEnabled('accounting');
     }
 
     public static function canAccess(): bool
     {
-        return !static::isCashierUser();
+        if (static::isCashierUser()) {
+            return false;
+        }
+        $company = Filament::getTenant();
+        if (!$company) return true;
+        return $company->isModuleEnabled('accounting');
     }
 
     // Formulaire état des stocks
@@ -130,13 +140,5 @@ class ReportsCenter extends Page implements HasForms
         return Warehouse::where('company_id', $this->getCompanyId())
             ->pluck('name', 'id')
             ->toArray();
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        $company = Filament::getTenant();
-        if (!$company) return true;
-        
-        return $company->isModuleEnabled('accounting');
     }
 }
