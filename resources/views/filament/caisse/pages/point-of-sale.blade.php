@@ -608,8 +608,8 @@
 
                 // Scanner caméra
                 async openCameraScanner() {
+                    console.log('openCameraScanner called');
                     this.showCameraModal = true;
-                    this.cameraLoading = true;
                     await this.$nextTick();
                     this.startCamera();
                 },
