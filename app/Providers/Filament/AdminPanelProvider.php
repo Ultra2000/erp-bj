@@ -139,6 +139,7 @@ class AdminPanelProvider extends PanelProvider
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
                 \App\Http\Middleware\RedirectToTenant::class,
+                \App\Http\Middleware\RedirectCashierToPOS::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

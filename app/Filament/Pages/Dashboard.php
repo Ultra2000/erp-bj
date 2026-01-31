@@ -31,8 +31,31 @@ class Dashboard extends Page implements HasForms
 
     public ?int $selectedWarehouse = null;
 
+    /**
+     * Cacher le dashboard pour les caissiers
+     */
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+        return !$user?->hasWarehouseRestriction();
+    }
+
+    /**
+     * Rediriger les caissiers vers le POS
+     */
     public function mount(): void
     {
+        $user = auth()->user();
+        
+        // Si c'est un caissier, rediriger vers le POS
+        if ($user && $user->hasWarehouseRestriction()) {
+            $tenant = Filament::getTenant();
+            if ($tenant) {
+                redirect()->to(route('filament.admin.pages.cash-register-page', ['tenant' => $tenant->slug]));
+                return;
+            }
+        }
+        
         // Par défaut, afficher tous les entrepôts (null = tous)
         $this->selectedWarehouse = null;
     }
