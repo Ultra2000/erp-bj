@@ -267,25 +267,23 @@
         </div>
 
         {{-- Modal Scanner Caméra --}}
-        <template x-if="showCameraModal">
-            <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-                    <div class="bg-emerald-600 text-white p-4 flex justify-between items-center">
-                        <h3 class="text-lg font-bold">Scanner code-barres</h3>
-                        <button @click="closeCameraScanner()" class="hover:bg-emerald-700 rounded-full p-1">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="p-4">
-                        {{-- Container pour Html5QrcodeScanner --}}
-                        <div id="qr-reader" style="width: 100%; min-height: 300px;"></div>
-                        <div class="mt-4 text-center text-sm text-gray-500" x-text="lastScannedCode ? 'Dernier code: ' + lastScannedCode : 'Placez le code-barres dans le cadre'"></div>
-                    </div>
+        <div x-show="showCameraModal" x-cloak class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div class="bg-emerald-600 text-white p-4 flex justify-between items-center">
+                    <h3 class="text-lg font-bold">Scanner code-barres</h3>
+                    <button @click="closeCameraScanner()" class="hover:bg-emerald-700 rounded-full p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4">
+                    {{-- Container pour Html5QrcodeScanner --}}
+                    <div id="qr-reader" style="width: 100%; min-height: 300px; background: #000;"></div>
+                    <div class="mt-4 text-center text-sm text-gray-500" x-text="lastScannedCode ? 'Dernier code: ' + lastScannedCode : 'Placez le code-barres dans le cadre'"></div>
                 </div>
             </div>
-        </template>
+        </div>
 
         {{-- Notification succès --}}
         <template x-if="showSuccess">
@@ -622,69 +620,85 @@
                 },
 
                 async startCamera() {
+                    console.log('startCamera called');
+                    
                     // Charger la bibliothèque Html5Qrcode
                     if (!window.Html5Qrcode) {
+                        console.log('Loading Html5Qrcode library...');
                         await this.loadHtml5QrCode();
+                        console.log('Html5Qrcode loaded:', !!window.Html5Qrcode);
                     }
+                    
+                    // Attendre que le DOM soit prêt
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    const readerElement = document.getElementById('qr-reader');
+                    if (!readerElement) {
+                        console.error('qr-reader element not found!');
+                        alert('Erreur: élément scanner non trouvé');
+                        return;
+                    }
+                    console.log('qr-reader element found, size:', readerElement.offsetWidth, 'x', readerElement.offsetHeight);
                     
                     try {
                         const self = this;
                         
-                        // Configuration du scanner
+                        // Créer le scanner
+                        this.html5QrcodeScanner = new Html5Qrcode("qr-reader");
+                        console.log('Html5Qrcode instance created');
+                        
+                        // Lister les caméras disponibles
+                        const cameras = await Html5Qrcode.getCameras();
+                        console.log('Cameras found:', cameras.length, cameras);
+                        
+                        if (!cameras || cameras.length === 0) {
+                            throw new Error('Aucune caméra détectée');
+                        }
+                        
+                        // Trouver la caméra arrière
+                        let cameraId = cameras[0].id;
+                        for (const camera of cameras) {
+                            const label = camera.label.toLowerCase();
+                            if (label.includes('back') || label.includes('rear') || label.includes('arrière') || label.includes('environment')) {
+                                cameraId = camera.id;
+                                break;
+                            }
+                        }
+                        // Sur mobile, la dernière caméra est souvent la caméra arrière
+                        if (cameras.length > 1) {
+                            cameraId = cameras[cameras.length - 1].id;
+                        }
+                        
+                        console.log('Using camera:', cameraId);
+                        
+                        // Configuration
                         const config = {
                             fps: 10,
                             qrbox: { width: 250, height: 150 },
-                            aspectRatio: 1.777778,
-                            // Forcer la caméra arrière par défaut
-                            videoConstraints: {
-                                facingMode: { ideal: "environment" }
-                            }
+                            aspectRatio: 1.333333
                         };
                         
-                        // Créer le scanner
-                        this.html5QrcodeScanner = new Html5Qrcode("qr-reader");
-                        
-                        // Démarrer le scan avec la caméra arrière
+                        // Démarrer le scan
                         await this.html5QrcodeScanner.start(
-                            { facingMode: "environment" },
+                            cameraId,
                             config,
                             (decodedText, decodedResult) => {
-                                // Code détecté !
+                                console.log('Code detected:', decodedText);
                                 self.lastScannedCode = decodedText;
                                 self.playBeep(true);
                                 self.scanBarcode(decodedText);
                                 self.closeCameraScanner();
                             },
                             (errorMessage) => {
-                                // Pas de code détecté (normal, continuer à scanner)
+                                // Pas de code détecté - normal
                             }
                         );
                         
+                        console.log('Scanner started successfully');
+                        
                     } catch (e) {
                         console.error('Camera error:', e);
-                        
-                        // Si la caméra arrière échoue, essayer n'importe quelle caméra
-                        try {
-                            const cameras = await Html5Qrcode.getCameras();
-                            if (cameras && cameras.length > 0) {
-                                const self = this;
-                                await this.html5QrcodeScanner.start(
-                                    cameras[cameras.length - 1].id, // Dernière caméra (souvent arrière)
-                                    { fps: 10, qrbox: { width: 250, height: 150 } },
-                                    (decodedText) => {
-                                        self.lastScannedCode = decodedText;
-                                        self.playBeep(true);
-                                        self.scanBarcode(decodedText);
-                                        self.closeCameraScanner();
-                                    },
-                                    () => {}
-                                );
-                            } else {
-                                throw new Error('Aucune caméra disponible');
-                            }
-                        } catch (e2) {
-                            alert('Erreur caméra: ' + e.message + '\n\nAssurez-vous que:\n- Vous utilisez HTTPS\n- Vous avez autorisé l\'accès à la caméra');
-                        }
+                        alert('Erreur caméra: ' + e.message + '\n\nAssurez-vous que:\n- Vous utilisez HTTPS\n- Vous avez autorisé l\'accès à la caméra\n- Une caméra est disponible');
                     }
                 },
 
