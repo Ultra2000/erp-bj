@@ -57,10 +57,11 @@ class CaisseController extends Controller
         $user = auth()->user();
         
         if (!$companyId || !$user) {
+            \Log::warning('getUserWarehouse: No company or user', ['companyId' => $companyId, 'user' => $user?->email]);
             return null;
         }
 
-        // Si l'utilisateur a un entrepôt par défaut, l'utiliser
+        // 1. Si l'utilisateur a un entrepôt assigné, l'utiliser
         $userWarehouse = $user->warehouses()
             ->where('company_id', $companyId)
             ->where('is_active', true)
@@ -68,20 +69,43 @@ class CaisseController extends Controller
             ->first();
 
         if ($userWarehouse) {
+            \Log::info('getUserWarehouse: Found user warehouse', ['warehouse' => $userWarehouse->name]);
             return $userWarehouse;
         }
 
-        // Si l'utilisateur est admin, prendre l'entrepôt POS par défaut de l'entreprise
-        if ($user->is_super_admin || $user->isAdmin()) {
-            return Warehouse::where('company_id', $companyId)
-                ->where('is_active', true)
-                ->where(function($q) {
-                    $q->where('is_pos_location', true)
-                      ->orWhere('is_default', true);
-                })
-                ->first();
+        // 2. Chercher l'entrepôt POS de l'entreprise
+        $posWarehouse = Warehouse::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->where('is_pos_location', true)
+            ->first();
+            
+        if ($posWarehouse) {
+            \Log::info('getUserWarehouse: Found POS warehouse', ['warehouse' => $posWarehouse->name]);
+            return $posWarehouse;
         }
 
+        // 3. Chercher l'entrepôt par défaut de l'entreprise
+        $defaultWarehouse = Warehouse::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->first();
+            
+        if ($defaultWarehouse) {
+            \Log::info('getUserWarehouse: Found default warehouse', ['warehouse' => $defaultWarehouse->name]);
+            return $defaultWarehouse;
+        }
+
+        // 4. Prendre n'importe quel entrepôt actif de l'entreprise
+        $anyWarehouse = Warehouse::where('company_id', $companyId)
+            ->where('is_active', true)
+            ->first();
+            
+        if ($anyWarehouse) {
+            \Log::info('getUserWarehouse: Found any warehouse', ['warehouse' => $anyWarehouse->name]);
+            return $anyWarehouse;
+        }
+
+        \Log::warning('getUserWarehouse: No warehouse found for company', ['companyId' => $companyId]);
         return null;
     }
 
