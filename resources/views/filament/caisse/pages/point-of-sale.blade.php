@@ -712,25 +712,34 @@
                         navigator.vibrate(success ? 50 : [100, 50, 100]);
                     }
                     
-                    // Beep audio
+                    // Beep audio - créer AudioContext uniquement après interaction utilisateur
                     try {
-                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
+                        // Réutiliser ou créer l'AudioContext
+                        if (!this.audioContext) {
+                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        }
+                        
+                        // Reprendre si suspendu (politiques navigateur)
+                        if (this.audioContext.state === 'suspended') {
+                            this.audioContext.resume();
+                        }
+                        
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
                         
                         oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
+                        gainNode.connect(this.audioContext.destination);
                         
-                        oscillator.frequency.value = success ? 800 : 400; // Fréquence plus haute pour succès
+                        oscillator.frequency.value = success ? 800 : 400;
                         oscillator.type = 'sine';
                         
-                        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                        gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
                         
-                        oscillator.start(audioContext.currentTime);
-                        oscillator.stop(audioContext.currentTime + 0.1);
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + 0.1);
                     } catch (e) {
-                        console.log('Audio not available');
+                        // Ignorer silencieusement si l'audio n'est pas disponible
                     }
                 },
                 
