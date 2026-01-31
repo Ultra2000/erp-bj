@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InvitationResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Mail\InvitationMail;
 use App\Models\Invitation;
 use App\Models\Role;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Mail;
 
 class InvitationResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Invitation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-envelope';

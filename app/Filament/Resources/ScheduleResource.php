@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ScheduleResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Schedule;
 use App\Models\Employee;
 use Filament\Forms;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ScheduleResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Schedule::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';

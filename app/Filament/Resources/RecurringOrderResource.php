@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\RecurringOrderResource\Pages;
 use App\Filament\Resources\RecurringOrderResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\RecurringOrder;
 use App\Models\Product;
 use Filament\Forms;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RecurringOrderResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = RecurringOrder::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path';

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AttendanceLogResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\AttendanceLog;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -10,6 +11,7 @@ use Filament\Tables\Table;
 
 class AttendanceLogResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = AttendanceLog::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';

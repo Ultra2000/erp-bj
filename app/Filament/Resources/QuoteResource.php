@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuoteResource\Pages;
 use App\Filament\Resources\QuoteResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Quote;
 use App\Models\Customer;
 use App\Models\Product;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class QuoteResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Quote::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';

@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PurchaseResource\Pages;
 use App\Filament\Resources\PurchaseResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Purchase;
 use App\Models\Product;
 use App\Models\Warehouse;
@@ -17,6 +18,7 @@ use Illuminate\Support\Str;
 
 class PurchaseResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Purchase::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';

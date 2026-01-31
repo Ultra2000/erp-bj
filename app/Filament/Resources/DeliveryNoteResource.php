@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\DeliveryNoteResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\DeliveryNote;
 use App\Models\Sale;
 use Filament\Forms;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DeliveryNoteResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = DeliveryNote::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

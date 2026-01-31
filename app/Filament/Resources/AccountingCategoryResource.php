@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AccountingCategoryResource\Pages;
 use App\Filament\Resources\AccountingCategoryResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\AccountingCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AccountingCategoryResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = AccountingCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';

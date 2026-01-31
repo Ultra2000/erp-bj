@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\InventoryResource\Pages;
 use App\Filament\Resources\InventoryResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Inventory;
 use App\Models\Warehouse;
 use Filament\Forms;
@@ -17,6 +18,7 @@ use Filament\Notifications\Notification;
 
 class InventoryResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Inventory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';

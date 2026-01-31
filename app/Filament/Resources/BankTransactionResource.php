@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BankTransactionResource\Pages;
 use App\Filament\Resources\BankTransactionResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\BankTransaction;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -17,6 +18,7 @@ use Illuminate\Support\Collection;
 
 class BankTransactionResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = BankTransaction::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';

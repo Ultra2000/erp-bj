@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StockTransferResource\Pages;
 use App\Filament\Resources\StockTransferResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use App\Models\Product;
@@ -18,6 +19,7 @@ use Filament\Notifications\Notification;
 
 class StockTransferResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = StockTransfer::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

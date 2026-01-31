@@ -24,6 +24,22 @@ class ReportsCenter extends Page implements HasForms
 
     protected static string $view = 'filament.pages.reports-center';
 
+    protected static function isCashierUser(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->hasWarehouseRestriction();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return !static::isCashierUser();
+    }
+
+    public static function canAccess(): bool
+    {
+        return !static::isCashierUser();
+    }
+
     // Formulaire état des stocks
     public ?string $stock_warehouse_id = null;
     public bool $stock_low_only = false;

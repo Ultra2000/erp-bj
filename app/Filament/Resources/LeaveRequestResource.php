@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LeaveRequestResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\LeaveRequest;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class LeaveRequestResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = LeaveRequest::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calendar';

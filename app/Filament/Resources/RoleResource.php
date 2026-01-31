@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\RoleResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Permission;
 use App\Models\Role;
 use Filament\Forms;
@@ -15,6 +16,7 @@ use Illuminate\Support\Str;
 
 class RoleResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Role::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';

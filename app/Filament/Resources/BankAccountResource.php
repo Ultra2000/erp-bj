@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\BankAccountResource\Pages;
 use App\Filament\Resources\BankAccountResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\BankAccount;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class BankAccountResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = BankAccount::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';

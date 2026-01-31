@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PaymentResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\Purchase;
@@ -16,6 +17,7 @@ use Filament\Facades\Filament;
 
 class PaymentResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Payment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';

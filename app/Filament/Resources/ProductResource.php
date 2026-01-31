@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -19,6 +20,7 @@ use App\Models\Product as ProductModel;
 
 class ProductResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cube';

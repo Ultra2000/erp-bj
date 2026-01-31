@@ -38,8 +38,25 @@ class EmcefReport extends Page implements HasForms, HasTable
         $this->selectedMonth = (int) now()->month;
     }
 
+    protected static function isCashierUser(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->hasWarehouseRestriction();
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
+        if (static::isCashierUser()) {
+            return false;
+        }
+        return Filament::getTenant()?->emcef_enabled ?? false;
+    }
+
+    public static function canAccess(): bool
+    {
+        if (static::isCashierUser()) {
+            return false;
+        }
         return Filament::getTenant()?->emcef_enabled ?? false;
     }
 

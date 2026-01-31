@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Filament\Resources\EmployeeResource\RelationManagers;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Employee;
 use App\Models\Warehouse;
 use Filament\Forms;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class EmployeeResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Employee::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';

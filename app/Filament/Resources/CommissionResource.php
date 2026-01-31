@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CommissionResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\Commission;
 use App\Models\Employee;
 use Filament\Facades\Filament;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class CommissionResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = Commission::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-euro';

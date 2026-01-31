@@ -17,6 +17,22 @@ class AttendanceQrDisplay extends Page
 
     protected static string $view = 'filament.pages.h-r.attendance-qr-display';
 
+    protected static function isCashierUser(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->hasWarehouseRestriction();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return !static::isCashierUser();
+    }
+
+    public static function canAccess(): bool
+    {
+        return !static::isCashierUser();
+    }
+
     public ?int $warehouseId = null;
     public ?Warehouse $selectedWarehouse = null;
     public array $warehouses = [];

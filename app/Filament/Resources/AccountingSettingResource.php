@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\AccountingSettingResource\Pages;
+use App\Filament\Traits\RestrictedForCashier;
 use App\Models\AccountingSetting;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,6 +14,7 @@ use Filament\Facades\Filament;
 
 class AccountingSettingResource extends Resource
 {
+    use RestrictedForCashier;
     protected static ?string $model = AccountingSetting::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';

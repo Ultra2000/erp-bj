@@ -23,8 +23,25 @@ class ConsolidatedStock extends Page implements HasTable
     protected static ?string $title = 'Vue consolidée des stocks';
     protected static string $view = 'filament.pages.warehouse.consolidated-stock';
 
+    protected static function isCashierUser(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->hasWarehouseRestriction();
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
+        if (static::isCashierUser()) {
+            return false;
+        }
+        return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('stock') ?? true;
+    }
+
+    public static function canAccess(): bool
+    {
+        if (static::isCashierUser()) {
+            return false;
+        }
         return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('stock') ?? true;
     }
 

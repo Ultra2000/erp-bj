@@ -29,13 +29,25 @@ class AccountingReports extends Page implements HasForms
 
     protected static string $view = 'filament.pages.accounting-reports';
 
+    protected static function isCashierUser(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->hasWarehouseRestriction();
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
+        if (static::isCashierUser()) {
+            return false;
+        }
         return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
     }
 
     public static function canAccess(): bool
     {
+        if (static::isCashierUser()) {
+            return false;
+        }
         return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('accounting') ?? false;
     }
 

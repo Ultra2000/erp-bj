@@ -37,13 +37,26 @@ class SchedulePlanning extends Page implements HasForms
     public $schedules = [];
     public $weekDays = [];
 
+    protected static function isCashierUser(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->hasWarehouseRestriction();
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
+        if (static::isCashierUser()) {
+            return false;
+        }
         return Filament::getTenant()?->isModuleEnabled('hr') ?? true;
     }
 
     public static function canAccess(): bool
     {
+        if (static::isCashierUser()) {
+            return false;
+        }
+        
         $tenant = Filament::getTenant();
         if (!$tenant?->isModuleEnabled('hr')) {
             return false;
