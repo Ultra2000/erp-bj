@@ -280,7 +280,7 @@
                     </div>
                     <div class="p-4">
                         <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
-                            <video x-ref="cameraVideo" class="w-full h-full object-cover" playsinline></video>
+                            <video x-ref="cameraVideo" class="w-full h-full object-cover" playsinline autoplay muted></video>
                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                                 <div class="w-64 h-32 border-2 border-emerald-400 rounded-lg"></div>
                             </div>
@@ -625,48 +625,83 @@
                 },
 
                 async startCamera() {
-                    if (!window.ZXingBrowser) {
-                        await this.loadZxing();
-                    }
-                    
                     const video = this.$refs.cameraVideo;
-                    this.codeReader = new window.ZXingBrowser.BrowserMultiFormatReader();
                     
                     try {
-                        const devices = await window.ZXingBrowser.BrowserMultiFormatReader.listVideoInputDevices();
-                        const backCamera = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[0];
+                        // Demander l'accès à la caméra directement
+                        const stream = await navigator.mediaDevices.getUserMedia({
+                            video: {
+                                facingMode: 'environment', // Caméra arrière
+                                width: { ideal: 1280 },
+                                height: { ideal: 720 }
+                            }
+                        });
                         
-                        if (backCamera) {
-                            this.codeReader.decodeFromVideoDevice(backCamera.deviceId, video, (result, err) => {
+                        video.srcObject = stream;
+                        await video.play();
+                        
+                        // Charger ZXing pour la détection
+                        if (!window.ZXing) {
+                            await this.loadZxing();
+                        }
+                        
+                        // Scanner en continu
+                        this.codeReader = new window.ZXing.BrowserMultiFormatReader();
+                        this.scanInterval = setInterval(async () => {
+                            if (!this.showCameraModal) {
+                                clearInterval(this.scanInterval);
+                                return;
+                            }
+                            
+                            try {
+                                const result = await this.codeReader.decodeFromVideoElement(video);
                                 if (result) {
                                     this.lastScannedCode = result.getText();
                                     this.scanBarcode(this.lastScannedCode);
                                     this.closeCameraScanner();
                                 }
-                            });
-                        }
+                            } catch (e) {
+                                // Pas de code détecté, continuer à scanner
+                            }
+                        }, 500);
+                        
                     } catch (e) {
                         console.error('Camera error:', e);
+                        alert('Erreur caméra: ' + e.message + '\n\nAssurez-vous que:\n- Vous utilisez HTTPS\n- Vous avez autorisé l\'accès à la caméra');
                     }
                 },
 
                 stopCamera() {
+                    if (this.scanInterval) {
+                        clearInterval(this.scanInterval);
+                    }
                     if (this.codeReader) {
                         this.codeReader.reset();
                     }
                     const video = this.$refs.cameraVideo;
                     if (video?.srcObject) {
                         video.srcObject.getTracks().forEach(t => t.stop());
+                        video.srcObject = null;
                     }
                 },
 
                 loadZxing() {
                     return new Promise((resolve, reject) => {
-                        if (window.ZXingBrowser) return resolve();
+                        if (window.ZXing) return resolve();
                         const script = document.createElement('script');
-                        script.src = 'https://unpkg.com/@aspect1/browser@0.1.4/umd/index.min.js';
-                        script.onload = resolve;
-                        script.onerror = reject;
+                        script.src = 'https://unpkg.com/@aspect/browser@0.1.4/umd/index.min.js';
+                        script.onload = () => {
+                            // Fallback si la bibliothèque n'est pas disponible
+                            if (!window.ZXing) {
+                                window.ZXing = window.ZXingBrowser || { BrowserMultiFormatReader: class { decodeFromVideoElement() { return null; } reset() {} } };
+                            }
+                            resolve();
+                        };
+                        script.onerror = () => {
+                            // Créer un mock si le chargement échoue
+                            window.ZXing = { BrowserMultiFormatReader: class { decodeFromVideoElement() { return null; } reset() {} } };
+                            resolve();
+                        };
                         document.head.appendChild(script);
                     });
                 },
