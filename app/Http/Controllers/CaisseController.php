@@ -485,6 +485,7 @@ class CaisseController extends Controller
                     'warehouse_id' => $warehouse?->id,
                     'cash_session_id' => $session->id,
                     'payment_method' => $paymentMethod,
+                    'payment_status' => 'paid',
                     'status' => 'completed',
                     'discount_percent' => 0,
                     'tax_percent' => 0,
