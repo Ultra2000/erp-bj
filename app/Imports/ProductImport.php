@@ -4,28 +4,20 @@ namespace App\Imports;
 
 use App\Models\Product;
 use App\Models\Supplier;
-use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\SkipsOnError;
-use Maatwebsite\Excel\Concerns\SkipsErrors;
-use Maatwebsite\Excel\Concerns\SkipsOnFailure;
-use Maatwebsite\Excel\Concerns\SkipsFailures;
-use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Illuminate\Support\Facades\Log;
 
-class ProductImport implements ToCollection, WithHeadingRow, WithValidation, SkipsOnError, SkipsOnFailure, WithBatchInserts, WithChunkReading
+class ProductImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
-    use SkipsErrors, SkipsFailures;
-
     protected int $companyId;
     protected int $importedCount = 0;
     protected int $updatedCount = 0;
     protected int $skippedCount = 0;
     protected array $importErrors = [];
+    protected int $currentRow = 1; // 1 = heading row
 
     public function __construct(int $companyId)
     {
@@ -34,140 +26,168 @@ class ProductImport implements ToCollection, WithHeadingRow, WithValidation, Ski
 
     public function collection(Collection $rows)
     {
-        foreach ($rows as $row) {
+        Log::info('Import produits: chunk reçu', ['nb_rows' => $rows->count()]);
+
+        foreach ($rows as $index => $row) {
+            $this->currentRow++;
+            $rowNum = $this->currentRow;
+
+            // Normaliser les clés (supprimer accents, espaces, etc.)
+            $row = $this->normalizeRow($row);
+
+            Log::info("Import ligne {$rowNum}", ['row_data' => $row->toArray()]);
+
+            // Vérifier les champs obligatoires - chercher le nom dans plusieurs colonnes possibles
+            $nom = trim($row['nom'] ?? $row['name'] ?? $row['article'] ?? $row['produit'] ?? $row['designation'] ?? '');
+            if (empty($nom)) {
+                $this->importErrors[] = "Ligne {$rowNum}: Nom du produit manquant (colonne 'nom' vide ou introuvable).";
+                $this->skippedCount++;
+                continue;
+            }
+
+            $prixVente = $this->parseDecimal($row['prix_vente'] ?? $row['prix'] ?? $row['pv'] ?? $row['price'] ?? $row['prix_de_vente'] ?? 0);
+            if ($prixVente <= 0) {
+                $this->importErrors[] = "Ligne {$rowNum} ({$nom}): Prix de vente manquant ou invalide.";
+                $this->skippedCount++;
+                continue;
+            }
+
             try {
                 // Chercher fournisseur si spécifié
                 $supplierId = null;
-                if (!empty($row['fournisseur'])) {
+                $fournisseurName = trim($row['fournisseur'] ?? $row['supplier'] ?? '');
+                if (!empty($fournisseurName)) {
                     $supplier = Supplier::where('company_id', $this->companyId)
-                        ->where(function ($q) use ($row) {
-                            $q->where('name', $row['fournisseur'])
-                              ->orWhere('code', $row['fournisseur']);
+                        ->where(function ($q) use ($fournisseurName) {
+                            $q->where('name', $fournisseurName)
+                              ->orWhere('code', $fournisseurName);
                         })
                         ->first();
                     $supplierId = $supplier?->id;
                 }
 
-                // Chercher si produit existe déjà (par code barre ou nom)
+                // Chercher si produit existe déjà
                 $existingProduct = null;
-                if (!empty($row['code_barre'])) {
+                $codeBarre = trim($row['code_barre'] ?? $row['codebarre'] ?? $row['barcode'] ?? $row['ean'] ?? $row['code_barres'] ?? '');
+                if (!empty($codeBarre)) {
                     $existingProduct = Product::where('company_id', $this->companyId)
-                        ->where('barcode', $row['code_barre'])
+                        ->where('barcode', $codeBarre)
                         ->first();
                 }
                 
-                if (!$existingProduct && !empty($row['nom'])) {
+                if (!$existingProduct) {
                     $existingProduct = Product::where('company_id', $this->companyId)
-                        ->where('name', $row['nom'])
+                        ->where('name', $nom)
                         ->first();
                 }
 
-                // Préparer les données
-                $priceIncludesVat = $this->parseBoolean($row['prix_ttc'] ?? '1');
-                $vatRateSale = $this->parseDecimal($row['tva_vente'] ?? '18');
-                $vatRatePurchase = $this->parseDecimal($row['tva_achat'] ?? '18');
+                // Lire les valeurs avec flexibilité sur les noms de colonnes
+                $prixAchat = $this->parseDecimal($row['prix_achat'] ?? $row['pa'] ?? $row['cout'] ?? $row['prix_dachat'] ?? $row['cost'] ?? 0);
+                $stock = $this->parseInt($row['stock'] ?? $row['quantite'] ?? $row['qty'] ?? $row['qte'] ?? 0);
+                $stockMin = $this->parseInt($row['stock_min'] ?? $row['stock_minimum'] ?? $row['seuil'] ?? 0);
+                $unite = trim($row['unite'] ?? $row['unit'] ?? $row['uom'] ?? 'pièce');
+                $description = trim($row['description'] ?? $row['desc'] ?? '');
+                $prixGros = $this->parseDecimal($row['prix_gros'] ?? $row['wholesale'] ?? 0);
+                $qteMinGros = $this->parseInt($row['qte_min_gros'] ?? $row['min_gros'] ?? 0);
+                
+                // TVA
+                $tvaSale = $this->parseDecimal($row['tva_vente'] ?? $row['tva'] ?? $row['tax'] ?? '18');
+                $tvaPurchase = $this->parseDecimal($row['tva_achat'] ?? $row['tva'] ?? $row['tax'] ?? '18');
+                
+                // Mode prix TTC/HT
+                $prixTtcFlag = trim($row['prix_ttc'] ?? $row['ttc'] ?? 'oui');
+                $priceIncludesVat = $this->parseBoolean($prixTtcFlag);
 
-                // Calculer les prix HT/TTC selon le mode
-                $purchasePrice = $this->parseDecimal($row['prix_achat'] ?? 0);
-                $salePrice = $this->parseDecimal($row['prix_vente'] ?? 0);
-                $wholesalePrice = $this->parseDecimal($row['prix_gros'] ?? 0);
-
+                // Calculer les prix HT/TTC
                 if ($priceIncludesVat) {
-                    // Prix saisis en TTC
-                    $purchasePriceHt = $vatRatePurchase > 0 ? $purchasePrice / (1 + $vatRatePurchase / 100) : $purchasePrice;
-                    $salePriceHt = $vatRateSale > 0 ? $salePrice / (1 + $vatRateSale / 100) : $salePrice;
-                    $wholesalePriceHt = $vatRateSale > 0 ? $wholesalePrice / (1 + $vatRateSale / 100) : $wholesalePrice;
+                    $purchasePriceHt = $tvaPurchase > 0 ? $prixAchat / (1 + $tvaPurchase / 100) : $prixAchat;
+                    $salePriceHt = $tvaSale > 0 ? $prixVente / (1 + $tvaSale / 100) : $prixVente;
+                    $wholesalePriceHt = $tvaSale > 0 ? $prixGros / (1 + $tvaSale / 100) : $prixGros;
                 } else {
-                    // Prix saisis en HT
-                    $purchasePriceHt = $purchasePrice;
-                    $salePriceHt = $salePrice;
-                    $wholesalePriceHt = $wholesalePrice;
-                    $purchasePrice = $purchasePrice * (1 + $vatRatePurchase / 100);
-                    $salePrice = $salePrice * (1 + $vatRateSale / 100);
-                    $wholesalePrice = $wholesalePrice * (1 + $vatRateSale / 100);
+                    $purchasePriceHt = $prixAchat;
+                    $salePriceHt = $prixVente;
+                    $wholesalePriceHt = $prixGros;
+                    $prixAchat = $prixAchat * (1 + $tvaPurchase / 100);
+                    $prixVente = $prixVente * (1 + $tvaSale / 100);
+                    $prixGros = $prixGros * (1 + $tvaSale / 100);
                 }
 
                 $data = [
                     'company_id' => $this->companyId,
-                    'name' => trim($row['nom']),
-                    'barcode' => !empty($row['code_barre']) ? trim($row['code_barre']) : null,
-                    'description' => $row['description'] ?? null,
-                    'purchase_price' => round($purchasePrice, 2),
+                    'name' => $nom,
+                    'barcode' => !empty($codeBarre) ? $codeBarre : null,
+                    'description' => !empty($description) ? $description : null,
+                    'purchase_price' => round($prixAchat, 2),
                     'purchase_price_ht' => round($purchasePriceHt, 2),
-                    'vat_rate_purchase' => $vatRatePurchase,
-                    'price' => round($salePrice, 2),
+                    'vat_rate_purchase' => $tvaPurchase,
+                    'price' => round($prixVente, 2),
                     'sale_price_ht' => round($salePriceHt, 2),
-                    'vat_rate_sale' => $vatRateSale,
+                    'vat_rate_sale' => $tvaSale,
                     'prices_include_vat' => $priceIncludesVat,
-                    'wholesale_price' => $wholesalePrice > 0 ? round($wholesalePrice, 2) : null,
+                    'wholesale_price' => $prixGros > 0 ? round($prixGros, 2) : null,
                     'wholesale_price_ht' => $wholesalePriceHt > 0 ? round($wholesalePriceHt, 2) : null,
-                    'min_wholesale_qty' => $this->parseInt($row['qte_min_gros'] ?? 0),
-                    'stock' => $this->parseInt($row['stock'] ?? 0),
-                    'min_stock' => $this->parseInt($row['stock_min'] ?? 0),
-                    'unit' => $row['unite'] ?? 'pièce',
+                    'min_wholesale_qty' => $qteMinGros,
+                    'stock' => $stock,
+                    'min_stock' => $stockMin,
+                    'unit' => $unite ?: 'pièce',
                     'supplier_id' => $supplierId,
                 ];
 
                 if ($existingProduct) {
-                    // Mise à jour du produit existant (sans modifier le stock)
-                    unset($data['stock']); // Ne pas écraser le stock existant via update
+                    unset($data['stock']);
                     $existingProduct->update($data);
                     $this->updatedCount++;
+                    Log::info("Produit mis à jour: {$nom}");
                 } else {
-                    // Création d'un nouveau produit
                     Product::create($data);
                     $this->importedCount++;
+                    Log::info("Produit créé: {$nom}");
                 }
 
             } catch (\Exception $e) {
-                $this->importErrors[] = "Ligne avec '{$row['nom']}': " . $e->getMessage();
+                $this->importErrors[] = "Ligne {$rowNum} ({$nom}): " . $e->getMessage();
                 $this->skippedCount++;
-                Log::error('Import produit erreur', [
-                    'row' => $row->toArray(),
+                Log::error("Import produit erreur ligne {$rowNum}", [
+                    'nom' => $nom,
                     'error' => $e->getMessage()
                 ]);
             }
         }
     }
 
-    public function rules(): array
+    /**
+     * Normalise les clés de la ligne : minuscules, sans accents, underscores
+     */
+    protected function normalizeRow(Collection $row): Collection
     {
-        return [
-            'nom' => 'required|string|max:255',
-            'prix_vente' => 'required|numeric|min:0',
-            'prix_achat' => 'nullable|numeric|min:0',
-            'stock' => 'nullable|integer|min:0',
-            'stock_min' => 'nullable|integer|min:0',
-            'code_barre' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'unite' => 'nullable|string|max:50',
-            'tva_vente' => 'nullable|numeric|min:0|max:100',
-            'tva_achat' => 'nullable|numeric|min:0|max:100',
-            'prix_gros' => 'nullable|numeric|min:0',
-            'qte_min_gros' => 'nullable|integer|min:0',
-            'fournisseur' => 'nullable|string|max:255',
-        ];
+        $normalized = [];
+        foreach ($row as $key => $value) {
+            $normalizedKey = $this->normalizeKey((string)$key);
+            $normalized[$normalizedKey] = $value;
+            // Garder aussi la clé originale
+            if ($normalizedKey !== $key) {
+                $normalized[$key] = $value;
+            }
+        }
+        return collect($normalized);
     }
 
-    public function customValidationMessages(): array
+    protected function normalizeKey(string $key): string
     {
-        return [
-            'nom.required' => 'Le nom du produit est obligatoire.',
-            'prix_vente.required' => 'Le prix de vente est obligatoire.',
-            'prix_vente.numeric' => 'Le prix de vente doit être un nombre.',
-            'prix_achat.numeric' => 'Le prix d\'achat doit être un nombre.',
-            'stock.integer' => 'Le stock doit être un nombre entier.',
-        ];
-    }
-
-    public function batchSize(): int
-    {
-        return 100;
+        $key = mb_strtolower($key);
+        $key = str_replace(
+            ['é', 'è', 'ê', 'ë', 'à', 'â', 'ä', 'ù', 'û', 'ü', 'ô', 'ö', 'î', 'ï', 'ç'],
+            ['e', 'e', 'e', 'e', 'a', 'a', 'a', 'u', 'u', 'u', 'o', 'o', 'i', 'i', 'c'],
+            $key
+        );
+        $key = preg_replace('/[\s\-\.]+/', '_', $key);
+        $key = preg_replace('/[^a-z0-9_]/', '', $key);
+        return trim($key, '_');
     }
 
     public function chunkSize(): int
     {
-        return 100;
+        return 200;
     }
 
     public function getImportedCount(): int
@@ -192,22 +212,22 @@ class ProductImport implements ToCollection, WithHeadingRow, WithValidation, Ski
 
     protected function parseDecimal($value): float
     {
-        if (empty($value)) return 0;
-        // Remplacer virgule par point et nettoyer
+        if ($value === null || $value === '') return 0;
         $value = str_replace([' ', ','], ['', '.'], (string)$value);
+        $value = preg_replace('/[^0-9.]/', '', $value);
         return (float) $value;
     }
 
     protected function parseInt($value): int
     {
-        if (empty($value)) return 0;
-        return (int) $value;
+        if ($value === null || $value === '') return 0;
+        return (int) round($this->parseDecimal($value));
     }
 
     protected function parseBoolean($value): bool
     {
         if (is_bool($value)) return $value;
-        $value = strtolower(trim((string)$value));
-        return in_array($value, ['1', 'true', 'oui', 'yes', 'ttc']);
+        $value = mb_strtolower(trim((string)$value));
+        return in_array($value, ['1', 'true', 'oui', 'yes', 'ttc', 'o']);
     }
 }

@@ -118,11 +118,6 @@ class ImportProducts extends Page implements HasForms
             $this->skippedCount = $import->getSkippedCount();
             $this->errors = $import->getImportErrors();
 
-            // Ajouter les erreurs de validation
-            foreach ($import->failures() as $failure) {
-                $this->errors[] = "Ligne {$failure->row()}: " . implode(', ', $failure->errors());
-            }
-
             $this->importCompleted = true;
 
             // Supprimer le fichier temporaire
