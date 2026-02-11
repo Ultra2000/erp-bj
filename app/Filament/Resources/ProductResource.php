@@ -651,6 +651,13 @@ class ProductResource extends Resource
                         })
                         ->deselectRecordsAfterCompletion(),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\Action::make('import')
+                    ->label('Importer')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->color('gray')
+                    ->url(fn () => \App\Filament\Pages\ImportProducts::getUrl()),
             ]);
     }
 
