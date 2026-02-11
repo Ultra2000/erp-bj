@@ -116,7 +116,7 @@ class ImportProducts extends Page implements HasForms
             $this->importedCount = $import->getImportedCount();
             $this->updatedCount = $import->getUpdatedCount();
             $this->skippedCount = $import->getSkippedCount();
-            $this->errors = $import->getErrors();
+            $this->errors = $import->getImportErrors();
 
             // Ajouter les erreurs de validation
             foreach ($import->failures() as $failure) {

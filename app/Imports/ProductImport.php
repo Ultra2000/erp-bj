@@ -25,7 +25,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithValidation, Ski
     protected int $importedCount = 0;
     protected int $updatedCount = 0;
     protected int $skippedCount = 0;
-    protected array $errors = [];
+    protected array $importErrors = [];
 
     public function __construct(int $companyId)
     {
@@ -120,7 +120,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithValidation, Ski
                 }
 
             } catch (\Exception $e) {
-                $this->errors[] = "Ligne avec '{$row['nom']}': " . $e->getMessage();
+                $this->importErrors[] = "Ligne avec '{$row['nom']}': " . $e->getMessage();
                 $this->skippedCount++;
                 Log::error('Import produit erreur', [
                     'row' => $row->toArray(),
@@ -185,9 +185,9 @@ class ProductImport implements ToCollection, WithHeadingRow, WithValidation, Ski
         return $this->skippedCount;
     }
 
-    public function getErrors(): array
+    public function getImportErrors(): array
     {
-        return $this->errors;
+        return $this->importErrors;
     }
 
     protected function parseDecimal($value): float
