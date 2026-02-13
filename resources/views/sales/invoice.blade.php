@@ -9,503 +9,385 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     @endif
     <style>
-        :root {
-            --primary: #1e293b;
-            --primary-light: #334155;
-            --accent: #3b82f6;
-            --accent-dark: #2563eb;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --gray-50: #f8fafc;
-            --gray-100: #f1f5f9;
-            --gray-200: #e2e8f0;
-            --gray-300: #cbd5e1;
-            --gray-400: #94a3b8;
-            --gray-500: #64748b;
-            --gray-600: #475569;
-            --gray-700: #334155;
-            --gray-800: #1e293b;
-            --gray-900: #0f172a;
-        }
-        
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 13px;
-            color: var(--gray-800);
+            color: #333;
             background: #fff;
             line-height: 1.5;
         }
-        
+
         .invoice-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 40px;
         }
-        
-        /* Header avec gradient */
+
+        /* Header */
         .invoice-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 32px;
-            border-radius: 16px;
-            margin-bottom: 32px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            box-shadow: 0 10px 40px rgba(30, 41, 59, 0.15);
         }
-        
+
         .company-info h1 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
             margin-bottom: 4px;
-            letter-spacing: -0.5px;
         }
-        
+
         .company-info .subtitle {
-            font-size: 13px;
-            opacity: 0.8;
-            font-weight: 400;
-        }
-        
-        .company-details {
-            margin-top: 16px;
             font-size: 12px;
-            opacity: 0.9;
+            color: #666;
+        }
+
+        .company-details {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #555;
             line-height: 1.6;
         }
-        
+
         .invoice-meta {
             text-align: right;
             min-width: 200px;
         }
-        
+
         .invoice-number {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
-            letter-spacing: -1px;
         }
-        
+
         .invoice-number span {
-            font-size: 14px;
-            opacity: 0.7;
+            font-size: 13px;
+            color: #666;
             font-weight: 400;
             display: block;
             margin-bottom: 4px;
         }
-        
+
         .invoice-date {
-            margin-top: 12px;
+            margin-top: 8px;
             font-size: 13px;
-            opacity: 0.8;
+            color: #666;
         }
-        
+
         .logo-container {
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
-        
+
         .logo-container img {
-            max-height: 60px;
-            max-width: 150px;
+            max-height: 50px;
+            max-width: 140px;
             object-fit: contain;
-            background-color: white;
-            padding: 5px;
-            border-radius: 4px;
         }
-        
+
         /* Preview Banner */
         .preview-banner {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 12px 20px;
-            margin-bottom: 24px;
+            border: 1px solid #999;
+            padding: 10px 16px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 13px;
-            color: var(--accent-dark);
+            color: #555;
         }
-        
+
         .preview-banner a {
-            color: var(--accent-dark);
+            color: #333;
             font-weight: 600;
             text-decoration: none;
-            padding: 6px 16px;
-            background: white;
-            border-radius: 6px;
-            transition: all 0.2s;
+            padding: 6px 14px;
+            border: 1px solid #333;
         }
-        
-        .preview-banner a:hover {
-            background: var(--accent-dark);
-            color: white;
-        }
-        
+
         /* Status Badge */
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 50px;
+            display: inline-block;
+            padding: 4px 12px;
+            border: 1px solid #333;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-top: 12px;
         }
-        
-        .status-badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-        
+
         .status-completed {
-            background: rgba(16, 185, 129, 0.15);
-            color: #059669;
+            border-color: #333;
         }
-        .status-completed::before { background: #10b981; }
-        
+
         .status-pending {
-            background: rgba(245, 158, 11, 0.15);
-            color: #d97706;
+            border-color: #999;
+            color: #999;
         }
-        .status-pending::before { background: #f59e0b; }
-        
+
         .status-cancelled {
-            background: rgba(239, 68, 68, 0.15);
-            color: #dc2626;
+            border-color: #999;
+            color: #999;
+            text-decoration: line-through;
         }
-        .status-cancelled::before { background: #ef4444; }
-        
+
         /* Cards Grid */
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 32px;
+            gap: 20px;
+            margin-bottom: 24px;
         }
-        
+
         .info-card {
-            background: var(--gray-50);
-            border: 1px solid var(--gray-200);
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.2s;
+            border: 1px solid #ccc;
+            padding: 16px;
         }
-        
-        .info-card:hover {
-            border-color: var(--accent);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-        }
-        
+
         .info-card-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--gray-200);
+            gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
         }
-        
-        .info-card-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 16px;
-        }
-        
+
         .info-card-title {
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: var(--gray-500);
+            color: #666;
         }
-        
+
         .info-card-content h3 {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
-        
+
         .info-card-content p {
             font-size: 12px;
-            color: var(--gray-500);
+            color: #555;
             line-height: 1.6;
         }
-        
-        /* Table moderne */
+
+        /* Table */
         .items-section {
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
-        
+
         .section-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #ccc;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: linear-gradient(180deg, var(--accent) 0%, var(--accent-dark) 100%);
-            border-radius: 2px;
-        }
-        
+
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        
-        .items-table thead {
-            background: linear-gradient(135deg, var(--gray-800) 0%, var(--gray-700) 100%);
-        }
-        
+
         .items-table thead th {
-            padding: 14px 16px;
+            padding: 10px 12px;
             text-align: left;
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: white;
+            border-bottom: 2px solid #333;
+            color: #333;
         }
-        
+
         .items-table thead th:last-child {
             text-align: right;
         }
-        
+
         .items-table tbody tr {
-            border-bottom: 1px solid var(--gray-100);
-            transition: background 0.2s;
+            border-bottom: 1px solid #eee;
         }
-        
-        .items-table tbody tr:hover {
-            background: var(--gray-50);
-        }
-        
+
         .items-table tbody tr:last-child {
-            border-bottom: none;
+            border-bottom: 1px solid #ccc;
         }
-        
+
         .items-table tbody td {
-            padding: 14px 16px;
+            padding: 10px 12px;
             font-size: 13px;
         }
-        
+
         .items-table tbody td:last-child {
             text-align: right;
             font-weight: 600;
         }
-        
+
         .product-name {
             font-weight: 500;
-            color: var(--gray-800);
         }
-        
+
         .text-right { text-align: right; }
-        .text-muted { color: var(--gray-500); }
-        
+        .text-muted { color: #777; }
+
         /* Totals Card */
         .totals-section {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
-        
+
         .totals-card {
-            width: 320px;
-            background: var(--gray-50);
-            border: 1px solid var(--gray-200);
-            border-radius: 12px;
-            overflow: hidden;
+            width: 300px;
+            border: 1px solid #ccc;
         }
-        
+
         .totals-row {
             display: flex;
             justify-content: space-between;
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--gray-200);
+            padding: 8px 16px;
+            border-bottom: 1px solid #eee;
             font-size: 13px;
         }
-        
+
         .totals-row:last-child {
             border-bottom: none;
         }
-        
+
         .totals-row .label {
-            color: var(--gray-500);
+            color: #555;
         }
-        
+
         .totals-row .value {
             font-weight: 500;
         }
-        
+
         .totals-row.discount .value {
-            color: var(--success);
+            color: #555;
         }
-        
+
         .totals-row.grand-total {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 16px 20px;
+            border-top: 2px solid #333;
+            padding: 12px 16px;
+            font-weight: bold;
         }
-        
+
         .totals-row.grand-total .label {
-            color: rgba(255,255,255,0.8);
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-size: 12px;
         }
-        
+
         .totals-row.grand-total .value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
         }
-        
+
         .amount-words {
-            padding: 12px 20px;
-            background: white;
+            padding: 8px 16px;
             font-size: 11px;
             font-style: italic;
-            color: var(--gray-500);
-            border-top: 1px dashed var(--gray-300);
+            color: #777;
+            border-top: 1px dashed #ccc;
         }
-        
+
         /* QR Verification */
         .verification-section {
-            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
-            border: 1px solid var(--gray-200);
-            border-radius: 12px;
-            padding: 20px;
+            border: 1px solid #ccc;
+            padding: 16px;
             display: flex;
-            gap: 20px;
+            gap: 16px;
             align-items: center;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
-        
+
         .qr-code {
             flex-shrink: 0;
-            padding: 8px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        
+
         .qr-code img {
             display: block;
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
         }
-        
+
         .verification-info h4 {
             font-size: 13px;
             font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            margin-bottom: 4px;
         }
-        
+
         .verification-info p {
             font-size: 11px;
-            color: var(--gray-500);
+            color: #555;
             line-height: 1.6;
         }
-        
+
         .verification-code {
             display: inline-block;
-            font-family: 'SF Mono', Monaco, monospace;
-            background: var(--gray-800);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 4px;
+            font-family: monospace;
+            border: 1px solid #333;
+            padding: 3px 8px;
             font-size: 11px;
-            margin-top: 6px;
+            margin-top: 4px;
         }
-        
+
         /* Footer */
         .invoice-footer {
             text-align: center;
-            padding-top: 24px;
-            border-top: 1px solid var(--gray-200);
-            color: var(--gray-500);
+            padding-top: 16px;
+            border-top: 1px solid #ccc;
+            color: #777;
             font-size: 11px;
             line-height: 1.6;
         }
-        
+
         /* Actions */
         .actions {
             display: flex;
             gap: 12px;
             justify-content: center;
-            margin-top: 32px;
+            margin-top: 24px;
         }
-        
+
         .btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 10px 20px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
             text-decoration: none;
-            border: none;
+            border: 1px solid #333;
+            background: #fff;
+            color: #333;
         }
-        
+
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
+            background: #333;
+            color: #fff;
         }
-        
+
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 41, 59, 0.4);
+            background: #555;
         }
-        
-        .btn-secondary {
-            background: white;
-            color: var(--gray-700);
-            border: 1px solid var(--gray-300);
-        }
-        
+
         .btn-secondary:hover {
-            background: var(--gray-50);
-            border-color: var(--gray-400);
+            background: #f5f5f5;
         }
-        
+
         @media print {
             .no-print { display: none !important; }
             body { margin: 0; }
             .invoice-container { padding: 20px; max-width: none; }
-            .invoice-header { box-shadow: none; }
-            .info-card:hover { border-color: var(--gray-200); box-shadow: none; }
         }
     </style>
 </head>
@@ -515,22 +397,22 @@
     $status = $sale->status;
     $statusClass = 'status-' . ($status ?: 'pending');
     $discountPercent = $sale->discount_percent ?? 0;
-    
+
     // Vérifier si l'entreprise est en franchise de TVA
     $isVatFranchise = \App\Models\AccountingSetting::isVatFranchise($company->id);
-    
+
     // Utiliser les valeurs TVA calculées par ligne et stockées dans Sale
     $totalHt = $sale->total_ht ?? $sale->items->sum('total_price_ht');
     $totalVat = $isVatFranchise ? 0 : ($sale->total_vat ?? $sale->items->sum('vat_amount'));
     $grandTotal = $isVatFranchise ? $totalHt : ($sale->total ?? ($totalHt + $totalVat));
-    
+
     // Calculer le taux TVA effectif (moyenne pondérée)
     $effectiveVatRate = $isVatFranchise ? 0 : ($totalHt > 0 ? round(($totalVat / $totalHt) * 100, 1) : 0);
-    
+
     // Calculer la remise si présente
     $totalAvantRemise = $sale->items->sum('total_price');
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
-    
+
     // Calculer les économies prix de gros
     $wholesaleSavings = $sale->items->sum(function($item) {
         if ($item->is_wholesale && $item->retail_unit_price) {
@@ -538,13 +420,12 @@
         }
         return 0;
     });
-    
+
     function amountToWordsFr($number, $currency = 'EUR') {
         $fmt = new \NumberFormatter('fr_FR', \NumberFormatter::SPELLOUT);
         $euros = floor($number);
         $centimes = round(($number - $euros) * 100);
-        
-        // Noms des unités et sous-unités par devise
+
         $units = [
             'EUR' => ['euro', 'euros', 'centime', 'centimes'],
             'FCFA' => ['franc CFA', 'francs CFA', 'centime', 'centimes'],
@@ -553,18 +434,17 @@
             'GBP' => ['livre sterling', 'livres sterling', 'penny', 'pence'],
         ];
         $u = $units[$currency] ?? ['unité', 'unités', 'centime', 'centimes'];
-        
+
         $euroWord = $euros == 1 ? $u[0] : $u[1];
         $centimeWord = $centimes == 1 ? $u[2] : $u[3];
-        
+
         $text = ucfirst($fmt->format($euros)) . ' ' . $euroWord;
         if ($centimes > 0) {
             $text .= ' et ' . $fmt->format($centimes) . ' ' . $centimeWord;
         }
         return $text;
     }
-    
-    // Nom de devise en lettres (pour affichage simple)
+
     $currencyNames = [
         'EUR' => 'euros',
         'FCFA' => 'francs CFA',
@@ -573,18 +453,21 @@
         'GBP' => 'livres sterling',
     ];
     $currencyInWords = $currencyNames[$currency] ?? $currency;
-    
+
     $statusLabels = [
         'completed' => 'Payée',
         'pending' => 'En attente',
         'cancelled' => 'Annulée'
     ];
+
+    // Déterminer si la facture est certifiée EMCEF
+    $isEmcefCertified = ($sale->emcef_status === 'certified' && $sale->emcef_qr_code);
 @endphp
 
 <div class="invoice-container">
     @if(!empty($previewMode))
         <div class="preview-banner no-print">
-            <span>⚡ Mode prévisualisation — Cette facture n'est pas finalisée</span>
+            <span>Mode prévisualisation — Cette facture n'est pas finalisée</span>
             <a href="{{ route('sales.invoice', $sale) }}">Télécharger PDF</a>
         </div>
     @endif
@@ -601,7 +484,7 @@
             <div class="company-details">
                 @if($company->address){{ $company->address }}<br>@endif
                 @if($company->phone)Tél: {{ $company->phone }}@endif
-                @if($company->email) • {{ $company->email }}@endif
+                @if($company->email) | {{ $company->email }}@endif
                 @if($company->tax_number)<br>N° Fiscal: {{ $company->tax_number }}@endif
             </div>
         </div>
@@ -611,9 +494,9 @@
                 {{ $sale->invoice_number }}
             </div>
             <div class="invoice-date">
-                {{ $sale->created_at->format('d M Y') }}
+                {{ $sale->created_at->format('d/m/Y') }}
             </div>
-            <div style="margin-top: 16px;">
+            <div>
                 <span class="status-badge {{ $statusClass }}">
                     {{ $statusLabels[$status] ?? $status }}
                 </span>
@@ -624,7 +507,6 @@
     <div class="info-grid">
         <div class="info-card">
             <div class="info-card-header">
-                <div class="info-card-icon">👤</div>
                 <span class="info-card-title">Client</span>
             </div>
             <div class="info-card-content">
@@ -634,15 +516,14 @@
                     @if(optional($sale->customer)->registration_number && optional($sale->customer)->registration_number !== optional($sale->customer)->siret)<strong>N°:</strong> {{ $sale->customer->registration_number }}<br>@endif
                     @if(optional($sale->customer)->address){{ $sale->customer->address }}<br>@endif
                     @if(optional($sale->customer)->zip_code || optional($sale->customer)->city){{ optional($sale->customer)->zip_code }} {{ optional($sale->customer)->city }}<br>@endif
-                    @if(optional($sale->customer)->phone)📞 {{ $sale->customer->phone }}<br>@endif
-                    @if(optional($sale->customer)->email)✉️ {{ $sale->customer->email }}@endif
+                    @if(optional($sale->customer)->phone)Tél: {{ $sale->customer->phone }}<br>@endif
+                    @if(optional($sale->customer)->email){{ $sale->customer->email }}@endif
                 </p>
             </div>
         </div>
-        
+
         <div class="info-card">
             <div class="info-card-header">
-                <div class="info-card-icon">📋</div>
                 <span class="info-card-title">Détails</span>
             </div>
             <div class="info-card-content">
@@ -673,14 +554,14 @@
                         <td>
                             <span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span>
                             @if($item->is_wholesale)
-                                <span style="display: inline-block; background: #d1fae5; color: #047857; font-size: 9px; padding: 2px 6px; border-radius: 4px; margin-left: 4px;">PRIX GROS</span>
+                                <span style="display: inline-block; border: 1px solid #333; font-size: 9px; padding: 1px 4px; margin-left: 4px;">PRIX GROS</span>
                             @endif
                         </td>
                         <td>{{ $item->quantity }}</td>
                         <td class="text-right text-muted">
                             {{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}
                             @if($item->is_wholesale && $item->retail_unit_price)
-                                <br><small style="color: #9ca3af; text-decoration: line-through;">{{ number_format($item->retail_unit_price, 2, ',', ' ') }}</small>
+                                <br><small style="color: #999; text-decoration: line-through;">{{ number_format($item->retail_unit_price, 2, ',', ' ') }}</small>
                             @endif
                         </td>
                         <td class="text-right">{{ number_format($item->vat_rate ?? 0, 0) }}%</td>
@@ -688,7 +569,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 40px; color: var(--gray-400);">
+                        <td colspan="5" style="text-align: center; padding: 30px; color: #999;">
                             Aucun article dans cette facture
                         </td>
                     </tr>
@@ -704,11 +585,9 @@
                 <span class="value">{{ number_format($totalHt, 2, ',', ' ') }} {{ $currency }}</span>
             </div>
             @if($wholesaleSavings > 0)
-                <div class="totals-row" style="background: #ecfdf5; margin: 4px -12px; padding: 6px 12px;">
-                    <span class="label" style="color: #047857;">
-                        🏷️ Économie prix de gros
-                    </span>
-                    <span class="value" style="color: #047857;">- {{ number_format($wholesaleSavings, 0, ',', ' ') }} {{ $currency }}</span>
+                <div class="totals-row">
+                    <span class="label">Économie prix de gros</span>
+                    <span class="value">- {{ number_format($wholesaleSavings, 0, ',', ' ') }} {{ $currency }}</span>
                 </div>
             @endif
             @if($discountPercent > 0)
@@ -720,7 +599,7 @@
             @if($isVatFranchise)
                 <div class="totals-row">
                     <span class="label">TVA</span>
-                    <span class="value" style="color: var(--gray-400);">Non applicable</span>
+                    <span class="value" style="color: #999;">Non applicable</span>
                 </div>
             @else
                 <div class="totals-row">
@@ -734,16 +613,16 @@
             </div>
             {{-- AIB (Acompte sur Impôt Bénéfices) - Bénin --}}
             @if($sale->aib_rate && $sale->aib_amount > 0)
-                <div class="totals-row" style="background: #fff7ed; margin: 8px -12px; padding: 8px 12px;">
-                    <span class="label" style="color: #c2410c;">
+                <div class="totals-row">
+                    <span class="label">
                         AIB {{ $sale->aib_rate === 'A' ? '(1%)' : '(5%)' }}
-                        <small style="display:block;font-size:9px;color:#9a3412;">Acompte sur Impôt Bénéfices</small>
+                        <small style="display:block;font-size:9px;color:#999;">Acompte sur Impôt Bénéfices</small>
                     </span>
-                    <span class="value" style="color: #c2410c;">{{ number_format($sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
+                    <span class="value">{{ number_format($sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
                 </div>
-                <div class="totals-row grand-total" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; margin: 8px -12px; padding: 12px;">
-                    <span class="label" style="color: white;">NET À PAYER</span>
-                    <span class="value" style="color: white; font-size: 1.3em;">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
+                <div class="totals-row grand-total">
+                    <span class="label">NET À PAYER</span>
+                    <span class="value">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
                 </div>
             @endif
             <div class="amount-words">
@@ -752,22 +631,23 @@
         </div>
     </div>
 
-    @if(!empty($verificationUrl) && !empty($verificationCode))
+    <!-- QR VERIFICATION (App) - Masqué si facture certifiée EMCEF -->
+    @if(!$isEmcefCertified && !empty($verificationUrl) && !empty($verificationCode))
         <div class="verification-section">
             <div class="qr-code">
                 @php
                     try {
-                        $qr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(100)->margin(0)->generate($verificationUrl));
+                        $qr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(80)->margin(0)->generate($verificationUrl));
                     } catch (\Throwable $e) { $qr = null; }
                 @endphp
                 @if($qr)
                     <img src="data:image/svg+xml;base64,{{ $qr }}" alt="QR Code">
                 @else
-                    <div style="width:100px;height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;">QR indisponible</div>
+                    <div style="width:80px;height:80px;"></div>
                 @endif
             </div>
             <div class="verification-info">
-                <h4>🔒 Vérification d'authenticité</h4>
+                <h4>Vérification d'authenticité</h4>
                 <p>
                     Scannez le QR code ou visitez l'URL ci-dessous pour vérifier l'authenticité de ce document.<br>
                     <span style="word-break:break-all;font-size:10px;">{{ $verificationUrl }}</span>
@@ -778,53 +658,50 @@
     @endif
 
     {{-- Section e-MCeF (Certification DGI Bénin) --}}
-    @if($sale->emcef_status === 'certified' && $sale->emcef_qr_code)
-        <div class="verification-section" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0;">
-            <div class="qr-code" style="background: white; padding: 8px; border-radius: 8px;">
+    @if($isEmcefCertified)
+        <div class="verification-section">
+            <div class="qr-code">
                 @php
                     try {
-                        // Le emcef_qr_code contient les données textuelles, on génère l'image QR
-                        $emcefQr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(100)->margin(0)->generate($sale->emcef_qr_code));
-                    } catch (\Throwable $e) { 
-                        $emcefQr = null; 
+                        $emcefQr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(80)->margin(0)->generate($sale->emcef_qr_code));
+                    } catch (\Throwable $e) {
+                        $emcefQr = null;
                     }
                 @endphp
                 @if($emcefQr)
-                    <img src="data:image/svg+xml;base64,{{ $emcefQr }}" alt="QR Code e-MCeF" style="width: 100px; height: 100px;">
+                    <img src="data:image/svg+xml;base64,{{ $emcefQr }}" alt="QR Code e-MCeF" style="width: 80px; height: 80px;">
                 @else
-                    <div style="width:100px;height:100px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10px;">QR indisponible</div>
+                    <div style="width:80px;height:80px;"></div>
                 @endif
             </div>
             <div class="verification-info">
-                <h4 style="color: #047857;">🏛️ Facture certifiée DGI Bénin</h4>
-                <p style="color: #065f46;">
+                <h4>Facture certifiée DGI Bénin</h4>
+                <p>
                     Cette facture a été certifiée conformément à la réglementation fiscale béninoise (e-MCeF).<br>
                     <strong>NIM :</strong> {{ $sale->emcef_nim }}<br>
                     <strong>Code MECeF :</strong> {{ $sale->emcef_code_mecef }}<br>
                     <strong>Date de certification :</strong> {{ $sale->emcef_certified_at?->format('d/m/Y à H:i') }}
                 </p>
                 @if($sale->emcef_counters)
-                    <span class="verification-code" style="background: #047857;">
-                        {{ $sale->emcef_counters }}
-                    </span>
+                    <span class="verification-code">{{ $sale->emcef_counters }}</span>
                 @endif
             </div>
         </div>
     @elseif($sale->emcef_status === 'error')
-        <div class="verification-section" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color: #fca5a5;">
+        <div class="verification-section">
             <div class="verification-info" style="width: 100%;">
-                <h4 style="color: #b91c1c;">⚠️ Certification e-MCeF en erreur</h4>
-                <p style="color: #991b1b;">
+                <h4>Certification e-MCeF en erreur</h4>
+                <p>
                     Cette facture n'a pas pu être certifiée par la DGI.<br>
                     <strong>Erreur :</strong> {{ $sale->emcef_error ?? 'Erreur inconnue' }}
                 </p>
             </div>
         </div>
     @elseif($company->emcef_enabled && $sale->emcef_status === 'pending')
-        <div class="verification-section" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fcd34d;">
+        <div class="verification-section">
             <div class="verification-info" style="width: 100%;">
-                <h4 style="color: #b45309;">⏳ Certification e-MCeF en cours</h4>
-                <p style="color: #92400e;">
+                <h4>Certification e-MCeF en cours</h4>
+                <p>
                     Cette facture est en attente de certification par la DGI Bénin.
                 </p>
             </div>
@@ -833,248 +710,45 @@
 
     <footer class="invoice-footer">
         @if($isVatFranchise)
-            <p style="font-weight: 600; color: var(--gray-700); margin-bottom: 8px; padding: 8px 16px; background: var(--gray-100); border-radius: 6px; display: inline-block;">
-                Exonéré de TVA
-            </p><br>
+            <p style="font-weight: 600; margin-bottom: 6px;"><strong>Exonéré de TVA</strong></p>
         @endif
         @if($company->footer_text)
             {{ $company->footer_text }}
         @else
-            Merci pour votre confiance • Document généré automatiquement<br>
+            Merci pour votre confiance<br>
             {{ $company->name }} — {{ $company->phone ?? '' }} — {{ $company->email ?? '' }}
         @endif
     </footer>
 
     <div class="actions no-print">
         @if(empty($previewMode))
-            <button onclick="window.print()" class="btn btn-primary">
-                🖨️ Imprimer
-            </button>
+            <button onclick="window.print()" class="btn btn-primary">Imprimer</button>
         @else
-            <a href="{{ route('sales.invoice', $sale) }}" class="btn btn-primary">
-                📄 Télécharger PDF Factur-X
-            </a>
-            <button onclick="window.print()" class="btn btn-secondary">
-                🖨️ Imprimer
-            </button>
+            <a href="{{ route('sales.invoice', $sale) }}" class="btn btn-primary">Télécharger PDF</a>
+            <button onclick="window.print()" class="btn btn-secondary">Imprimer</button>
         @endif
     </div>
 
     {{-- Accordion XML Preview (only in preview mode) --}}
     @if(!empty($previewMode) && !empty($facturxXml))
-        <div class="xml-accordion no-print">
-            <button class="xml-accordion-toggle" onclick="toggleXmlAccordion()">
-                <span class="xml-icon">📋</span>
-                <span class="xml-title">Factur-X XML intégré (CII)</span>
-                <span class="xml-badge">PDF/A-3</span>
-                <span class="xml-chevron" id="xmlChevron">▼</span>
+        <div style="margin-top: 24px; border: 1px solid #ccc;" class="no-print">
+            <button style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f5f5f5; border: none; cursor: pointer; font-size: 13px; font-weight: 500; text-align: left;" onclick="document.getElementById('xmlContent').classList.toggle('open'); document.getElementById('xmlChevron').classList.toggle('open');">
+                <span>Factur-X XML intégré (CII)</span>
+                <span style="margin-left: auto; font-size: 11px; border: 1px solid #333; padding: 2px 8px;">PDF/A-3</span>
+                <span id="xmlChevron" style="transition: transform 0.3s;">▼</span>
             </button>
-            <div class="xml-content" id="xmlContent">
-                <div class="xml-toolbar">
-                    <span class="xml-info">
-                        <span class="xml-profile">Profil: BASIC</span>
-                        <span class="xml-standard">Norme: Factur-X / ZUGFeRD 2.1</span>
-                    </span>
-                    <button class="xml-copy-btn" onclick="copyXmlToClipboard()">
-                        📋 Copier XML
-                    </button>
+            <div id="xmlContent" style="display: none; background: #f9f9f9;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; border-bottom: 1px solid #eee;">
+                    <span style="font-size: 11px; color: #666;">Profil: BASIC | Norme: Factur-X / ZUGFeRD 2.1</span>
+                    <button onclick="navigator.clipboard.writeText(document.getElementById('xmlCode').textContent)" style="background: #333; color: white; border: none; padding: 6px 12px; font-size: 11px; cursor: pointer;">Copier XML</button>
                 </div>
-                <pre class="xml-code" id="xmlCode"><code>{{ $facturxXml }}</code></pre>
+                <pre id="xmlCode" style="margin: 0; padding: 16px; font-family: monospace; font-size: 11px; line-height: 1.5; overflow-x: auto; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"><code>{{ $facturxXml }}</code></pre>
             </div>
         </div>
-        
         <style>
-            .xml-accordion {
-                margin-top: 32px;
-                border: 1px solid var(--gray-200);
-                border-radius: 12px;
-                overflow: hidden;
-                background: white;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            }
-            
-            .xml-accordion-toggle {
-                width: 100%;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 16px 20px;
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-                color: white;
-                border: none;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 500;
-                text-align: left;
-                transition: all 0.2s;
-            }
-            
-            .xml-accordion-toggle:hover {
-                background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            }
-            
-            .xml-icon {
-                font-size: 18px;
-            }
-            
-            .xml-title {
-                flex: 1;
-            }
-            
-            .xml-badge {
-                background: #10b981;
-                color: white;
-                padding: 4px 10px;
-                border-radius: 20px;
-                font-size: 10px;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            
-            .xml-chevron {
-                font-size: 12px;
-                transition: transform 0.3s ease;
-            }
-            
-            .xml-chevron.open {
-                transform: rotate(180deg);
-            }
-            
-            .xml-content {
-                display: none;
-                background: #0f172a;
-            }
-            
-            .xml-content.open {
-                display: block;
-            }
-            
-            .xml-toolbar {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 20px;
-                background: #1e293b;
-                border-bottom: 1px solid #334155;
-            }
-            
-            .xml-info {
-                display: flex;
-                gap: 16px;
-                font-size: 11px;
-            }
-            
-            .xml-profile {
-                color: #60a5fa;
-                font-weight: 500;
-            }
-            
-            .xml-standard {
-                color: #94a3b8;
-            }
-            
-            .xml-copy-btn {
-                background: #3b82f6;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
-            }
-            
-            .xml-copy-btn:hover {
-                background: #2563eb;
-                transform: translateY(-1px);
-            }
-            
-            .xml-copy-btn:active {
-                transform: translateY(0);
-            }
-            
-            .xml-code {
-                margin: 0;
-                padding: 20px;
-                background: #0f172a;
-                color: #e2e8f0;
-                font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
-                font-size: 11px;
-                line-height: 1.6;
-                overflow-x: auto;
-                max-height: 500px;
-                overflow-y: auto;
-                white-space: pre-wrap;
-                word-break: break-word;
-            }
-            
-            .xml-code::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-            }
-            
-            .xml-code::-webkit-scrollbar-track {
-                background: #1e293b;
-            }
-            
-            .xml-code::-webkit-scrollbar-thumb {
-                background: #475569;
-                border-radius: 4px;
-            }
-            
-            .xml-code::-webkit-scrollbar-thumb:hover {
-                background: #64748b;
-            }
-            
-            /* Syntax highlighting (basic) */
-            .xml-code code {
-                color: #e2e8f0;
-            }
+            #xmlContent.open { display: block !important; }
+            #xmlChevron.open { transform: rotate(180deg); }
         </style>
-        
-        <script>
-            function toggleXmlAccordion() {
-                const content = document.getElementById('xmlContent');
-                const chevron = document.getElementById('xmlChevron');
-                content.classList.toggle('open');
-                chevron.classList.toggle('open');
-            }
-            
-            function copyXmlToClipboard() {
-                const xmlCode = document.getElementById('xmlCode').textContent;
-                navigator.clipboard.writeText(xmlCode).then(() => {
-                    const btn = document.querySelector('.xml-copy-btn');
-                    const originalText = btn.textContent;
-                    btn.textContent = '✓ Copié !';
-                    btn.style.background = '#10b981';
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                        btn.style.background = '#3b82f6';
-                    }, 2000);
-                }).catch(err => {
-                    alert('Erreur lors de la copie: ' + err);
-                });
-            }
-            
-            // Syntax highlighting (simple XML colorization)
-            document.addEventListener('DOMContentLoaded', function() {
-                const codeElement = document.querySelector('.xml-code code');
-                if (codeElement) {
-                    let xml = codeElement.innerHTML;
-                    // Highlight tags
-                    xml = xml.replace(/(&lt;\/?[\w:]+)/g, '<span style="color:#60a5fa">$1</span>');
-                    // Highlight attributes
-                    xml = xml.replace(/(\s[\w:]+)(=)/g, '<span style="color:#f472b6">$1</span>$2');
-                    // Highlight attribute values
-                    xml = xml.replace(/(".*?")/g, '<span style="color:#a5f3fc">$1</span>');
-                    // Highlight comments
-                    xml = xml.replace(/(&lt;!--.*?--&gt;)/g, '<span style="color:#6b7280">$1</span>');
-                    codeElement.innerHTML = xml;
-                }
-            });
-        </script>
     @endif
 </div>
 </body>
