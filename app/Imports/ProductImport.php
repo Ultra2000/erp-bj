@@ -58,10 +58,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithChunkReading
                 $fournisseurName = trim($row['fournisseur'] ?? $row['supplier'] ?? '');
                 if (!empty($fournisseurName)) {
                     $supplier = Supplier::where('company_id', $this->companyId)
-                        ->where(function ($q) use ($fournisseurName) {
-                            $q->where('name', $fournisseurName)
-                              ->orWhere('code', $fournisseurName);
-                        })
+                        ->where('name', $fournisseurName)
                         ->first();
                     $supplierId = $supplier?->id;
                 }
