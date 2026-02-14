@@ -8,8 +8,6 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class ProductTemplateExport implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithTitle
@@ -111,42 +109,14 @@ class ProductTemplateExport implements FromArray, WithHeadings, WithStyles, With
 
     public function styles(Worksheet $sheet): array
     {
-        // Ajouter des commentaires explicatifs
-        $sheet->getComment('A1')->getText()->createTextRun('OBLIGATOIRE: Nom du produit');
-        $sheet->getComment('B1')->getText()->createTextRun('Code-barres du produit (optionnel)');
-        $sheet->getComment('C1')->getText()->createTextRun('Description du produit (optionnel)');
-        $sheet->getComment('D1')->getText()->createTextRun('Prix d\'achat en FCFA');
-        $sheet->getComment('E1')->getText()->createTextRun('OBLIGATOIRE: Prix de vente en FCFA');
-        $sheet->getComment('F1')->getText()->createTextRun('Stock initial (par défaut: 0)');
-        $sheet->getComment('G1')->getText()->createTextRun('Stock minimum d\'alerte');
-        $sheet->getComment('H1')->getText()->createTextRun('Unité: pièce, kg, litre, etc.');
-        $sheet->getComment('I1')->getText()->createTextRun('Taux TVA achat (ex: 18 pour 18%)');
-        $sheet->getComment('J1')->getText()->createTextRun('Taux TVA vente (ex: 18 pour 18%)');
-        $sheet->getComment('K1')->getText()->createTextRun('Prix de vente en gros (optionnel)');
-        $sheet->getComment('L1')->getText()->createTextRun('Quantité minimum pour prix de gros');
-        $sheet->getComment('M1')->getText()->createTextRun('Nom ou code du fournisseur');
-        $sheet->getComment('N1')->getText()->createTextRun('Oui si prix en TTC, Non si prix en HT');
-
         return [
             // Style pour l'en-tête
             1 => [
                 'font' => [
                     'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'],
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '4F46E5'], // Indigo
                 ],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
-                ],
-            ],
-            // Style pour les données d'exemple
-            '2:4' => [
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => 'F3F4F6'], // Gris clair
                 ],
             ],
         ];
