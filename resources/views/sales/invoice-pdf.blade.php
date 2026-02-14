@@ -6,7 +6,7 @@
     <title>{{ $sale->type === 'credit_note' ? 'Avoir' : 'Facture' }} {{ $sale->invoice_number }}</title>
     <style>
         @page {
-            margin: 20mm 25mm 20mm 25mm;
+            margin: 20mm 30mm 20mm 30mm;
         }
 
         * {
