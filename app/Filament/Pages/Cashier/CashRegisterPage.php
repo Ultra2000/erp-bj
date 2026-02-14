@@ -288,8 +288,8 @@ class CashRegisterPage extends Page
                         ->lockForUpdate()
                         ->findOrFail($line['product_id']);
                     
-                    $qty = (int) $line['quantity'];
-                    if ($qty < 1) $qty = 1;
+                    $qty = floatval($line['quantity']);
+                    if ($qty <= 0) $qty = 1;
                     
                     if ($product->stock < $qty) {
                         throw new \RuntimeException('Stock insuffisant pour ' . $product->name);

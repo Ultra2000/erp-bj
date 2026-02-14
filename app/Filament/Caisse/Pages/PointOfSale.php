@@ -244,7 +244,7 @@ class PointOfSale extends Page
                     return ['success' => false, 'message' => "Produit introuvable"];
                 }
                 
-                $qty = max(1, (int) $line['quantity']);
+                $qty = max(0.001, floatval($line['quantity']));
                 // Toujours utiliser sale_price_ht (garanti HT) pour éviter la double taxation
                 $unitPrice = $product->sale_price_ht ?? $product->price;
                 $vatRate = $product->vat_rate_sale ?? 18;
