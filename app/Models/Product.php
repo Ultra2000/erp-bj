@@ -500,7 +500,7 @@ class Product extends Model
     /**
      * Détermine si une quantité bénéficie du prix de gros
      */
-    public function qualifiesForWholesale(int $quantity): bool
+    public function qualifiesForWholesale(float|int $quantity): bool
     {
         if (!$this->hasWholesalePrice()) {
             return false;
@@ -515,7 +515,7 @@ class Product extends Model
      * @param bool $includingVat Si true, retourne le prix TTC, sinon HT
      * @return float Prix unitaire
      */
-    public function getApplicablePrice(int $quantity = 1, bool $includingVat = true): float
+    public function getApplicablePrice(float|int $quantity = 1, bool $includingVat = true): float
     {
         if ($this->qualifiesForWholesale($quantity)) {
             return $includingVat ? $this->wholesale_price_ttc : $this->wholesale_price_ht;
@@ -527,7 +527,7 @@ class Product extends Model
     /**
      * Retourne le type de prix applicable (retail/wholesale)
      */
-    public function getPriceType(int $quantity = 1): string
+    public function getPriceType(float|int $quantity = 1): string
     {
         return $this->qualifiesForWholesale($quantity) ? 'wholesale' : 'retail';
     }
@@ -535,7 +535,7 @@ class Product extends Model
     /**
      * Calcule l'économie réalisée avec le prix de gros
      */
-    public function getWholesaleSavings(int $quantity): float
+    public function getWholesaleSavings(float|int $quantity): float
     {
         if (!$this->qualifiesForWholesale($quantity)) {
             return 0;
