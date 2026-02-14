@@ -501,7 +501,7 @@
             @forelse($sale->items as $item)
                 <tr>
                     <td><span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span></td>
-                    <td class="text-center">{{ $item->quantity }}</td>
+                    <td class="text-center">{{ $item->quantity == intval($item->quantity) ? intval($item->quantity) : number_format($item->quantity, 3, ',', ' ') }}</td>
                     <td class="text-right text-muted">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}</td>
                     <td class="text-center">{{ number_format($item->vat_rate ?? 0, 0) }}%</td>
                     <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>

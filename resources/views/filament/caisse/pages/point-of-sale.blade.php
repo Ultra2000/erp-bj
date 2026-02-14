@@ -164,7 +164,7 @@
                                 </div>
                                 <div class="flex items-center gap-2 mt-2">
                                     <button @click="decrementQty(index)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">−</button>
-                                    <input type="number" x-model.number="item.quantity" @change="updateItemTotal(index)" min="1" class="w-16 text-center border rounded py-1">
+                                    <input type="number" x-model.number="item.quantity" @change="updateItemTotal(index)" min="0.001" step="any" class="w-16 text-center border rounded py-1">
                                     <button @click="incrementQty(index)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">+</button>
                                     <button @click="removeFromCart(index)" class="ml-auto text-red-500 hover:text-red-700">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

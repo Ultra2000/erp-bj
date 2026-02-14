@@ -569,7 +569,7 @@
                                 <span style="display: inline-block; border: 1px solid #333; font-size: 9px; padding: 1px 4px; margin-left: 4px;">PRIX GROS</span>
                             @endif
                         </td>
-                        <td>{{ $item->quantity }}</td>
+                        <td>{{ $item->quantity == intval($item->quantity) ? intval($item->quantity) : number_format($item->quantity, 3, ',', ' ') }}</td>
                         <td class="text-right text-muted">
                             {{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}
                             @if($item->is_wholesale && $item->retail_unit_price)

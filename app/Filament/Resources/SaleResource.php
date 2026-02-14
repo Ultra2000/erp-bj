@@ -329,8 +329,9 @@ class SaleResource extends Resource
                                     ->label('Qté')
                                     ->required()
                                     ->numeric()
+                                    ->step(0.001)
                                     ->default(1)
-                                    ->minValue(1)
+                                    ->minValue(0.001)
                                     ->maxValue(function (Forms\Get $get) {
                                         $productId = $get('product_id');
                                         $warehouseId = $get('../../warehouse_id');
@@ -344,7 +345,7 @@ class SaleResource extends Resource
                                     })
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $quantity = (int) $state;
+                                        $quantity = floatval($state);
                                         $productId = $get('product_id');
                                         $vatRate = $get('vat_rate') ?? 18;
                                         

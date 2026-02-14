@@ -29,7 +29,7 @@ class SaleItem extends Model
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:3',
         'unit_price' => 'decimal:2',
         'unit_price_ht' => 'decimal:2',
         'vat_rate' => 'decimal:2',
@@ -262,10 +262,10 @@ class SaleItem extends Model
     /**
      * Applique automatiquement le prix de gros si la quantité le permet
      * @param Product $product Le produit
-     * @param int $quantity La quantité commandée
+     * @param float|int $quantity La quantité commandée
      * @return array ['unit_price' => float, 'is_wholesale' => bool, 'retail_price' => float|null]
      */
-    public static function calculatePriceForQuantity(Product $product, int $quantity): array
+    public static function calculatePriceForQuantity(Product $product, float|int $quantity): array
     {
         $retailPrice = $product->sale_price_ht;
         
