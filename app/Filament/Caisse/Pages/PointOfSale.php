@@ -245,7 +245,8 @@ class PointOfSale extends Page
                 }
                 
                 $qty = max(1, (int) $line['quantity']);
-                $unitPrice = $line['unit_price'] ?? $product->price;
+                // Toujours utiliser sale_price_ht (garanti HT) pour éviter la double taxation
+                $unitPrice = $product->sale_price_ht ?? $product->price;
                 $vatRate = $product->vat_rate_sale ?? 18;
                 
                 // Vérifier stock

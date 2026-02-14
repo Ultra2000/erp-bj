@@ -39,10 +39,28 @@ class CreateSale extends CreateRecord
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
+                'vat_rate' => $item['vat_rate'] ?? null,
+                'vat_category' => $item['vat_category'] ?? null,
+                'is_wholesale' => $item['is_wholesale'] ?? false,
+                'retail_unit_price' => $item['retail_unit_price'] ?? null,
                 'total_price' => $item['total_price'],
             ]);
         }
 
+        // Recharger la relation pour avoir tous les items frais
+        $sale->refresh();
         $sale->calculateTotal();
+
+        // Forcer les totaux corrects (sécurité contre observers qui pourraient écraser)
+        $totalHt = $sale->items()->sum('total_price_ht');
+        $totalVat = $sale->items()->sum('vat_amount');
+        $discountPercent = floatval($sale->discount_percent ?? 0);
+        $multiplier = 1 - ($discountPercent / 100);
+
+        \DB::table('sales')->where('id', $sale->id)->update([
+            'total_ht' => round($totalHt * $multiplier, 2),
+            'total_vat' => round($totalVat * $multiplier, 2),
+            'total' => round(($totalHt + $totalVat) * $multiplier, 2),
+        ]);
     }
 }

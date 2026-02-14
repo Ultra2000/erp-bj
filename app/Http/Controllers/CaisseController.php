@@ -428,7 +428,8 @@ class CaisseController extends Controller
             foreach ($items as $item) {
                 $product = Product::where('company_id', $companyId)->findOrFail($item['product_id']);
                 $qty = (int) $item['quantity'];
-                $price = floatval($item['price']);
+                // Toujours utiliser sale_price_ht (garanti HT) pour éviter la double taxation
+                $price = floatval($product->sale_price_ht ?? $product->price);
                 $vatRate = $product->vat_rate_sale ?? 18;
                 
                 // Vérifier stock

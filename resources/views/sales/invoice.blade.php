@@ -406,8 +406,20 @@
     $totalVat = $isVatFranchise ? 0 : ($sale->total_vat ?? $sale->items->sum('vat_amount'));
     $grandTotal = $isVatFranchise ? $totalHt : ($sale->total ?? ($totalHt + $totalVat));
 
-    // Calculer le taux TVA effectif (moyenne pondérée)
-    $effectiveVatRate = $isVatFranchise ? 0 : ($totalHt > 0 ? round(($totalVat / $totalHt) * 100, 1) : 0);
+    // Ventilation TVA par taux (pour factures avec taux mixtes)
+    $vatBreakdown = [];
+    if (!$isVatFranchise) {
+        foreach ($sale->items as $item) {
+            $rate = number_format($item->vat_rate ?? 0, 1);
+            if (!isset($vatBreakdown[$rate])) {
+                $vatBreakdown[$rate] = ['base_ht' => 0, 'vat_amount' => 0];
+            }
+            $vatBreakdown[$rate]['base_ht'] += $item->total_price_ht ?? 0;
+            $vatBreakdown[$rate]['vat_amount'] += $item->vat_amount ?? 0;
+        }
+        ksort($vatBreakdown);
+    }
+    $hasMixedRates = count($vatBreakdown) > 1;
 
     // Calculer la remise si présente
     $totalAvantRemise = $sale->items->sum('total_price');
@@ -601,9 +613,16 @@
                     <span class="label">TVA</span>
                     <span class="value" style="color: #999;">Non applicable</span>
                 </div>
+            @elseif($hasMixedRates)
+                @foreach($vatBreakdown as $rate => $amounts)
+                <div class="totals-row">
+                    <span class="label">TVA {{ $rate }}% (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
+                    <span class="value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</span>
+                </div>
+                @endforeach
             @else
                 <div class="totals-row">
-                    <span class="label">TVA ({{ number_format($effectiveVatRate, 1, ',', ' ') }}%)</span>
+                    <span class="label">TVA ({{ count($vatBreakdown) ? array_key_first($vatBreakdown) : '0' }}%)</span>
                     <span class="value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
             @endif

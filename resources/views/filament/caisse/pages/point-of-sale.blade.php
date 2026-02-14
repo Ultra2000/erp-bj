@@ -101,7 +101,7 @@
                                 <div class="font-semibold text-gray-800 truncate group-hover:text-emerald-700" x-text="product.name"></div>
                                 <div class="text-xs text-gray-500 mt-1" x-text="product.code || 'Sans code'"></div>
                                 <div class="flex justify-between items-end mt-3">
-                                    <div class="text-lg font-bold text-emerald-600" x-text="formatPrice(product.price)"></div>
+                                    <div class="text-lg font-bold text-emerald-600" x-text="formatPrice(Math.round((parseFloat(product.sale_price_ht) || parseFloat(product.price)) * (1 + (parseFloat(product.vat_rate_sale) || 18) / 100)))"></div>
                                     <div class="text-xs px-2 py-1 rounded-full" 
                                          :class="product.stock <= (product.min_stock || 0) ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'"
                                          x-text="'Stock: ' + product.stock">
@@ -156,7 +156,7 @@
                                 <div class="flex justify-between">
                                     <div class="flex-1">
                                         <div class="font-medium" x-text="item.name"></div>
-                                        <div class="text-sm text-gray-500" x-text="formatPrice(item.unit_price) + ' × ' + item.quantity"></div>
+                                        <div class="text-sm text-gray-500" x-text="formatPrice(item.display_price || item.unit_price) + ' × ' + item.quantity"></div>
                                     </div>
                                     <div class="text-right">
                                         <div class="font-semibold text-emerald-600" x-text="formatPrice(item.total)"></div>
@@ -190,7 +190,7 @@
                             <input type="number" x-model.number="discount" min="0" max="100" step="0.5" class="w-20 text-right border rounded px-2 py-1 text-sm">
                         </div>
                         <div class="flex justify-between items-center text-xs text-gray-400">
-                            <span>TVA incluse par produit (18%)</span>
+                            <span>TVA calculée par produit</span>
                         </div>
                     </div>
 
@@ -513,17 +513,25 @@
                     if (existing) {
                         if (existing.quantity < product.stock) {
                             existing.quantity++;
-                            existing.total = existing.quantity * existing.unit_price;
+                            existing.total = existing.quantity * existing.display_price;
                         } else {
                             alert('Stock insuffisant');
                         }
                     } else {
+                        // Utiliser sale_price_ht (toujours HT) pour le backend
+                        const priceHt = parseFloat(product.sale_price_ht) || parseFloat(product.price);
+                        const vatRate = parseFloat(product.vat_rate_sale) || 18;
+                        // Prix TTC pour l'affichage client
+                        const priceTtc = Math.round(priceHt * (1 + vatRate / 100));
+                        
                         this.cart.push({
                             id: product.id,
                             name: product.name,
-                            unit_price: parseFloat(product.price),
+                            unit_price: priceHt,         // HT - envoyé au backend
+                            display_price: priceTtc,     // TTC - affiché au client
+                            vat_rate: vatRate,
                             quantity: 1,
-                            total: parseFloat(product.price),
+                            total: priceTtc,             // TTC total pour affichage
                             stock: product.stock
                         });
                     }
@@ -551,7 +559,7 @@
 
                 updateItemTotal(index) {
                     const item = this.cart[index];
-                    item.total = item.quantity * item.unit_price;
+                    item.total = item.quantity * item.display_price;
                 },
 
                 clearCart() {
@@ -567,7 +575,7 @@
                 get grandTotal() {
                     const discountAmt = this.subtotal * (this.discount / 100);
                     const afterDiscount = this.subtotal - discountAmt;
-                    // TVA déjà incluse dans les prix produits (18% par défaut)
+                    // Les totaux sont en TTC (calculés à partir du HT + TVA par produit)
                     return Math.round(afterDiscount);
                 },
 
