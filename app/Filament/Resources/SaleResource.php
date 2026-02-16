@@ -235,6 +235,7 @@ class SaleResource extends Resource
                                                 $set('vat_rate', $product->vat_rate_sale ?? $defaultVatRate);
                                                 $set('vat_category', $product->vat_category ?? $defaultVatCategory);
                                                 $set('tax_specific_amount', $product->tax_specific_amount);
+                                                $set('tax_specific_label', $product->tax_specific_label);
                                                 $set('quantity', 1);
                                                 $set('is_wholesale', false);
                                                 $set('retail_unit_price', null);
@@ -373,6 +374,8 @@ class SaleResource extends Resource
                                 Forms\Components\Hidden::make('vat_category')
                                     ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S'),
                                 Forms\Components\Hidden::make('tax_specific_amount')
+                                    ->default(null),
+                                Forms\Components\Hidden::make('tax_specific_label')
                                     ->default(null),
                                 Forms\Components\Hidden::make('is_wholesale')
                                     ->default(false),
@@ -923,6 +926,7 @@ class SaleResource extends Resource
                                 'vat_rate' => $item->vat_rate ?? 18,
                                 'vat_category' => $item->vat_category ?? 'A',
                                 'tax_specific_amount' => $item->tax_specific_amount,
+                                'tax_specific_label' => $item->tax_specific_label,
                             ]);
                         }
                         

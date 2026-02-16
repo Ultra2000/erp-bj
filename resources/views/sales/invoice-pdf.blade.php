@@ -388,6 +388,7 @@
     // Ventilation TVA par taux (pour factures avec taux mixtes)
     $vatBreakdown = [];
     $totalTaxSpecific = 0;
+    $taxSpecificLabel = null;
     if (!$isVatFranchise) {
         foreach ($sale->items as $item) {
             $group = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category);
@@ -400,6 +401,9 @@
             // Taxe spécifique (Groupe E) — cumulée séparément
             if ($item->tax_specific_amount > 0) {
                 $totalTaxSpecific += ($item->tax_specific_total ?? ($item->tax_specific_amount * $item->quantity));
+                if (!$taxSpecificLabel && $item->tax_specific_label) {
+                    $taxSpecificLabel = $item->tax_specific_label;
+                }
             }
         }
         ksort($vatBreakdown);
@@ -597,7 +601,7 @@
                         <div class="totals-row">
                             <table class="totals-row-table">
                                 <tr>
-                                    <td class="totals-label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
+                                    <td class="totals-label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
                                     <td class="totals-value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</td>
                                 </tr>
                             </table>
@@ -618,7 +622,7 @@
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
+                                <td class="totals-label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
                                 <td class="totals-value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>

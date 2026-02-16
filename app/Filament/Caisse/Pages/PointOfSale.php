@@ -277,6 +277,7 @@ class PointOfSale extends Page
                     'vat_rate' => $vatRate,
                     'vat_category' => $product->vat_category ?? 'S',
                     'tax_specific_amount' => $product->tax_specific_amount,
+                    'tax_specific_label' => $product->tax_specific_label,
                     'tax_specific_total' => $lineTaxSpec,
                     'vat_amount' => $lineVat,
                     'total_price_ht' => $lineHt,

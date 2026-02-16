@@ -41,6 +41,7 @@ class Product extends Model
         'vat_rate_sale',
         'vat_category',
         'tax_specific_amount',
+        'tax_specific_label',
         'prices_include_vat',
         // Prix de gros
         'wholesale_price',

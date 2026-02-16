@@ -423,6 +423,7 @@
     // Ventilation TVA par taux (pour factures avec taux mixtes)
     $vatBreakdown = [];
     $totalTaxSpecific = 0; // Total taxe spécifique (affiché séparément)
+    $taxSpecificLabel = null; // Libellé personnalisé (ex: Taxe de séjour)
     if (!$isVatFranchise) {
         foreach ($sale->items as $item) {
             // TVA classique (toujours)
@@ -437,6 +438,9 @@
             // Taxe spécifique (cumulée séparément)
             if ($item->tax_specific_amount > 0) {
                 $totalTaxSpecific += $item->tax_specific_total ?? round($item->tax_specific_amount * $item->quantity, 2);
+                if (!$taxSpecificLabel && $item->tax_specific_label) {
+                    $taxSpecificLabel = $item->tax_specific_label;
+                }
             }
         }
         ksort($vatBreakdown);
@@ -672,7 +676,7 @@
                 @endforeach
                 @if($totalTaxSpecific > 0)
                 <div class="totals-row">
-                    <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
+                    <span class="label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
                     <span class="value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
                 @endif
@@ -685,7 +689,7 @@
                 </div>
                 @if($totalTaxSpecific > 0)
                 <div class="totals-row">
-                    <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
+                    <span class="label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
                     <span class="value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
                 @endif

@@ -22,6 +22,7 @@ class SaleItem extends Model
         'vat_category',
         'tax_specific_amount',
         'tax_specific_total',
+        'tax_specific_label',
         'unit_price_ht',
         'vat_amount',
         'total_price_ht',

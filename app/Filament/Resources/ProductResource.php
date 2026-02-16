@@ -252,10 +252,18 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('tax_specific_amount')
                             ->label('Taxe spécifique / unité')
                             ->numeric()
+                            ->live()
                             ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                             ->helperText('Montant fixe de taxe par unité (Groupe E). Se cumule avec la TVA du groupe sélectionné ci-dessus.')
                             ->placeholder('Laisser vide si aucune taxe spécifique')
                             ->visible(fn () => (Filament::getTenant()?->emcef_enabled ?? false))
+                            ->columnSpan(1),
+
+                        Forms\Components\TextInput::make('tax_specific_label')
+                            ->label('Libellé de la taxe')
+                            ->placeholder('Taxe spécifique')
+                            ->helperText('Ex: Taxe de séjour, Droit d\'accise, Taxe communale...')
+                            ->visible(fn (Forms\Get $get) => (Filament::getTenant()?->emcef_enabled ?? false) && floatval($get('tax_specific_amount') ?? 0) > 0)
                             ->columnSpan(1),
 
                         // Affichage de la marge
