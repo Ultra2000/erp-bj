@@ -511,7 +511,10 @@ class EmcefService
         // Préparer les articles
         $items = [];
         foreach ($sale->items as $item) {
-            $taxGroup = $this->getTaxGroup($item->vat_rate ?? 18, $item->vat_category);
+            // Si taxe spécifique présente → Groupe E pour e-MCeF, sinon groupe TVA classique
+            $hasSpecificTax = $item->tax_specific_amount > 0;
+            $taxGroup = $hasSpecificTax ? 'E' : $this->getTaxGroup($item->vat_rate ?? 18, $item->vat_category);
+            
             $itemData = [
                 'code' => $item->product->sku ?? $item->product->id,
                 'name' => $item->product->name,
@@ -523,7 +526,7 @@ class EmcefService
             ];
             
             // Groupe E: ajouter le montant de taxe spécifique
-            if ($taxGroup === 'E' && $item->tax_specific_amount > 0) {
+            if ($hasSpecificTax) {
                 $itemData['taxSpecific'] = (int) round($item->tax_specific_amount);
             }
             

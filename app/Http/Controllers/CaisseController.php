@@ -444,19 +444,14 @@ class CaisseController extends Controller
                     }
                 }
                 
-                // Calculs
+                // Calculs: TVA + taxe spécifique cumulatives
                 $lineHt = $qty * $price;
-                // Groupe E: taxe spécifique = montant fixe × quantité
-                $vatCategory = $product->vat_category ?? 'S';
-                if ($vatCategory === 'E' && $product->tax_specific_amount > 0) {
-                    $lineVat = round($product->tax_specific_amount * $qty, 2);
-                } else {
-                    $lineVat = round($lineHt * ($vatRate / 100), 2);
-                }
-                $lineTtc = $lineHt + $lineVat;
+                $lineVat = round($lineHt * ($vatRate / 100), 2);
+                $lineTaxSpec = ($product->tax_specific_amount > 0) ? round($product->tax_specific_amount * $qty, 2) : 0;
+                $lineTtc = $lineHt + $lineVat + $lineTaxSpec;
                 
                 $totalHt += $lineHt;
-                $totalVat += $lineVat;
+                $totalVat += $lineVat + $lineTaxSpec;
                 $totalTtc += $lineTtc;
                 
                 $itemsToCreate[] = [
@@ -465,8 +460,9 @@ class CaisseController extends Controller
                     'unit_price' => $price,
                     'unit_price_ht' => $price,
                     'vat_rate' => $vatRate,
-                    'vat_category' => $vatCategory,
+                    'vat_category' => $product->vat_category ?? 'S',
                     'tax_specific_amount' => $product->tax_specific_amount,
+                    'tax_specific_total' => $lineTaxSpec,
                     'vat_amount' => $lineVat,
                     'total_price_ht' => $lineHt,
                     'total_price' => $lineTtc,

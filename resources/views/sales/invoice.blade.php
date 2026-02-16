@@ -422,24 +422,26 @@
 
     // Ventilation TVA par taux (pour factures avec taux mixtes)
     $vatBreakdown = [];
+    $totalTaxSpecific = 0; // Total taxe spécifique (affiché séparément)
     if (!$isVatFranchise) {
         foreach ($sale->items as $item) {
+            // TVA classique (toujours)
+            $rate = number_format($item->vat_rate ?? 0, 1);
             $group = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category);
-            // Groupe E: clé spéciale pour taxe spécifique
-            if ($group === 'E' && $item->tax_specific_amount > 0) {
-                $rate = 'E'; // Clé spéciale
-            } else {
-                $rate = number_format($item->vat_rate ?? 0, 1);
-            }
             if (!isset($vatBreakdown[$rate])) {
                 $vatBreakdown[$rate] = ['base_ht' => 0, 'vat_amount' => 0, 'group' => $group];
             }
             $vatBreakdown[$rate]['base_ht'] += $item->total_price_ht ?? 0;
             $vatBreakdown[$rate]['vat_amount'] += $item->vat_amount ?? 0;
+            
+            // Taxe spécifique (cumulée séparément)
+            if ($item->tax_specific_amount > 0) {
+                $totalTaxSpecific += $item->tax_specific_total ?? round($item->tax_specific_amount * $item->quantity, 2);
+            }
         }
         ksort($vatBreakdown);
     }
-    $hasMixedRates = count($vatBreakdown) > 1;
+    $hasMixedRates = count($vatBreakdown) > 1 || $totalTaxSpecific > 0;
 
     // Vérifier si e-MCeF est activé (pour afficher les groupes de taxe DGI)
     $isEmcefEnabled = $company->emcef_enabled ?? false;
@@ -614,13 +616,15 @@
                         </td>
                         <td class="text-right">
                             @php $itemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); @endphp
-                            @if($itemGroup === 'E' && $item->tax_specific_amount > 0)
-                                {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u
-                            @else
-                                {{ number_format($item->vat_rate ?? 0, 0) }}%
+                            {{ number_format($item->vat_rate ?? 0, 0) }}%
+                            @if($item->tax_specific_amount > 0)
+                                <br><small style="color: #666;">+ {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u</small>
                             @endif
                             @if($isEmcefEnabled)
                                 <span style="display:inline-block;border:1px solid #555;font-size:8px;padding:0 3px;margin-left:2px;border-radius:2px;font-weight:bold;">{{ $itemGroup }}</span>
+                                @if($item->tax_specific_amount > 0)
+                                    <span style="display:inline-block;border:1px solid #e67e22;background:#fef3e2;font-size:8px;padding:0 3px;margin-left:1px;border-radius:2px;font-weight:bold;color:#e67e22;">E</span>
+                                @endif
                             @endif
                         </td>
                         <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
@@ -662,25 +666,29 @@
             @elseif($hasMixedRates)
                 @foreach($vatBreakdown as $rate => $amounts)
                 <div class="totals-row">
-                    @if($rate === 'E')
-                        <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }} (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
-                    @else
-                        <span class="label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
-                    @endif
+                    <span class="label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
                     <span class="value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
                 @endforeach
+                @if($totalTaxSpecific > 0)
+                <div class="totals-row">
+                    <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
+                    <span class="value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</span>
+                </div>
+                @endif
             @else
                 @php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; @endphp
                 @php $singleRate = count($vatBreakdown) ? array_key_first($vatBreakdown) : '0'; @endphp
                 <div class="totals-row">
-                    @if($singleRate === 'E')
-                        <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
-                    @else
-                        <span class="label">TVA ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</span>
-                    @endif
+                    <span class="label">TVA ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</span>
                     <span class="value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
+                @if($totalTaxSpecific > 0)
+                <div class="totals-row">
+                    <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
+                    <span class="value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</span>
+                </div>
+                @endif
             @endif
             <div class="totals-row grand-total">
                 <span class="label">Total {{ $isVatFranchise ? 'Net' : 'TTC' }}</span>

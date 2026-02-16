@@ -21,11 +21,11 @@ class SaleItem extends Model
         'vat_rate',
         'vat_category',
         'tax_specific_amount',
+        'tax_specific_total',
         'unit_price_ht',
         'vat_amount',
         'total_price_ht',
         'total_price',
-        'vat_category',
         'is_wholesale',
         'retail_unit_price',
     ];
@@ -36,6 +36,7 @@ class SaleItem extends Model
         'unit_price_ht' => 'decimal:2',
         'vat_rate' => 'decimal:2',
         'tax_specific_amount' => 'decimal:2',
+        'tax_specific_total' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'total_price_ht' => 'decimal:2',
         'total_price' => 'decimal:2',
@@ -224,13 +225,18 @@ class SaleItem extends Model
             
             $this->vat_rate = $vatRate;
             
-            // Groupe E: taxe spécifique = montant fixe × quantité
-            if ($this->vat_category === 'E' && $this->tax_specific_amount > 0) {
-                $this->vat_amount = round($this->tax_specific_amount * $this->quantity, 2);
+            // 1. TVA classique (pourcentage sur le HT)
+            $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
+            
+            // 2. Taxe spécifique (montant fixe × quantité) — cumulable avec la TVA
+            if ($this->tax_specific_amount > 0) {
+                $this->tax_specific_total = round($this->tax_specific_amount * $this->quantity, 2);
             } else {
-                $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
+                $this->tax_specific_total = 0;
             }
-            $this->total_price = $this->total_price_ht + $this->vat_amount;
+            
+            // Total TTC = HT + TVA + taxe spécifique
+            $this->total_price = $this->total_price_ht + $this->vat_amount + $this->tax_specific_total;
         }
     }
 

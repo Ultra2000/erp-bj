@@ -297,16 +297,12 @@ class SaleResource extends Resource
                                                 $set('is_wholesale', false);
                                                 $set('retail_unit_price', null);
                                                 
-                                                // Calculer le total
+                                                // Calculer le total TTC = HT + TVA + taxe spécifique
                                                 $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
                                                 $totalHt = $product->sale_price_ht;
-                                                // Groupe E: taxe spécifique = montant fixe × quantité
-                                                if (($product->vat_category ?? '') === 'E' && $product->tax_specific_amount > 0) {
-                                                    $vat = round($product->tax_specific_amount * 1, 2); // qty=1
-                                                } else {
-                                                    $vat = round($totalHt * ($vatRate / 100), 2);
-                                                }
-                                                $set('total_price', $totalHt + $vat);
+                                                $vat = round($totalHt * ($vatRate / 100), 2);
+                                                $taxSpec = $product->tax_specific_amount > 0 ? round($product->tax_specific_amount * 1, 2) : 0;
+                                                $set('total_price', $totalHt + $vat + $taxSpec);
                                                 
                                                 // Info prix de gros si disponible
                                                 if ($product->hasWholesalePrice()) {
@@ -366,17 +362,12 @@ class SaleResource extends Resource
                                                 $set('is_wholesale', $priceData['is_wholesale']);
                                                 $set('retail_unit_price', $priceData['retail_unit_price']);
                                                 
-                                                // Calculer le total
+                                                // Calculer le total TTC = HT + TVA + taxe spécifique
                                                 $totalHt = $quantity * $unitPrice;
-                                                // Groupe E: taxe spécifique
-                                                $vatCategory = $get('vat_category');
-                                                $taxSpecific = (float) ($get('tax_specific_amount') ?? 0);
-                                                if ($vatCategory === 'E' && $taxSpecific > 0) {
-                                                    $vat = round($taxSpecific * $quantity, 2);
-                                                } else {
-                                                    $vat = round($totalHt * ($vatRate / 100), 2);
-                                                }
-                                                $set('total_price', $totalHt + $vat);
+                                                $vat = round($totalHt * ($vatRate / 100), 2);
+                                                $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
+                                                $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * $quantity, 2) : 0;
+                                                $set('total_price', $totalHt + $vat + $taxSpecTotal);
                                                 
                                                 // Message prix de gros
                                                 if ($priceData['is_wholesale']) {
@@ -391,14 +382,10 @@ class SaleResource extends Resource
                                             $unitPrice = $get('unit_price');
                                             if ($quantity && $unitPrice) {
                                                 $totalHt = $quantity * $unitPrice;
-                                                $vatCategory = $get('vat_category');
-                                                $taxSpecific = (float) ($get('tax_specific_amount') ?? 0);
-                                                if ($vatCategory === 'E' && $taxSpecific > 0) {
-                                                    $vat = round($taxSpecific * $quantity, 2);
-                                                } else {
-                                                    $vat = round($totalHt * ($vatRate / 100), 2);
-                                                }
-                                                $set('total_price', $totalHt + $vat);
+                                                $vat = round($totalHt * ($vatRate / 100), 2);
+                                                $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
+                                                $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * $quantity, 2) : 0;
+                                                $set('total_price', $totalHt + $vat + $taxSpecTotal);
                                             }
                                         }
                                     }),
@@ -416,14 +403,10 @@ class SaleResource extends Resource
                                         $vatRate = $get('vat_rate') ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
-                                            $vatCategory = $get('vat_category');
-                                            $taxSpecific = (float) ($get('tax_specific_amount') ?? 0);
-                                            if ($vatCategory === 'E' && $taxSpecific > 0) {
-                                                $vat = round($taxSpecific * floatval($quantity), 2);
-                                            } else {
-                                                $vat = round($totalHt * ($vatRate / 100), 2);
-                                            }
-                                            $set('total_price', $totalHt + $vat);
+                                            $vat = round($totalHt * ($vatRate / 100), 2);
+                                            $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
+                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), 2) : 0;
+                                            $set('total_price', $totalHt + $vat + $taxSpecTotal);
                                         }
                                     }),
                                 Forms\Components\Select::make('vat_rate')
@@ -439,14 +422,10 @@ class SaleResource extends Resource
                                         $vatRate = $state ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
-                                            $vatCategory = $get('vat_category');
-                                            $taxSpecific = (float) ($get('tax_specific_amount') ?? 0);
-                                            if ($vatCategory === 'E' && $taxSpecific > 0) {
-                                                $vat = round($taxSpecific * floatval($quantity), 2);
-                                            } else {
-                                                $vat = round($totalHt * ($vatRate / 100), 2);
-                                            }
-                                            $set('total_price', $totalHt + $vat);
+                                            $vat = round($totalHt * ($vatRate / 100), 2);
+                                            $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
+                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), 2) : 0;
+                                            $set('total_price', $totalHt + $vat + $taxSpecTotal);
                                         }
                                     }),
                                 Forms\Components\Hidden::make('vat_category')

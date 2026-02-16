@@ -582,7 +582,6 @@ class Product extends Model
                 'B' => 'B - Exonéré (0%)',
                 'C' => 'C - Exportation taxable',
                 'D' => 'D - Régime fiscal particulier',
-                'E' => 'E - Taxe spécifique',
                 'F' => 'F - Autre taxe',
             ];
         }
