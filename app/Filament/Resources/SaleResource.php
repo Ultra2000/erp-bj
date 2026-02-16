@@ -195,64 +195,6 @@ class SaleResource extends Resource
                             ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF'),
                     ])->columns(4),
 
-                // Section AIB (Bénin uniquement)
-                Forms\Components\Section::make('AIB (Acompte sur Impôt Bénéfices)')
-                    ->description('Prélèvement fiscal obligatoire au Bénin')
-                    ->schema([
-                        Forms\Components\Select::make('aib_rate')
-                            ->label('Taux AIB')
-                            ->options([
-                                'A' => 'Taux A (1%) - Client avec IFU',
-                                'B' => 'Taux B (5%) - Client sans IFU',
-                            ])
-                            ->placeholder('Aucun (exonéré)')
-                            ->live()
-                            ->afterStateUpdated(function ($state, ?Sale $record) {
-                                if ($record) {
-                                    $record->aib_rate = $state;
-                                    $record->aib_amount = $record->calculateAibAmount();
-                                    $record->save();
-                                }
-                            })
-                            ->helperText(function () {
-                                $company = Filament::getTenant();
-                                return match ($company?->aib_mode ?? 'auto') {
-                                    'auto' => '🔄 Mode automatique : calculé selon l\'IFU du client',
-                                    'manual' => '✋ Mode manuel : sélectionnez le taux applicable',
-                                    'disabled' => '⛔ AIB désactivé pour cette entreprise',
-                                };
-                            }),
-                        Forms\Components\Toggle::make('aib_exempt')
-                            ->label('Exonérer cette vente de l\'AIB')
-                            ->live()
-                            ->afterStateUpdated(function ($state, ?Sale $record) {
-                                if ($record) {
-                                    $record->aib_exempt = $state;
-                                    if ($state) {
-                                        $record->aib_rate = null;
-                                        $record->aib_amount = 0;
-                                    } else {
-                                        $record->applyAib();
-                                    }
-                                    $record->save();
-                                }
-                            }),
-                        Forms\Components\Placeholder::make('aib_amount_display')
-                            ->label('Montant AIB')
-                            ->content(fn (?Sale $record) => $record && $record->aib_amount > 0 
-                                ? number_format($record->aib_amount, 0, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF')
-                                : '-'),
-                        Forms\Components\Placeholder::make('total_with_aib_display')
-                            ->label('Net à payer (TTC + AIB)')
-                            ->content(fn (?Sale $record) => $record 
-                                ? number_format($record->total_with_aib, 0, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF')
-                                : '-')
-                            ->extraAttributes(['class' => 'font-bold text-lg']),
-                    ])
-                    ->columns(4)
-                    ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled')
-                    ->collapsed(fn (?Sale $record) => !$record || $record->aib_amount == 0),
-
                 Forms\Components\Section::make('Articles')
                     ->schema([
                         Forms\Components\Repeater::make('items')
@@ -454,6 +396,99 @@ class SaleResource extends Resource
                             ->columnSpanFull()
                             ->hidden(fn (Forms\Get $get) => !$get('warehouse_id')),
                     ]),
+
+                // Section AIB (Bénin uniquement) — après les articles pour afficher le net à payer
+                Forms\Components\Section::make('AIB (Acompte sur Impôt Bénéfices)')
+                    ->description('Prélèvement fiscal obligatoire au Bénin')
+                    ->schema([
+                        Forms\Components\Select::make('aib_rate')
+                            ->label('Taux AIB')
+                            ->options([
+                                'A' => 'Taux A (1%) - Client avec IFU',
+                                'B' => 'Taux B (5%) - Client sans IFU',
+                            ])
+                            ->placeholder('Aucun (exonéré)')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set, ?Sale $record) {
+                                if ($record) {
+                                    $record->aib_rate = $state;
+                                    $record->aib_amount = $record->calculateAibAmount();
+                                    $record->save();
+                                }
+                                // Mettre à jour les placeholders en temps réel (création & édition)
+                                $items = $get('items') ?? [];
+                                $totalHt = 0;
+                                $totalTtc = 0;
+                                foreach ($items as $item) {
+                                    $qty = floatval($item['quantity'] ?? 0);
+                                    $unitPrice = floatval($item['unit_price'] ?? 0);
+                                    $ht = $qty * $unitPrice;
+                                    $totalHt += $ht;
+                                    $totalTtc += floatval($item['total_price'] ?? $ht);
+                                }
+                                $discountPercent = floatval($get('discount_percent') ?? 0);
+                                $totalHt *= (1 - $discountPercent / 100);
+                                $totalTtc *= (1 - $discountPercent / 100);
+                                $aibPercent = match ($state) { 'A' => 1, 'B' => 5, default => 0 };
+                                $aibAmount = round($totalHt * ($aibPercent / 100), 2);
+                                $set('_aib_amount_calc', $aibAmount);
+                                $set('_net_a_payer_calc', round($totalTtc + $aibAmount, 2));
+                            })
+                            ->helperText(function () {
+                                $company = Filament::getTenant();
+                                return match ($company?->aib_mode ?? 'auto') {
+                                    'auto' => '🔄 Mode automatique : calculé selon l\'IFU du client',
+                                    'manual' => '✋ Mode manuel : sélectionnez le taux applicable',
+                                    'disabled' => '⛔ AIB désactivé pour cette entreprise',
+                                };
+                            }),
+                        Forms\Components\Toggle::make('aib_exempt')
+                            ->label('Exonérer cette vente de l\'AIB')
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, ?Sale $record) {
+                                if ($record) {
+                                    $record->aib_exempt = $state;
+                                    if ($state) {
+                                        $record->aib_rate = null;
+                                        $record->aib_amount = 0;
+                                    } else {
+                                        $record->applyAib();
+                                    }
+                                    $record->save();
+                                }
+                                if ($state) {
+                                    $set('_aib_amount_calc', 0);
+                                    $set('_net_a_payer_calc', 0);
+                                }
+                            }),
+                        Forms\Components\Hidden::make('_aib_amount_calc')->default(0),
+                        Forms\Components\Hidden::make('_net_a_payer_calc')->default(0),
+                        Forms\Components\Placeholder::make('aib_amount_display')
+                            ->label('Montant AIB')
+                            ->content(function (?Sale $record, Forms\Get $get) {
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                // En édition, utiliser la valeur stockée ; en création, la valeur calculée
+                                if ($record && $record->aib_amount > 0) {
+                                    return number_format($record->aib_amount, 0, ',', ' ') . ' ' . $currency;
+                                }
+                                $calc = floatval($get('_aib_amount_calc') ?? 0);
+                                return $calc > 0 ? number_format($calc, 0, ',', ' ') . ' ' . $currency : '-';
+                            }),
+                        Forms\Components\Placeholder::make('total_with_aib_display')
+                            ->label('Net à payer (TTC + AIB)')
+                            ->content(function (?Sale $record, Forms\Get $get) {
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                if ($record && $record->aib_amount > 0) {
+                                    return number_format($record->total_with_aib, 0, ',', ' ') . ' ' . $currency;
+                                }
+                                $calc = floatval($get('_net_a_payer_calc') ?? 0);
+                                return $calc > 0 ? number_format($calc, 0, ',', ' ') . ' ' . $currency : '-';
+                            })
+                            ->extraAttributes(['class' => 'font-bold text-lg']),
+                    ])
+                    ->columns(3)
+                    ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled')
+                    ->collapsed(fn (?Sale $record) => !$record || $record->aib_amount == 0),
             ]);
     }
 
