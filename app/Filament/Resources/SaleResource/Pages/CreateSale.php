@@ -24,8 +24,8 @@ class CreateSale extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Laisser le modèle gérer la génération du numéro de facture
-        // $data['invoice_number'] = 'FACT-' . strtoupper(Str::random(8));
+        // Nettoyer les champs de calcul temporaires (pas des colonnes DB)
+        unset($data['items'], $data['_aib_amount_calc'], $data['_net_a_payer_calc']);
         return $data;
     }
 
@@ -61,10 +61,11 @@ class CreateSale extends CreateRecord
         $finalTotalHt = round($totalHt * $multiplier, 2);
         $finalTotal = round(($totalHt + $totalVat) * $multiplier, 2);
 
-        // Calculer l'AIB si applicable
+        // Calculer l'AIB depuis les données du formulaire (source de vérité)
+        $aibRate = $this->data['aib_rate'] ?? $sale->aib_rate ?? null;
         $aibAmount = 0;
-        if ($sale->aib_rate) {
-            $aibPercent = match ($sale->aib_rate) {
+        if ($aibRate) {
+            $aibPercent = match ($aibRate) {
                 'A' => 1,
                 'B' => 5,
                 default => 0,
@@ -72,10 +73,13 @@ class CreateSale extends CreateRecord
             $aibAmount = round($finalTotalHt * ($aibPercent / 100), 2);
         }
 
+        \Log::info("CreateSale::afterCreate - aib_rate from form: " . ($this->data['aib_rate'] ?? 'null') . ", from model: " . ($sale->aib_rate ?? 'null') . ", aib_amount: {$aibAmount}");
+
         \DB::table('sales')->where('id', $sale->id)->update([
             'total_ht' => $finalTotalHt,
             'total_vat' => round($totalVat * $multiplier, 2),
             'total' => $finalTotal,
+            'aib_rate' => $aibRate,
             'aib_amount' => $aibAmount,
         ]);
     }
