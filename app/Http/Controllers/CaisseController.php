@@ -451,7 +451,7 @@ class CaisseController extends Controller
                 $lineTtc = $lineHt + $lineVat + $lineTaxSpec;
                 
                 $totalHt += $lineHt;
-                $totalVat += $lineVat + $lineTaxSpec;
+                $totalVat += $lineVat;
                 $totalTtc += $lineTtc;
                 
                 $itemsToCreate[] = [

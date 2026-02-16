@@ -56,11 +56,13 @@ class CreateSale extends CreateRecord
         // Forcer les totaux corrects (sécurité contre observers qui pourraient écraser)
         $totalHt = $sale->items()->sum('total_price_ht');
         $totalVat = $sale->items()->sum('vat_amount');
+        $totalTaxSpecific = $sale->items()->sum('tax_specific_total');
         $discountPercent = floatval($sale->discount_percent ?? 0);
         $multiplier = 1 - ($discountPercent / 100);
 
         $finalTotalHt = round($totalHt * $multiplier, 2);
-        $finalTotal = round(($totalHt + $totalVat) * $multiplier, 2);
+        // Total TTC = (HT + TVA) après remise + taxe spécifique (non remisée)
+        $finalTotal = round(($totalHt + $totalVat) * $multiplier + $totalTaxSpecific, 2);
 
         // Calculer l'AIB depuis les données du formulaire (source de vérité)
         $aibRate = $this->data['aib_rate'] ?? $sale->aib_rate ?? null;

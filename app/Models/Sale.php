@@ -328,12 +328,13 @@ class Sale extends Model
         // Calculer les totaux à partir des lignes (TVA gérée par ligne)
         $totalHt = $this->items()->sum('total_price_ht');
         $totalVat = $this->items()->sum('vat_amount');
+        $totalTaxSpecific = $this->items()->sum('tax_specific_total');
         
-        \Log::info("Sale::calculateTotal id={$this->id}: items_count=" . $this->items()->count() . ", sum_ht={$totalHt}, sum_vat={$totalVat}");
+        \Log::info("Sale::calculateTotal id={$this->id}: items_count=" . $this->items()->count() . ", sum_ht={$totalHt}, sum_vat={$totalVat}, sum_tax_specific={$totalTaxSpecific}");
         
-        $subtotal = $totalHt + $totalVat; // Total TTC avant remise
+        $subtotal = $totalHt + $totalVat; // Total HT + TVA avant remise
         
-        // Appliquer la remise globale (sur TTC)
+        // Appliquer la remise globale (sur HT + TVA, pas sur la taxe spécifique)
         $discount = $subtotal * ($this->discount_percent / 100);
         $afterDiscount = $subtotal - $discount;
         
@@ -344,7 +345,8 @@ class Sale extends Model
         
         $this->total_ht = round($totalHt * (1 - $this->discount_percent / 100), 2);
         $this->total_vat = round($totalVat * (1 - $this->discount_percent / 100), 2);
-        $this->total = round($afterDiscount, 2);
+        // Total TTC = HT + TVA (après remise) + taxe spécifique (non remisée)
+        $this->total = round($afterDiscount + $totalTaxSpecific, 2);
         
         // Utiliser saveQuietly() pour éviter de déclencher les events updating/updated
         // qui pourraient bloquer la sauvegarde (NF525, etc.)

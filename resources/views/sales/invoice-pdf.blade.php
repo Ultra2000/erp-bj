@@ -366,10 +366,10 @@
     // Vérifier si l'entreprise est en franchise de TVA
     $isVatFranchise = \App\Models\AccountingSetting::isVatFranchise($company->id);
 
-    // Calculs TVA
-    $totalHt = $sale->total_ht ?? $sale->items->sum('total_price_ht');
-    $totalVat = $isVatFranchise ? 0 : ($sale->total_vat ?? $sale->items->sum('vat_amount'));
-    $grandTotal = $isVatFranchise ? $totalHt : ($sale->total ?? ($totalHt + $totalVat));
+    // Calculs TVA — toujours depuis les lignes pour fiabilité
+    $rawTotalHt = $sale->items->sum('total_price_ht');
+    $rawTotalVat = $isVatFranchise ? 0 : $sale->items->sum('vat_amount');
+    // grandTotal sera recalculé après le calcul de $totalTaxSpecific ci-dessous
 
     // Déterminer le groupe de taxe à partir du taux TVA (convention DGI Bénin)
     // Groupes e-MCeF valides : A, B, C, D, E, F
@@ -410,10 +410,18 @@
     }
     $hasMixedRates = count($vatBreakdown) > 1 || $totalTaxSpecific > 0;
 
+    // Appliquer la remise sur HT + TVA (la taxe spécifique n'est pas remisée)
+    $discountMultiplier = 1 - (($sale->discount_percent ?? 0) / 100);
+    $totalHt = round($rawTotalHt * $discountMultiplier, 2);
+    $totalVat = round($rawTotalVat * $discountMultiplier, 2);
+    // Total TTC = HT + TVA (après remise) + taxe spécifique
+    $grandTotal = $isVatFranchise ? $totalHt : ($totalHt + $totalVat + $totalTaxSpecific);
+
     // Vérifier si e-MCeF est activé (pour afficher les groupes de taxe DGI)
     $isEmcefEnabled = $company->emcef_enabled ?? false;
 
-    $totalAvantRemise = $sale->items->sum('total_price');
+    // Remise appliquée sur HT + TVA (pas sur taxe spécifique)
+    $totalAvantRemise = $rawTotalHt + $rawTotalVat;
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
 
     // Fonction montant en lettres

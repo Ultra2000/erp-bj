@@ -266,7 +266,7 @@ class PointOfSale extends Page
                 $lineTtc = $lineHt + $lineVat + $lineTaxSpec;
                 
                 $totalHt += $lineHt;
-                $totalVat += $lineVat + $lineTaxSpec;
+                $totalVat += $lineVat;
                 $totalTtc += $lineTtc;
                 
                 $itemsToCreate[] = [
