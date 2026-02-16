@@ -461,8 +461,8 @@ class SaleResource extends Resource
                                     $set('_net_a_payer_calc', 0);
                                 }
                             }),
-                        Forms\Components\Hidden::make('_aib_amount_calc')->default(0),
-                        Forms\Components\Hidden::make('_net_a_payer_calc')->default(0),
+                        Forms\Components\Hidden::make('_aib_amount_calc')->default(0)->dehydrated(false),
+                        Forms\Components\Hidden::make('_net_a_payer_calc')->default(0)->dehydrated(false),
                         Forms\Components\Placeholder::make('aib_amount_display')
                             ->label('Montant AIB')
                             ->content(function (?Sale $record, Forms\Get $get) {
