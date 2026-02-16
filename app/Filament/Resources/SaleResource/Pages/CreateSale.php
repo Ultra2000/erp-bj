@@ -58,10 +58,25 @@ class CreateSale extends CreateRecord
         $discountPercent = floatval($sale->discount_percent ?? 0);
         $multiplier = 1 - ($discountPercent / 100);
 
+        $finalTotalHt = round($totalHt * $multiplier, 2);
+        $finalTotal = round(($totalHt + $totalVat) * $multiplier, 2);
+
+        // Calculer l'AIB si applicable
+        $aibAmount = 0;
+        if ($sale->aib_rate) {
+            $aibPercent = match ($sale->aib_rate) {
+                'A' => 1,
+                'B' => 5,
+                default => 0,
+            };
+            $aibAmount = round($finalTotalHt * ($aibPercent / 100), 2);
+        }
+
         \DB::table('sales')->where('id', $sale->id)->update([
-            'total_ht' => round($totalHt * $multiplier, 2),
+            'total_ht' => $finalTotalHt,
             'total_vat' => round($totalVat * $multiplier, 2),
-            'total' => round(($totalHt + $totalVat) * $multiplier, 2),
+            'total' => $finalTotal,
+            'aib_amount' => $aibAmount,
         ]);
     }
 }
