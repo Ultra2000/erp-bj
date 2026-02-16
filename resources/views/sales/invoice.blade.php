@@ -427,13 +427,14 @@
     if (!$isVatFranchise) {
         foreach ($sale->items as $item) {
             // TVA classique (toujours)
-            $rate = number_format($item->vat_rate ?? 0, 1);
             $group = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category);
-            if (!isset($vatBreakdown[$rate])) {
-                $vatBreakdown[$rate] = ['base_ht' => 0, 'vat_amount' => 0, 'group' => $group];
+            $rate = number_format($item->vat_rate ?? 0, 1);
+            $key = $group . '_' . $rate;
+            if (!isset($vatBreakdown[$key])) {
+                $vatBreakdown[$key] = ['base_ht' => 0, 'vat_amount' => 0, 'group' => $group, 'rate' => $rate];
             }
-            $vatBreakdown[$rate]['base_ht'] += $item->total_price_ht ?? 0;
-            $vatBreakdown[$rate]['vat_amount'] += $item->vat_amount ?? 0;
+            $vatBreakdown[$key]['base_ht'] += $item->total_price_ht ?? 0;
+            $vatBreakdown[$key]['vat_amount'] += $item->vat_amount ?? 0;
             
             // Taxe spécifique (cumulée séparément)
             if ($item->tax_specific_amount > 0) {
@@ -680,10 +681,10 @@
                     <span class="value" style="color: #999;">Non applicable</span>
                 </div>
             @elseif($hasMixedRates)
-                @foreach($vatBreakdown as $rate => $amounts)
+                @foreach($vatBreakdown as $key => $amounts)
                 @php $taxLabel = ($amounts['group'] ?? '') === 'E' ? 'TPS' : 'TVA'; @endphp
                 <div class="totals-row">
-                    <span class="label">{{ $taxLabel }} {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
+                    <span class="label">{{ $taxLabel }} {{ $amounts['rate'] }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
                     <span class="value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
                 @endforeach
@@ -695,7 +696,7 @@
                 @endif
             @else
                 @php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; @endphp
-                @php $singleRate = count($vatBreakdown) ? array_key_first($vatBreakdown) : '0'; @endphp
+                @php $singleRate = count($vatBreakdown) ? (reset($vatBreakdown)['rate'] ?? '0') : '0'; @endphp
                 @php $singleTaxLabel = $singleGroup === 'E' ? 'TPS' : 'TVA'; @endphp
                 <div class="totals-row">
                     <span class="label">{{ $singleTaxLabel }} ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</span>

@@ -583,7 +583,7 @@ class Product extends Model
                 'B' => 'B - Exonéré (0%)',
                 'C' => 'C - Exportation taxable',
                 'D' => 'D - Régime fiscal particulier',
-                'E' => 'E - TPS 5% (Taxe sur Prestations de Services)',
+                'E' => 'E - TPS (Taxe sur Prestations de Services)',
                 'F' => 'F - Autre taxe',
             ];
         }
@@ -610,8 +610,7 @@ class Product extends Model
         if ($company?->emcef_enabled) {
             return [
                 18.00 => '18% - TVA standard (Groupe A)',
-                5.00 => '5% - TPS (Groupe E)',
-                0.00 => '0% - Exonéré (Groupe B)',
+                0.00 => '0% - Exonéré / TPS (Groupe B/E)',
             ];
         }
         
