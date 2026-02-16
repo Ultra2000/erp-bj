@@ -6,7 +6,8 @@
     <title>{{ $sale->type === 'credit_note' ? 'Avoir' : 'Facture' }} {{ $sale->invoice_number }}</title>
     <style>
         @page {
-            margin: 20mm 15mm 15mm 15mm;
+            size: A4;
+            margin: 0; /* On gère les marges via le body pour plus de contrôle */
         }
 
         * {
@@ -20,7 +21,8 @@
             font-size: 9px;
             color: #333;
             line-height: 1.4;
-            width: 100%;
+            padding: 15mm 20mm; /* 1.5cm haut/bas, 2cm gauche/droite */
+            margin: 0;
         }
 
         /* ===== HEADER ===== */
@@ -177,6 +179,7 @@
         .items-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed; /* Force le respect des largeurs de colonnes */
         }
 
         .items-table thead th {
