@@ -368,8 +368,12 @@
     $grandTotal = $isVatFranchise ? $totalHt : ($sale->total ?? ($totalHt + $totalVat));
 
     // Déterminer le groupe de taxe à partir du taux TVA (convention DGI Bénin)
-    $getTaxGroupLabel = function(float $vatRate, ?string $vatCategory = null): string {
-        if ($vatCategory) return strtoupper($vatCategory);
+    // Groupes e-MCeF valides : A, B, C, D, E, F
+    $validEmcefGroups = ['A', 'B', 'C', 'D', 'E', 'F'];
+    $getTaxGroupLabel = function(float $vatRate, ?string $vatCategory = null) use ($validEmcefGroups): string {
+        if ($vatCategory && in_array(strtoupper($vatCategory), $validEmcefGroups)) {
+            return strtoupper($vatCategory);
+        }
         return match (true) {
             $vatRate >= 18 => 'A',
             $vatRate == 0 => 'B',
