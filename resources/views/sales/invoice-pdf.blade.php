@@ -367,13 +367,24 @@
     $totalVat = $isVatFranchise ? 0 : ($sale->total_vat ?? $sale->items->sum('vat_amount'));
     $grandTotal = $isVatFranchise ? $totalHt : ($sale->total ?? ($totalHt + $totalVat));
 
+    // Déterminer le groupe de taxe à partir du taux TVA (convention DGI Bénin)
+    $getTaxGroupLabel = function(float $vatRate, ?string $vatCategory = null): string {
+        if ($vatCategory) return strtoupper($vatCategory);
+        return match (true) {
+            $vatRate >= 18 => 'A',
+            $vatRate == 0 => 'B',
+            default => 'A',
+        };
+    };
+
     // Ventilation TVA par taux (pour factures avec taux mixtes)
     $vatBreakdown = [];
     if (!$isVatFranchise) {
         foreach ($sale->items as $item) {
             $rate = number_format($item->vat_rate ?? 0, 1);
+            $group = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category);
             if (!isset($vatBreakdown[$rate])) {
-                $vatBreakdown[$rate] = ['base_ht' => 0, 'vat_amount' => 0];
+                $vatBreakdown[$rate] = ['base_ht' => 0, 'vat_amount' => 0, 'group' => $group];
             }
             $vatBreakdown[$rate]['base_ht'] += $item->total_price_ht ?? 0;
             $vatBreakdown[$rate]['vat_amount'] += $item->vat_amount ?? 0;
@@ -381,6 +392,9 @@
         ksort($vatBreakdown);
     }
     $hasMixedRates = count($vatBreakdown) > 1;
+
+    // Vérifier si e-MCeF est activé (pour afficher les groupes de taxe DGI)
+    $isEmcefEnabled = $company->emcef_enabled ?? false;
 
     $totalAvantRemise = $sale->items->sum('total_price');
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
@@ -461,7 +475,8 @@
                     <div class="info-card-title">Client</div>
                     <div class="info-card-name">{{ $sale->customer->name ?? 'Client non défini' }}</div>
                     <div class="info-card-text">
-                        @if(optional($sale->customer)->siret)SIRET: {{ $sale->customer->siret }}<br>@endif
+                        @if(optional($sale->customer)->registration_number)IFU: {{ $sale->customer->registration_number }}<br>@endif
+                        @if(optional($sale->customer)->siret && optional($sale->customer)->siret !== optional($sale->customer)->registration_number)SIRET: {{ $sale->customer->siret }}<br>@endif
                         @if(optional($sale->customer)->address){{ $sale->customer->address }}<br>@endif
                         @if(optional($sale->customer)->zip_code || optional($sale->customer)->city){{ optional($sale->customer)->zip_code }} {{ optional($sale->customer)->city }}<br>@endif
                         @if(optional($sale->customer)->phone)Tel: {{ $sale->customer->phone }}<br>@endif
@@ -490,10 +505,10 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th style="width: 40%;">Désignation</th>
+                <th style="width: 38%;">Désignation</th>
                 <th style="width: 10%;" class="text-center">Qté</th>
-                <th style="width: 18%;" class="text-right">P.U. HT</th>
-                <th style="width: 12%;" class="text-center">TVA</th>
+                <th style="width: 17%;" class="text-right">P.U. HT</th>
+                <th style="width: 15%;" class="text-center">TVA</th>
                 <th style="width: 20%;" class="text-right">Total HT</th>
             </tr>
         </thead>
@@ -503,7 +518,7 @@
                     <td><span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span></td>
                     <td class="text-center">{{ floatval($item->quantity) == intval($item->quantity) ? intval($item->quantity) : rtrim(rtrim(number_format(floatval($item->quantity), 3, ',', ' '), '0'), ',') }}</td>
                     <td class="text-right text-muted">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}</td>
-                    <td class="text-center">{{ number_format($item->vat_rate ?? 0, 0) }}%</td>
+                    <td class="text-center">{{ number_format($item->vat_rate ?? 0, 0) }}%@if($isEmcefEnabled) <span style="border:1px solid #555;font-size:7px;padding:0 2px;font-weight:bold;">{{ $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category) }}</span>@endif</td>
                     <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
                 </tr>
             @empty
@@ -547,17 +562,18 @@
                         <div class="totals-row">
                             <table class="totals-row-table">
                                 <tr>
-                                    <td class="totals-label">TVA {{ $rate }}% (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
+                                    <td class="totals-label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
                                     <td class="totals-value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</td>
                                 </tr>
                             </table>
                         </div>
                         @endforeach
                     @else
+                    @php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; @endphp
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">TVA ({{ count($vatBreakdown) ? array_key_first($vatBreakdown) : '0' }}%)</td>
+                                <td class="totals-label">TVA ({{ count($vatBreakdown) ? array_key_first($vatBreakdown) : '0' }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</td>
                                 <td class="totals-value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>

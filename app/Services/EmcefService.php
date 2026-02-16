@@ -84,6 +84,61 @@ class EmcefService
     }
 
     /**
+     * Vérifie un IFU auprès de la DGI et retourne les informations du contribuable
+     */
+    public function verifyIfu(string $ifu): array
+    {
+        if (!$this->isEnabled()) {
+            return [
+                'success' => false,
+                'error' => 'e-MCeF n\'est pas activé pour cette entreprise',
+            ];
+        }
+
+        // Validation du format IFU (13 chiffres)
+        if (!preg_match('/^\d{13}$/', $ifu)) {
+            return [
+                'success' => false,
+                'error' => 'L\'IFU doit contenir exactement 13 chiffres',
+            ];
+        }
+
+        try {
+            $response = $this->getHttpClient()->get('/api/info/taxpayer/' . $ifu);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'success' => true,
+                    'data' => $data,
+                ];
+            }
+
+            // Tentative endpoint alternatif
+            $response2 = $this->getHttpClient()->get('/api/taxpayer/' . $ifu);
+            if ($response2->successful()) {
+                $data = $response2->json();
+                return [
+                    'success' => true,
+                    'data' => $data,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'error' => 'IFU non trouvé (code ' . $response->status() . ')',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('e-MCeF IFU Lookup Error', ['ifu' => $ifu, 'error' => $e->getMessage()]);
+            return [
+                'success' => false,
+                'error' => 'Erreur de connexion au serveur DGI: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Récupère les groupes de taxes
      */
     public function getTaxGroups(): array

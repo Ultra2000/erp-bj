@@ -12,6 +12,18 @@ class Customer extends Model
 {
     use HasFactory, BelongsToCompany, LogsActivity;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Synchroniser registration_number → tax_number pour compatibilité e-MCeF
+        static::saving(function ($customer) {
+            if ($customer->registration_number && empty($customer->tax_number)) {
+                $customer->tax_number = $customer->registration_number;
+            }
+        });
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

@@ -5,8 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\CustomerResource\Pages;
 use App\Filament\Resources\CustomerResource\RelationManagers;
 use App\Models\Customer;
+use App\Services\EmcefService;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -35,15 +38,89 @@ class CustomerResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informations générales')
                     ->schema([
+                        Forms\Components\TextInput::make('registration_number')
+                            ->label('IFU (Identifiant Fiscal Unique)')
+                            ->maxLength(13)
+                            ->helperText('13 chiffres — Cliquez sur la loupe pour rechercher automatiquement les informations')
+                            ->placeholder('0000000000000')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                // Synchroniser registration_number → tax_number pour e-MCeF
+                                if ($state) {
+                                    $set('tax_number', $state);
+                                }
+                            })
+                            ->suffixAction(
+                                Forms\Components\Actions\Action::make('lookupIfu')
+                                    ->icon('heroicon-o-magnifying-glass')
+                                    ->tooltip('Rechercher les informations via e-MCeF (DGI)')
+                                    ->action(function (Forms\Get $get, Forms\Set $set) {
+                                        $ifu = $get('registration_number');
+
+                                        if (!$ifu || strlen($ifu) !== 13) {
+                                            Notification::make()
+                                                ->warning()
+                                                ->title('IFU invalide')
+                                                ->body('L\'IFU doit contenir exactement 13 chiffres.')
+                                                ->send();
+                                            return;
+                                        }
+
+                                        $company = Filament::getTenant();
+                                        if (!$company?->emcef_enabled || !$company->emcef_token) {
+                                            Notification::make()
+                                                ->warning()
+                                                ->title('e-MCeF non configuré')
+                                                ->body('Activez e-MCeF dans les paramètres pour utiliser la recherche IFU.')
+                                                ->send();
+                                            return;
+                                        }
+
+                                        $emcef = new EmcefService($company);
+                                        $result = $emcef->verifyIfu($ifu);
+
+                                        if ($result['success'] && !empty($result['data'])) {
+                                            $data = $result['data'];
+
+                                            // Remplir les champs avec les données récupérées
+                                            if (!empty($data['raisonSociale'] ?? $data['name'] ?? null)) {
+                                                $set('name', $data['raisonSociale'] ?? $data['name']);
+                                            }
+                                            if (!empty($data['adresse'] ?? $data['address'] ?? null)) {
+                                                $set('address', $data['adresse'] ?? $data['address']);
+                                            }
+                                            if (!empty($data['telephone'] ?? $data['phone'] ?? null)) {
+                                                $set('phone', $data['telephone'] ?? $data['phone']);
+                                            }
+                                            if (!empty($data['email'] ?? null)) {
+                                                $set('email', $data['email']);
+                                            }
+                                            if (!empty($data['ville'] ?? $data['city'] ?? null)) {
+                                                $set('city', $data['ville'] ?? $data['city']);
+                                            }
+
+                                            // Automatiquement B2B pour un contribuable avec IFU
+                                            $set('customer_type', 'B2B');
+                                            $set('tax_number', $ifu);
+
+                                            Notification::make()
+                                                ->success()
+                                                ->title('IFU trouvé')
+                                                ->body('Les informations du contribuable ont été remplies automatiquement.')
+                                                ->send();
+                                        } else {
+                                            Notification::make()
+                                                ->danger()
+                                                ->title('IFU non trouvé')
+                                                ->body($result['error'] ?? 'Aucune information trouvée pour cet IFU.')
+                                                ->send();
+                                        }
+                                    })
+                            ),
                         Forms\Components\TextInput::make('name')
                             ->label('Nom / Raison Sociale')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('registration_number')
-                            ->label('IFU (Identifiant Fiscal Unique)')
-                            ->maxLength(13)
-                            ->helperText('13 chiffres - Obligatoire pour facturation e-MCeF B2B')
-                            ->placeholder('0000000000000'),
                         Forms\Components\Select::make('customer_type')
                             ->label('Type de client')
                             ->options([
@@ -62,6 +139,7 @@ class CustomerResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->placeholder('+229 XX XX XX XX'),
+                        Forms\Components\Hidden::make('tax_number'),
                     ])->columns(3),
                 Forms\Components\Section::make('Adresse')
                     ->schema([
