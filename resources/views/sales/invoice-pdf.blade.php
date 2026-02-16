@@ -470,6 +470,17 @@
     </table>
 </div>
 
+{{-- Référence facture d'origine pour les avoirs (exigence DGI) --}}
+@if($sale->type === 'credit_note' && $sale->parent)
+<div style="background:#fff3cd;border:1px solid #d4a913;padding:8px 12px;margin-bottom:10px;font-size:10px;">
+    <strong>Avoir relatif à la facture N° {{ $sale->parent->invoice_number }} du {{ $sale->parent->created_at->format('d/m/Y') }}</strong><br>
+    Facture d'origine : {{ $sale->parent->invoice_number }}
+    @if($sale->parent->emcef_code_mecef)
+        &nbsp;&mdash;&nbsp;Code MECeF/DGI : {{ $sale->parent->emcef_code_mecef }}
+    @endif
+</div>
+@endif
+
 <!-- INFO CARDS -->
 <div class="info-section">
     <table class="info-table">

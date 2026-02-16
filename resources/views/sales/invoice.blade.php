@@ -510,7 +510,7 @@
                 </div>
             @endif
             <h1>{{ $company->name ?: 'Votre Entreprise' }}</h1>
-            <p class="subtitle">Facture de vente</p>
+            <p class="subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : 'Facture de vente' }}</p>
             <div class="company-details">
                 @if($company->address){{ $company->address }}<br>@endif
                 @if($company->phone)Tél: {{ $company->phone }}@endif
@@ -520,7 +520,7 @@
         </div>
         <div class="invoice-meta">
             <div class="invoice-number">
-                <span>Facture N°</span>
+                <span>{{ $sale->type === 'credit_note' ? 'Avoir N°' : 'Facture N°' }}</span>
                 {{ $sale->invoice_number }}
             </div>
             <div class="invoice-date">
@@ -533,6 +533,19 @@
             </div>
         </div>
     </header>
+
+    {{-- Référence facture d'origine pour les avoirs (exigence DGI) --}}
+    @if($sale->type === 'credit_note' && $sale->parent)
+        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+            <strong style="color:#856404;">Avoir relatif à la facture N° {{ $sale->parent->invoice_number }} du {{ $sale->parent->created_at->format('d/m/Y') }}</strong>
+            <div style="margin-top:6px;color:#555;">
+                <span><strong>Facture d'origine :</strong> {{ $sale->parent->invoice_number }}</span>
+                @if($sale->parent->emcef_code_mecef)
+                    <span style="margin-left:16px;"><strong>Code MECeF/DGI :</strong> {{ $sale->parent->emcef_code_mecef }}</span>
+                @endif
+            </div>
+        </div>
+    @endif
 
     <div class="info-grid">
         <div class="info-card">

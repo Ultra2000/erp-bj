@@ -28,7 +28,7 @@ class SaleInvoiceController extends Controller
         $this->authorize('view', $sale);
 
         $company = $sale->company;
-        $sale->load(['items.product', 'customer', 'warehouse']);
+        $sale->load(['items.product', 'customer', 'warehouse', 'parent']);
         
         $verificationUrl = URL::signedRoute('sales.invoice.verify', ['sale' => $sale->id]);
         $verificationCode = substr(sha1($sale->id . '|' . $sale->invoice_number . '|' . ($sale->total ?? $sale->items->sum('total_price')) . '|' . $sale->created_at), 0, 12);
@@ -59,7 +59,7 @@ class SaleInvoiceController extends Controller
         $this->authorize('view', $sale);
 
         $company = $sale->company;
-        $sale->load(['items.product', 'customer', 'warehouse']);
+        $sale->load(['items.product', 'customer', 'warehouse', 'parent']);
         
         $verificationUrl = URL::signedRoute('sales.invoice.verify', ['sale' => $sale->id]);
         $verificationCode = substr(sha1($sale->id . '|' . $sale->invoice_number . '|' . ($sale->total ?? $sale->items->sum('total_price')) . '|' . $sale->created_at), 0, 12);
