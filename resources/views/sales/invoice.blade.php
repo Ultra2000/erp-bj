@@ -424,8 +424,13 @@
     $vatBreakdown = [];
     if (!$isVatFranchise) {
         foreach ($sale->items as $item) {
-            $rate = number_format($item->vat_rate ?? 0, 1);
             $group = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category);
+            // Groupe E: clé spéciale pour taxe spécifique
+            if ($group === 'E' && $item->tax_specific_amount > 0) {
+                $rate = 'E'; // Clé spéciale
+            } else {
+                $rate = number_format($item->vat_rate ?? 0, 1);
+            }
             if (!isset($vatBreakdown[$rate])) {
                 $vatBreakdown[$rate] = ['base_ht' => 0, 'vat_amount' => 0, 'group' => $group];
             }
@@ -608,9 +613,14 @@
                             @endif
                         </td>
                         <td class="text-right">
-                            {{ number_format($item->vat_rate ?? 0, 0) }}%
+                            @php $itemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); @endphp
+                            @if($itemGroup === 'E' && $item->tax_specific_amount > 0)
+                                {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u
+                            @else
+                                {{ number_format($item->vat_rate ?? 0, 0) }}%
+                            @endif
                             @if($isEmcefEnabled)
-                                <span style="display:inline-block;border:1px solid #555;font-size:8px;padding:0 3px;margin-left:2px;border-radius:2px;font-weight:bold;">{{ $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category) }}</span>
+                                <span style="display:inline-block;border:1px solid #555;font-size:8px;padding:0 3px;margin-left:2px;border-radius:2px;font-weight:bold;">{{ $itemGroup }}</span>
                             @endif
                         </td>
                         <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
@@ -652,14 +662,23 @@
             @elseif($hasMixedRates)
                 @foreach($vatBreakdown as $rate => $amounts)
                 <div class="totals-row">
-                    <span class="label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
+                    @if($rate === 'E')
+                        <span class="label">Taxe spécifique@if($isEmcefEnabled) — Groupe E@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
+                    @else
+                        <span class="label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
+                    @endif
                     <span class="value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
                 @endforeach
             @else
                 @php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; @endphp
+                @php $singleRate = count($vatBreakdown) ? array_key_first($vatBreakdown) : '0'; @endphp
                 <div class="totals-row">
-                    <span class="label">TVA ({{ count($vatBreakdown) ? array_key_first($vatBreakdown) : '0' }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</span>
+                    @if($singleRate === 'E')
+                        <span class="label">Taxe spécifique@if($isEmcefEnabled) — Groupe E@endif)</span>
+                    @else
+                        <span class="label">TVA ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</span>
+                    @endif
                     <span class="value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</span>
                 </div>
             @endif

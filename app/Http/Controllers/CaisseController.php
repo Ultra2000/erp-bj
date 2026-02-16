@@ -446,7 +446,13 @@ class CaisseController extends Controller
                 
                 // Calculs
                 $lineHt = $qty * $price;
-                $lineVat = round($lineHt * ($vatRate / 100), 2);
+                // Groupe E: taxe spécifique = montant fixe × quantité
+                $vatCategory = $product->vat_category ?? 'S';
+                if ($vatCategory === 'E' && $product->tax_specific_amount > 0) {
+                    $lineVat = round($product->tax_specific_amount * $qty, 2);
+                } else {
+                    $lineVat = round($lineHt * ($vatRate / 100), 2);
+                }
                 $lineTtc = $lineHt + $lineVat;
                 
                 $totalHt += $lineHt;
@@ -459,7 +465,8 @@ class CaisseController extends Controller
                     'unit_price' => $price,
                     'unit_price_ht' => $price,
                     'vat_rate' => $vatRate,
-                    'vat_category' => $product->vat_category ?? 'S',
+                    'vat_category' => $vatCategory,
+                    'tax_specific_amount' => $product->tax_specific_amount,
                     'vat_amount' => $lineVat,
                     'total_price_ht' => $lineHt,
                     'total_price' => $lineTtc,

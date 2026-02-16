@@ -511,15 +511,23 @@ class EmcefService
         // Préparer les articles
         $items = [];
         foreach ($sale->items as $item) {
-            $items[] = [
+            $taxGroup = $this->getTaxGroup($item->vat_rate ?? 18, $item->vat_category);
+            $itemData = [
                 'code' => $item->product->sku ?? $item->product->id,
                 'name' => $item->product->name,
-                'price' => (int) round($item->unit_price), // Prix en centimes/unités entières
+                'price' => (int) round($item->unit_price), // Prix en unités entières
                 'quantity' => (float) $item->quantity,
-                'taxGroup' => $this->getTaxGroup($item->vat_rate ?? 18),
+                'taxGroup' => $taxGroup,
                 'originalPrice' => $item->original_price ? (float) $item->original_price : null,
                 'priceModification' => $item->discount_percent > 0 ? "Remise {$item->discount_percent}%" : null,
             ];
+            
+            // Groupe E: ajouter le montant de taxe spécifique
+            if ($taxGroup === 'E' && $item->tax_specific_amount > 0) {
+                $itemData['taxSpecific'] = (int) round($item->tax_specific_amount);
+            }
+            
+            $items[] = $itemData;
         }
         
         // Préparer les données client
@@ -619,6 +627,7 @@ class EmcefService
 
     /**
      * Convertit le taux de TVA en groupe de taxe e-MCeF
+     * Utilise vat_category en priorité si c'est un groupe e-MCeF valide
      * A = TVA 18% (taux normal)
      * B = TVA 0% (exonéré)
      * C = Exportation
@@ -626,8 +635,15 @@ class EmcefService
      * E = Taxe spécifique
      * F = Autre
      */
-    protected function getTaxGroup(float $vatRate): string
+    protected function getTaxGroup(float $vatRate, ?string $vatCategory = null): string
     {
+        // Si une catégorie e-MCeF valide est définie, l'utiliser directement
+        $validGroups = ['A', 'B', 'C', 'D', 'E', 'F'];
+        if ($vatCategory && in_array($vatCategory, $validGroups)) {
+            return $vatCategory;
+        }
+        
+        // Sinon, déduire du taux
         return match (true) {
             $vatRate >= 18 => 'A',
             $vatRate == 0 => 'B',

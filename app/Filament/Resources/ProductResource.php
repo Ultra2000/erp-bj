@@ -226,9 +226,43 @@ class ProductResource extends Resource
                             ->options(Product::getVatCategories())
                             ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S')
                             ->helperText(fn () => Filament::getTenant()?->emcef_enabled 
-                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%)' 
+                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%, E=Taxe spécifique)' 
                                 : 'Utilisé pour la facturation électronique')
                             ->visible(fn () => (Filament::getTenant()?->isModuleEnabled('e_invoicing') ?? false) || (Filament::getTenant()?->emcef_enabled ?? false))
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                // Quand on sélectionne le groupe E, forcer le taux TVA à 0
+                                if ($state === 'E') {
+                                    $set('vat_rate_sale', 0.00);
+                                    // Recalculer le prix HT (le prix saisi devient le prix HT car TVA=0)
+                                    $price = (float) ($get('price') ?? 0);
+                                    $set('sale_price_ht', $price);
+                                } elseif ($state === 'B') {
+                                    $set('vat_rate_sale', 0.00);
+                                    $price = (float) ($get('price') ?? 0);
+                                    $set('sale_price_ht', $price);
+                                } elseif ($state === 'A') {
+                                    $set('vat_rate_sale', 18.00);
+                                    $price = (float) ($get('price') ?? 0);
+                                    $pricesTtc = $get('prices_include_vat');
+                                    if ($pricesTtc) {
+                                        $set('sale_price_ht', round($price / 1.18, 2));
+                                    } else {
+                                        $set('sale_price_ht', $price);
+                                    }
+                                }
+                            })
+                            ->columnSpan(1),
+
+                        // Montant de taxe spécifique (visible uniquement pour Groupe E)
+                        Forms\Components\TextInput::make('tax_specific_amount')
+                            ->label('Taxe spécifique / unité')
+                            ->numeric()
+                            ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
+                            ->helperText('Montant fixe de taxe par unité vendue (Groupe E e-MCeF)')
+                            ->placeholder('Ex: 50')
+                            ->visible(fn (Forms\Get $get) => $get('vat_category') === 'E')
+                            ->required(fn (Forms\Get $get) => $get('vat_category') === 'E')
                             ->columnSpan(1),
 
                         // Affichage de la marge

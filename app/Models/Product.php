@@ -40,6 +40,7 @@ class Product extends Model
         'sale_price_ht',
         'vat_rate_sale',
         'vat_category',
+        'tax_specific_amount',
         'prices_include_vat',
         // Prix de gros
         'wholesale_price',
@@ -63,6 +64,7 @@ class Product extends Model
         'min_wholesale_qty' => 'integer',
         'vat_rate_purchase' => 'decimal:2',
         'vat_rate_sale' => 'decimal:2',
+        'tax_specific_amount' => 'decimal:2',
         'prices_include_vat' => 'boolean',
     ];
 

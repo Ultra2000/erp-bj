@@ -19,6 +19,8 @@ class SaleItem extends Model
         'quantity',
         'unit_price',
         'vat_rate',
+        'vat_category',
+        'tax_specific_amount',
         'unit_price_ht',
         'vat_amount',
         'total_price_ht',
@@ -33,6 +35,7 @@ class SaleItem extends Model
         'unit_price' => 'decimal:2',
         'unit_price_ht' => 'decimal:2',
         'vat_rate' => 'decimal:2',
+        'tax_specific_amount' => 'decimal:2',
         'vat_amount' => 'decimal:2',
         'total_price_ht' => 'decimal:2',
         'total_price' => 'decimal:2',
@@ -220,7 +223,13 @@ class SaleItem extends Model
             }
             
             $this->vat_rate = $vatRate;
-            $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
+            
+            // Groupe E: taxe spécifique = montant fixe × quantité
+            if ($this->vat_category === 'E' && $this->tax_specific_amount > 0) {
+                $this->vat_amount = round($this->tax_specific_amount * $this->quantity, 2);
+            } else {
+                $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
+            }
             $this->total_price = $this->total_price_ht + $this->vat_amount;
         }
     }

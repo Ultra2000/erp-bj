@@ -41,6 +41,7 @@ class CreateSale extends CreateRecord
                 'unit_price' => $item['unit_price'],
                 'vat_rate' => $item['vat_rate'] ?? null,
                 'vat_category' => $item['vat_category'] ?? null,
+                'tax_specific_amount' => $item['tax_specific_amount'] ?? null,
                 'is_wholesale' => $item['is_wholesale'] ?? false,
                 'retail_unit_price' => $item['retail_unit_price'] ?? null,
                 'total_price' => $item['total_price'],
