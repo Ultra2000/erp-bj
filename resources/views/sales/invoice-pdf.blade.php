@@ -633,8 +633,26 @@
                             </tr>
                         </table>
                     </div>
+                    @if($sale->aib_rate && $sale->aib_amount > 0)
+                    <div class="totals-row">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label">AIB {{ $sale->aib_rate === 'A' ? '(1%)' : '(5%)' }}<br><span style="font-size:7px;color:#999;">Acompte sur Impôt Bénéfices</span></td>
+                                <td class="totals-value">{{ number_format($sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="totals-row grand-total">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label">NET À PAYER</td>
+                                <td class="totals-value">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @endif
                     <div class="amount-words">
-                        {{ amountToWordsFrSalePdf($grandTotal, $currency) }}
+                        {{ amountToWordsFrSalePdf($sale->aib_amount > 0 ? ($grandTotal + $sale->aib_amount) : $grandTotal, $currency) }}
                     </div>
                 </div>
             </td>
