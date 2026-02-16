@@ -226,7 +226,7 @@ class ProductResource extends Resource
                             ->options(Product::getVatCategories())
                             ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S')
                             ->helperText(fn () => Filament::getTenant()?->emcef_enabled 
-                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%)' 
+                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%, E=TPS 5%)' 
                                 : 'Utilisé pour la facturation électronique')
                             ->visible(fn () => (Filament::getTenant()?->isModuleEnabled('e_invoicing') ?? false) || (Filament::getTenant()?->emcef_enabled ?? false))
                             ->live()
@@ -241,6 +241,16 @@ class ProductResource extends Resource
                                     $pricesTtc = $get('prices_include_vat');
                                     if ($pricesTtc) {
                                         $set('sale_price_ht', round($price / 1.18, 2));
+                                    } else {
+                                        $set('sale_price_ht', $price);
+                                    }
+                                } elseif ($state === 'E') {
+                                    // TPS (Taxe sur Prestations de Services) = 5%
+                                    $set('vat_rate_sale', 5.00);
+                                    $price = (float) ($get('price') ?? 0);
+                                    $pricesTtc = $get('prices_include_vat');
+                                    if ($pricesTtc) {
+                                        $set('sale_price_ht', round($price / 1.05, 2));
                                     } else {
                                         $set('sale_price_ht', $price);
                                     }

@@ -555,7 +555,7 @@
                     <td class="text-center">{{ floatval($item->quantity) == intval($item->quantity) ? intval($item->quantity) : rtrim(rtrim(number_format(floatval($item->quantity), 3, ',', ' '), '0'), ',') }}</td>
                     <td class="text-right text-muted">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}</td>
                     @php $pdfItemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); @endphp
-                    <td class="text-center">{{ number_format($item->vat_rate ?? 0, 0) }}%@if($item->tax_specific_amount > 0)<br><span style="font-size:7px;">+ {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u</span>@endif @if($isEmcefEnabled) <span style="border:1px solid #555;font-size:7px;padding:0 2px;font-weight:bold;">{{ $pdfItemGroup }}</span>@if($item->tax_specific_amount > 0) <span style="border:1px solid #e67e22;color:#e67e22;font-size:7px;padding:0 2px;font-weight:bold;">E</span>@endif @endif</td>
+                    <td class="text-center">@if($pdfItemGroup === 'E' && !$item->tax_specific_amount)TPS @endif{{ number_format($item->vat_rate ?? 0, 0) }}%@if($item->tax_specific_amount > 0)<br><span style="font-size:7px;">+ {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u</span>@endif @if($isEmcefEnabled) <span style="border:1px solid #555;font-size:7px;padding:0 2px;font-weight:bold;">{{ $pdfItemGroup }}</span>@if($item->tax_specific_amount > 0) <span style="border:1px solid #e67e22;color:#e67e22;font-size:7px;padding:0 2px;font-weight:bold;">E</span>@endif @endif</td>
                     <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
                 </tr>
             @empty
@@ -596,10 +596,11 @@
                     @endif
                     @if($hasMixedRates)
                         @foreach($vatBreakdown as $rate => $amounts)
+                        @php $taxLabel = ($amounts['group'] ?? '') === 'E' ? 'TPS' : 'TVA'; @endphp
                         <div class="totals-row">
                             <table class="totals-row-table">
                                 <tr>
-                                    <td class="totals-label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
+                                    <td class="totals-label">{{ $taxLabel }} {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
                                     <td class="totals-value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</td>
                                 </tr>
                             </table>
@@ -618,10 +619,11 @@
                     @else
                     @php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; @endphp
                     @php $singleRate = count($vatBreakdown) ? array_key_first($vatBreakdown) : '0'; @endphp
+                    @php $singleTaxLabel = $singleGroup === 'E' ? 'TPS' : 'TVA'; @endphp
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">TVA ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</td>
+                                <td class="totals-label">{{ $singleTaxLabel }} ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</td>
                                 <td class="totals-value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
