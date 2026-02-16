@@ -509,6 +509,7 @@ class SaleResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
+                    ->getStateUsing(fn (Sale $record) => $record->total + ($record->aib_amount ?? 0))
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount_paid')
