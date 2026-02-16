@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
     <meta charset="utf-8">
-    <title>Facture {{ $sale->invoice_number }}</title>
-    @if(!empty($previewMode))
+    <title>Facture <?php echo e($sale->invoice_number); ?></title>
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!empty($previewMode)): ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -392,7 +392,7 @@
     </style>
 </head>
 <body>
-@php
+<?php
     $currency = $company->currency ?? 'XOF';
     $status = $sale->status;
     $statusClass = 'status-' . ($status ?: 'pending');
@@ -497,60 +497,63 @@
 
     // Déterminer si la facture est certifiée EMCEF
     $isEmcefCertified = ($sale->emcef_status === 'certified' && $sale->emcef_qr_code);
-@endphp
+?>
 
 <div class="invoice-container">
-    @if(!empty($previewMode))
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!empty($previewMode)): ?>
         <div class="preview-banner no-print">
             <span>Mode prévisualisation — Cette facture n'est pas finalisée</span>
-            <a href="{{ route('sales.invoice', $sale) }}">Télécharger PDF</a>
+            <a href="<?php echo e(route('sales.invoice', $sale)); ?>">Télécharger PDF</a>
         </div>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     <header class="invoice-header">
         <div class="company-info">
-            @if($company->logo_path)
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($company->logo_path): ?>
                 <div class="logo-container">
-                    <img src="{{ asset('storage/' . $company->logo_path) }}" alt="{{ $company->name }}">
+                    <img src="<?php echo e(asset('storage/' . $company->logo_path)); ?>" alt="<?php echo e($company->name); ?>">
                 </div>
-            @endif
-            <h1>{{ $company->name ?: 'Votre Entreprise' }}</h1>
-            <p class="subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : 'Facture de vente' }}</p>
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <h1><?php echo e($company->name ?: 'Votre Entreprise'); ?></h1>
+            <p class="subtitle"><?php echo e($sale->type === 'credit_note' ? 'Avoir' : 'Facture de vente'); ?></p>
             <div class="company-details">
-                @if($company->address){{ $company->address }}<br>@endif
-                @if($company->phone)Tél: {{ $company->phone }}@endif
-                @if($company->email) | {{ $company->email }}@endif
-                @if($company->tax_number)<br>N° Fiscal: {{ $company->tax_number }}@endif
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($company->address): ?><?php echo e($company->address); ?><br><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($company->phone): ?>Tél: <?php echo e($company->phone); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($company->email): ?> | <?php echo e($company->email); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($company->tax_number): ?><br>N° Fiscal: <?php echo e($company->tax_number); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
         </div>
         <div class="invoice-meta">
             <div class="invoice-number">
-                <span>{{ $sale->type === 'credit_note' ? 'Avoir N°' : 'Facture N°' }}</span>
-                {{ $sale->invoice_number }}
+                <span><?php echo e($sale->type === 'credit_note' ? 'Avoir N°' : 'Facture N°'); ?></span>
+                <?php echo e($sale->invoice_number); ?>
+
             </div>
             <div class="invoice-date">
-                {{ $sale->created_at->format('d/m/Y') }}
+                <?php echo e($sale->created_at->format('d/m/Y')); ?>
+
             </div>
             <div>
-                <span class="status-badge {{ $statusClass }}">
-                    {{ $statusLabels[$status] ?? $status }}
+                <span class="status-badge <?php echo e($statusClass); ?>">
+                    <?php echo e($statusLabels[$status] ?? $status); ?>
+
                 </span>
             </div>
         </div>
     </header>
 
-    {{-- Référence facture d'origine pour les avoirs (exigence DGI) --}}
-    @if($sale->type === 'credit_note' && $sale->parent)
+    
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sale->type === 'credit_note' && $sale->parent): ?>
         <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
-            <strong style="color:#856404;">Avoir relatif à la facture N° {{ $sale->parent->invoice_number }} du {{ $sale->parent->created_at->format('d/m/Y') }}</strong>
+            <strong style="color:#856404;">Avoir relatif à la facture N° <?php echo e($sale->parent->invoice_number); ?> du <?php echo e($sale->parent->created_at->format('d/m/Y')); ?></strong>
             <div style="margin-top:6px;color:#555;">
-                <span><strong>Facture d'origine :</strong> {{ $sale->parent->invoice_number }}</span>
-                @if($sale->parent->emcef_code_mecef)
-                    <span style="margin-left:16px;"><strong>Code MECeF/DGI :</strong> {{ $sale->parent->emcef_code_mecef }}</span>
-                @endif
+                <span><strong>Facture d'origine :</strong> <?php echo e($sale->parent->invoice_number); ?></span>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sale->parent->emcef_code_mecef): ?>
+                    <span style="margin-left:16px;"><strong>Code MECeF/DGI :</strong> <?php echo e($sale->parent->emcef_code_mecef); ?></span>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
         </div>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     <div class="info-grid">
         <div class="info-card">
@@ -558,14 +561,14 @@
                 <span class="info-card-title">Client</span>
             </div>
             <div class="info-card-content">
-                <h3>{{ $sale->customer->name ?? 'Client non défini' }}</h3>
+                <h3><?php echo e($sale->customer->name ?? 'Client non défini'); ?></h3>
                 <p>
-                    @if(optional($sale->customer)->registration_number)<strong>IFU:</strong> {{ $sale->customer->registration_number }}<br>@endif
-                    @if(optional($sale->customer)->siret && optional($sale->customer)->siret !== optional($sale->customer)->registration_number)<strong>SIRET:</strong> {{ $sale->customer->siret }}<br>@endif
-                    @if(optional($sale->customer)->address){{ $sale->customer->address }}<br>@endif
-                    @if(optional($sale->customer)->zip_code || optional($sale->customer)->city){{ optional($sale->customer)->zip_code }} {{ optional($sale->customer)->city }}<br>@endif
-                    @if(optional($sale->customer)->phone)Tél: {{ $sale->customer->phone }}<br>@endif
-                    @if(optional($sale->customer)->email){{ $sale->customer->email }}@endif
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(optional($sale->customer)->registration_number): ?><strong>IFU:</strong> <?php echo e($sale->customer->registration_number); ?><br><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php if(optional($sale->customer)->siret && optional($sale->customer)->siret !== optional($sale->customer)->registration_number): ?><strong>SIRET:</strong> <?php echo e($sale->customer->siret); ?><br><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php if(optional($sale->customer)->address): ?><?php echo e($sale->customer->address); ?><br><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php if(optional($sale->customer)->zip_code || optional($sale->customer)->city): ?><?php echo e(optional($sale->customer)->zip_code); ?> <?php echo e(optional($sale->customer)->city); ?><br><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php if(optional($sale->customer)->phone): ?>Tél: <?php echo e($sale->customer->phone); ?><br><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php if(optional($sale->customer)->email): ?><?php echo e($sale->customer->email); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </p>
             </div>
         </div>
@@ -577,8 +580,8 @@
             <div class="info-card-content">
                 <h3>Informations de paiement</h3>
                 <p>
-                    Mode: {{ ucfirst($sale->payment_method ?? 'Non spécifié') }}<br>
-                    @if($sale->warehouse)Entrepôt: {{ $sale->warehouse->name }}@endif
+                    Mode: <?php echo e(ucfirst($sale->payment_method ?? 'Non spécifié')); ?><br>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sale->warehouse): ?>Entrepôt: <?php echo e($sale->warehouse->name); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                 </p>
             </div>
         </div>
@@ -597,41 +600,42 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($sale->items as $item)
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__empty_1 = true; $__currentLoopData = $sale->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <tr>
                         <td>
-                            <span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span>
-                            @if($item->is_wholesale)
+                            <span class="product-name"><?php echo e($item->product->name ?? 'Produit supprimé'); ?></span>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($item->is_wholesale): ?>
                                 <span style="display: inline-block; border: 1px solid #333; font-size: 9px; padding: 1px 4px; margin-left: 4px;">PRIX GROS</span>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </td>
-                        <td>{{ floatval($item->quantity) == intval($item->quantity) ? intval($item->quantity) : rtrim(rtrim(number_format(floatval($item->quantity), 3, ',', ' '), '0'), ',') }}</td>
+                        <td><?php echo e(floatval($item->quantity) == intval($item->quantity) ? intval($item->quantity) : rtrim(rtrim(number_format(floatval($item->quantity), 3, ',', ' '), '0'), ',')); ?></td>
                         <td class="text-right text-muted">
-                            {{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}
-                            @if($item->is_wholesale && $item->retail_unit_price)
-                                <br><small style="color: #999; text-decoration: line-through;">{{ number_format($item->retail_unit_price, 2, ',', ' ') }}</small>
-                            @endif
+                            <?php echo e(number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ')); ?> <?php echo e($currency); ?>
+
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($item->is_wholesale && $item->retail_unit_price): ?>
+                                <br><small style="color: #999; text-decoration: line-through;"><?php echo e(number_format($item->retail_unit_price, 2, ',', ' ')); ?></small>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </td>
                         <td class="text-right">
-                            @php $itemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); @endphp
-                            @if($itemGroup === 'E' && $item->tax_specific_amount > 0)
-                                {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u
-                            @else
-                                {{ number_format($item->vat_rate ?? 0, 0) }}%
-                            @endif
-                            @if($isEmcefEnabled)
-                                <span style="display:inline-block;border:1px solid #555;font-size:8px;padding:0 3px;margin-left:2px;border-radius:2px;font-weight:bold;">{{ $itemGroup }}</span>
-                            @endif
+                            <?php $itemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($itemGroup === 'E' && $item->tax_specific_amount > 0): ?>
+                                <?php echo e(number_format($item->tax_specific_amount, 0, ',', ' ')); ?> <?php echo e($currency); ?>/u
+                            <?php else: ?>
+                                <?php echo e(number_format($item->vat_rate ?? 0, 0)); ?>%
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isEmcefEnabled): ?>
+                                <span style="display:inline-block;border:1px solid #555;font-size:8px;padding:0 3px;margin-left:2px;border-radius:2px;font-weight:bold;"><?php echo e($itemGroup); ?></span>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </td>
-                        <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
+                        <td class="text-right"><?php echo e(number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ')); ?> <?php echo e($currency); ?></td>
                     </tr>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
                         <td colspan="5" style="text-align: center; padding: 30px; color: #999;">
                             Aucun article dans cette facture
                         </td>
                     </tr>
-                @endforelse
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -640,139 +644,143 @@
         <div class="totals-card">
             <div class="totals-row">
                 <span class="label">Total HT</span>
-                <span class="value">{{ number_format($totalHt, 2, ',', ' ') }} {{ $currency }}</span>
+                <span class="value"><?php echo e(number_format($totalHt, 2, ',', ' ')); ?> <?php echo e($currency); ?></span>
             </div>
-            @if($wholesaleSavings > 0)
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($wholesaleSavings > 0): ?>
                 <div class="totals-row">
                     <span class="label">Économie prix de gros</span>
-                    <span class="value">- {{ number_format($wholesaleSavings, 0, ',', ' ') }} {{ $currency }}</span>
+                    <span class="value">- <?php echo e(number_format($wholesaleSavings, 0, ',', ' ')); ?> <?php echo e($currency); ?></span>
                 </div>
-            @endif
-            @if($discountPercent > 0)
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($discountPercent > 0): ?>
                 <div class="totals-row discount">
-                    <span class="label">Remise ({{ number_format($discountPercent, 1, ',', ' ') }}%)</span>
-                    <span class="value">- {{ number_format($discountAmount, 2, ',', ' ') }} {{ $currency }}</span>
+                    <span class="label">Remise (<?php echo e(number_format($discountPercent, 1, ',', ' ')); ?>%)</span>
+                    <span class="value">- <?php echo e(number_format($discountAmount, 2, ',', ' ')); ?> <?php echo e($currency); ?></span>
                 </div>
-            @endif
-            @if($isVatFranchise)
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isVatFranchise): ?>
                 <div class="totals-row">
                     <span class="label">TVA</span>
                     <span class="value" style="color: #999;">Non applicable</span>
                 </div>
-            @elseif($hasMixedRates)
-                @foreach($vatBreakdown as $rate => $amounts)
+            <?php elseif($hasMixedRates): ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $vatBreakdown; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $rate => $amounts): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <div class="totals-row">
-                    @if($rate === 'E')
-                        <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }} (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
-                    @else
-                        <span class="label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</span>
-                    @endif
-                    <span class="value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</span>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($rate === 'E'): ?>
+                        <span class="label">Taxe spécifique<?php echo e($isEmcefEnabled ? ' — Groupe E' : ''); ?> (base <?php echo e(number_format($amounts['base_ht'], 2, ',', ' ')); ?>)</span>
+                    <?php else: ?>
+                        <span class="label">TVA <?php echo e($rate); ?>%<?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isEmcefEnabled && !empty($amounts['group'])): ?> — Groupe <?php echo e($amounts['group']); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?> (base <?php echo e(number_format($amounts['base_ht'], 2, ',', ' ')); ?>)</span>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <span class="value"><?php echo e(number_format($amounts['vat_amount'], 2, ',', ' ')); ?> <?php echo e($currency); ?></span>
                 </div>
-                @endforeach
-            @else
-                @php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; @endphp
-                @php $singleRate = count($vatBreakdown) ? array_key_first($vatBreakdown) : '0'; @endphp
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <?php else: ?>
+                <?php $singleGroup = count($vatBreakdown) ? (reset($vatBreakdown)['group'] ?? null) : null; ?>
+                <?php $singleRate = count($vatBreakdown) ? array_key_first($vatBreakdown) : '0'; ?>
                 <div class="totals-row">
-                    @if($singleRate === 'E')
-                        <span class="label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</span>
-                    @else
-                        <span class="label">TVA ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</span>
-                    @endif
-                    <span class="value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</span>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($singleRate === 'E'): ?>
+                        <span class="label">Taxe spécifique<?php echo e($isEmcefEnabled ? ' — Groupe E' : ''); ?></span>
+                    <?php else: ?>
+                        <span class="label">TVA (<?php echo e($singleRate); ?>%<?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isEmcefEnabled && $singleGroup): ?> — Groupe <?php echo e($singleGroup); ?><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>)</span>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <span class="value"><?php echo e(number_format($totalVat, 2, ',', ' ')); ?> <?php echo e($currency); ?></span>
                 </div>
-            @endif
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             <div class="totals-row grand-total">
-                <span class="label">Total {{ $isVatFranchise ? 'Net' : 'TTC' }}</span>
-                <span class="value">{{ number_format($grandTotal, 2, ',', ' ') }} {{ $currency }}</span>
+                <span class="label">Total <?php echo e($isVatFranchise ? 'Net' : 'TTC'); ?></span>
+                <span class="value"><?php echo e(number_format($grandTotal, 2, ',', ' ')); ?> <?php echo e($currency); ?></span>
             </div>
-            {{-- AIB (Acompte sur Impôt Bénéfices) - Bénin --}}
-            @if($sale->aib_rate && $sale->aib_amount > 0)
+            
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sale->aib_rate && $sale->aib_amount > 0): ?>
                 <div class="totals-row">
                     <span class="label">
-                        AIB {{ $sale->aib_rate === 'A' ? '(1%)' : '(5%)' }}
+                        AIB <?php echo e($sale->aib_rate === 'A' ? '(1%)' : '(5%)'); ?>
+
                         <small style="display:block;font-size:9px;color:#999;">Acompte sur Impôt Bénéfices</small>
                     </span>
-                    <span class="value">{{ number_format($sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
+                    <span class="value"><?php echo e(number_format($sale->aib_amount, 0, ',', ' ')); ?> <?php echo e($currency); ?></span>
                 </div>
                 <div class="totals-row grand-total">
                     <span class="label">NET À PAYER</span>
-                    <span class="value">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</span>
+                    <span class="value"><?php echo e(number_format($grandTotal + $sale->aib_amount, 0, ',', ' ')); ?> <?php echo e($currency); ?></span>
                 </div>
-            @endif
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             <div class="amount-words">
-                {{ amountToWordsFr($sale->aib_amount > 0 ? ($grandTotal + $sale->aib_amount) : $grandTotal, $currency) }}
+                <?php echo e(amountToWordsFr($sale->aib_amount > 0 ? ($grandTotal + $sale->aib_amount) : $grandTotal, $currency)); ?>
+
             </div>
         </div>
     </div>
 
     <!-- QR VERIFICATION (App) - Masqué si facture certifiée EMCEF -->
-    @if(!$isEmcefCertified && !empty($verificationUrl) && !empty($verificationCode))
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$isEmcefCertified && !empty($verificationUrl) && !empty($verificationCode)): ?>
         <div class="verification-section">
             <div class="qr-code">
-                @php
+                <?php
                     try {
                         $qr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(80)->margin(0)->generate($verificationUrl));
                     } catch (\Throwable $e) { $qr = null; }
-                @endphp
-                @if($qr)
-                    <img src="data:image/svg+xml;base64,{{ $qr }}" alt="QR Code">
-                @else
+                ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($qr): ?>
+                    <img src="data:image/svg+xml;base64,<?php echo e($qr); ?>" alt="QR Code">
+                <?php else: ?>
                     <div style="width:80px;height:80px;"></div>
-                @endif
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
             <div class="verification-info">
                 <h4>Vérification d'authenticité</h4>
                 <p>
                     Scannez le QR code ou visitez l'URL ci-dessous pour vérifier l'authenticité de ce document.<br>
-                    <span style="word-break:break-all;font-size:10px;">{{ $verificationUrl }}</span>
+                    <span style="word-break:break-all;font-size:10px;"><?php echo e($verificationUrl); ?></span>
                 </p>
-                <span class="verification-code">{{ $verificationCode }}</span>
+                <span class="verification-code"><?php echo e($verificationCode); ?></span>
             </div>
         </div>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-    {{-- Section e-MCeF (Certification DGI Bénin) --}}
-    @if($isEmcefCertified)
+    
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isEmcefCertified): ?>
         <div class="verification-section">
             <div class="qr-code">
-                @php
+                <?php
                     try {
                         $emcefQr = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(80)->margin(0)->generate($sale->emcef_qr_code));
                     } catch (\Throwable $e) {
                         $emcefQr = null;
                     }
-                @endphp
-                @if($emcefQr)
-                    <img src="data:image/svg+xml;base64,{{ $emcefQr }}" alt="QR Code e-MCeF" style="width: 80px; height: 80px;">
-                @else
+                ?>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($emcefQr): ?>
+                    <img src="data:image/svg+xml;base64,<?php echo e($emcefQr); ?>" alt="QR Code e-MCeF" style="width: 80px; height: 80px;">
+                <?php else: ?>
                     <div style="width:80px;height:80px;"></div>
-                @endif
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
             <div class="verification-info">
                 <h4>Facture certifiée DGI Bénin</h4>
                 <p>
                     Cette facture a été certifiée conformément à la réglementation fiscale béninoise (e-MCeF).<br>
-                    <strong>NIM :</strong> {{ $sale->emcef_nim }}<br>
-                    <strong>Code MECeF :</strong> {{ $sale->emcef_code_mecef }}<br>
-                    <strong>Date de certification :</strong> {{ $sale->emcef_certified_at?->format('d/m/Y à H:i') }}
+                    <strong>NIM :</strong> <?php echo e($sale->emcef_nim); ?><br>
+                    <strong>Code MECeF :</strong> <?php echo e($sale->emcef_code_mecef); ?><br>
+                    <strong>Date de certification :</strong> <?php echo e($sale->emcef_certified_at?->format('d/m/Y à H:i')); ?>
+
                 </p>
-                @if($sale->emcef_counters)
-                    <span class="verification-code">{{ $sale->emcef_counters }}</span>
-                @endif
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($sale->emcef_counters): ?>
+                    <span class="verification-code"><?php echo e($sale->emcef_counters); ?></span>
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </div>
         </div>
-    @elseif($sale->emcef_status === 'error')
+    <?php elseif($sale->emcef_status === 'error'): ?>
         <div class="verification-section">
             <div class="verification-info" style="width: 100%;">
                 <h4>Certification e-MCeF en erreur</h4>
                 <p>
                     Cette facture n'a pas pu être certifiée par la DGI.<br>
-                    <strong>Erreur :</strong> {{ $sale->emcef_error ?? 'Erreur inconnue' }}
+                    <strong>Erreur :</strong> <?php echo e($sale->emcef_error ?? 'Erreur inconnue'); ?>
+
                 </p>
             </div>
         </div>
-    @elseif($company->emcef_enabled && $sale->emcef_status === 'pending')
+    <?php elseif($company->emcef_enabled && $sale->emcef_status === 'pending'): ?>
         <div class="verification-section">
             <div class="verification-info" style="width: 100%;">
                 <h4>Certification e-MCeF en cours</h4>
@@ -781,31 +789,33 @@
                 </p>
             </div>
         </div>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     <footer class="invoice-footer">
-        @if($isVatFranchise)
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($isVatFranchise): ?>
             <p style="font-weight: 600; margin-bottom: 6px;"><strong>Exonéré de TVA</strong></p>
-        @endif
-        @if($company->footer_text)
-            {{ $company->footer_text }}
-        @else
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($company->footer_text): ?>
+            <?php echo e($company->footer_text); ?>
+
+        <?php else: ?>
             Merci pour votre confiance<br>
-            {{ $company->name }} — {{ $company->phone ?? '' }} — {{ $company->email ?? '' }}
-        @endif
+            <?php echo e($company->name); ?> — <?php echo e($company->phone ?? ''); ?> — <?php echo e($company->email ?? ''); ?>
+
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </footer>
 
     <div class="actions no-print">
-        @if(empty($previewMode))
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(empty($previewMode)): ?>
             <button onclick="window.print()" class="btn btn-primary">Imprimer</button>
-        @else
-            <a href="{{ route('sales.invoice', $sale) }}" class="btn btn-primary">Télécharger PDF</a>
+        <?php else: ?>
+            <a href="<?php echo e(route('sales.invoice', $sale)); ?>" class="btn btn-primary">Télécharger PDF</a>
             <button onclick="window.print()" class="btn btn-secondary">Imprimer</button>
-        @endif
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </div>
 
-    {{-- Accordion XML Preview (only in preview mode) --}}
-    @if(!empty($previewMode) && !empty($facturxXml))
+    
+    <?php if(!empty($previewMode) && !empty($facturxXml)): ?>
         <div style="margin-top: 24px; border: 1px solid #ccc;" class="no-print">
             <button style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f5f5f5; border: none; cursor: pointer; font-size: 13px; font-weight: 500; text-align: left;" onclick="document.getElementById('xmlContent').classList.toggle('open'); document.getElementById('xmlChevron').classList.toggle('open');">
                 <span>Factur-X XML intégré (CII)</span>
@@ -817,14 +827,14 @@
                     <span style="font-size: 11px; color: #666;">Profil: BASIC | Norme: Factur-X / ZUGFeRD 2.1</span>
                     <button onclick="navigator.clipboard.writeText(document.getElementById('xmlCode').textContent)" style="background: #333; color: white; border: none; padding: 6px 12px; font-size: 11px; cursor: pointer;">Copier XML</button>
                 </div>
-                <pre id="xmlCode" style="margin: 0; padding: 16px; font-family: monospace; font-size: 11px; line-height: 1.5; overflow-x: auto; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"><code>{{ $facturxXml }}</code></pre>
+                <pre id="xmlCode" style="margin: 0; padding: 16px; font-family: monospace; font-size: 11px; line-height: 1.5; overflow-x: auto; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;"><code><?php echo e($facturxXml); ?></code></pre>
             </div>
         </div>
         <style>
             #xmlContent.open { display: block !important; }
             #xmlChevron.open { transform: rotate(180deg); }
         </style>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 </div>
 </body>
 </html>

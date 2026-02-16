@@ -588,7 +588,7 @@
                             <table class="totals-row-table">
                                 <tr>
                                     @if($rate === 'E')
-                                        <td class="totals-label">Taxe spécifique@if($isEmcefEnabled) — Groupe E@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
+                                        <td class="totals-label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }} (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
                                     @else
                                         <td class="totals-label">TVA {{ $rate }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
                                     @endif
@@ -604,7 +604,7 @@
                         <table class="totals-row-table">
                             <tr>
                                 @if($singleRate === 'E')
-                                    <td class="totals-label">Taxe spécifique@if($isEmcefEnabled) — Groupe E@endif</td>
+                                    <td class="totals-label">Taxe spécifique{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
                                 @else
                                     <td class="totals-label">TVA ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</td>
                                 @endif
