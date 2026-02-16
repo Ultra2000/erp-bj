@@ -610,7 +610,7 @@ class Product extends Model
         if ($company?->emcef_enabled) {
             return [
                 18.00 => '18% - TVA standard (Groupe A)',
-                0.00 => '0% - Exonéré / TPS (Groupe B/E)',
+                0.00 => '0% - Exonéré (Groupe B)',
             ];
         }
         
