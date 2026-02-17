@@ -196,8 +196,8 @@ Route::middleware('auth')->group(function () {
 });
 
 // Ticket de caisse (impression thermique 80mm)
-Route::get('/sales/{sale}/receipt', function (Sale $sale) {
-    $sale->load(['items.product', 'customer', 'cashSession.user']);
+Route::get('/sales/{saleId}/receipt', function (int $saleId) {
+    $sale = Sale::withoutGlobalScopes()->with(['items.product', 'customer', 'cashSession.user'])->findOrFail($saleId);
     $company = \App\Models\Company::find($sale->company_id);
     
     return view('prints.receipt', [
