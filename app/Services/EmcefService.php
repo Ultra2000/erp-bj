@@ -600,11 +600,16 @@ class EmcefService
      */
     protected function getInvoiceType(Sale $sale): string
     {
+        // Vérifier si c'est une vente à l'export (au moins un article Groupe C)
+        $isExport = $sale->items->contains(function ($item) {
+            return strtoupper($item->vat_category ?? '') === 'C';
+        });
+
         if ($sale->type === 'credit_note') {
-            return 'FA'; // Facture d'Avoir
+            return $isExport ? 'EA' : 'FA';
         }
         
-        return 'FV'; // Facture de Vente
+        return $isExport ? 'EV' : 'FV';
     }
 
     /**

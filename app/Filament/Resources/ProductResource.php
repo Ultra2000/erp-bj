@@ -226,12 +226,13 @@ class ProductResource extends Resource
                             ->options(Product::getVatCategories())
                             ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S')
                             ->helperText(fn () => Filament::getTenant()?->emcef_enabled 
-                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%, E=TPS 0%)' 
+                                ? 'Groupe de taxation DGI Bénin (A=18%, B=0%, C=Export, E=TPS)' 
                                 : 'Utilisé pour la facturation électronique')
                             ->visible(fn () => (Filament::getTenant()?->isModuleEnabled('e_invoicing') ?? false) || (Filament::getTenant()?->emcef_enabled ?? false))
                             ->live()
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                if ($state === 'B') {
+                                if ($state === 'B' || $state === 'C') {
+                                    // Exonéré (B) ou Export (C) = 0%
                                     $set('vat_rate_sale', 0.00);
                                     $price = (float) ($get('price') ?? 0);
                                     $set('sale_price_ht', $price);

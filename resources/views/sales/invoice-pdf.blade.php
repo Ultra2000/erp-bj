@@ -421,6 +421,9 @@
     // Vérifier si e-MCeF est activé (pour afficher les groupes de taxe DGI)
     $isEmcefEnabled = $company->emcef_enabled ?? false;
 
+    // Détecter si c'est une facture export (Groupe C)
+    $isExportInvoice = $sale->items->contains(fn($item) => strtoupper($item->vat_category ?? '') === 'C');
+
     // Remise appliquée sur HT + TVA (pas sur taxe spécifique)
     $totalAvantRemise = $rawTotalHt + $rawTotalVat;
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
@@ -456,7 +459,7 @@
         'cancelled' => 'Annulée'
     ];
 
-    $invoiceTypeLabel = $sale->type === 'credit_note' ? 'Avoir N°' : 'Facture N°';
+    $invoiceTypeLabel = $sale->type === 'credit_note' ? 'Avoir N°' : ($isExportInvoice ? 'Facture Export N°' : 'Facture N°');
 
     // Déterminer si la facture est certifiée EMCEF
     $isEmcefCertified = ($sale->emcef_status === 'certified' && $sale->emcef_qr_code);
@@ -471,7 +474,7 @@
                     <img src="{{ public_path('storage/' . $company->logo_path) }}" alt="{{ $company->name }}" class="logo">
                 @endif
                 <div class="company-name">{{ $company->name ?: 'Votre Entreprise' }}</div>
-                <div class="company-subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : 'Facture de vente' }}</div>
+                <div class="company-subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : ($isExportInvoice ? 'Facture de vente à l\'exportation' : 'Facture de vente') }}</div>
                 <div class="company-details">
                     @if($company->address){{ $company->address }}<br>@endif
                     @if($company->phone)Tel: {{ $company->phone }}@endif
@@ -770,7 +773,9 @@
 
 <!-- FOOTER -->
 <div class="footer">
-    @if($isVatFranchise)
+    @if($isExportInvoice)
+        <strong>Exonération de TVA — Exportation de biens (Art. 262 CGI)</strong><br>
+    @elseif($isVatFranchise)
         <strong>Exonéré de TVA</strong><br>
     @endif
     @if($company->footer_text)

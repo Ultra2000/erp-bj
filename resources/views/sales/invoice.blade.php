@@ -458,6 +458,9 @@
     // Vérifier si e-MCeF est activé (pour afficher les groupes de taxe DGI)
     $isEmcefEnabled = $company->emcef_enabled ?? false;
 
+    // Détecter si c'est une facture export (Groupe C)
+    $isExportInvoice = $sale->items->contains(fn($item) => strtoupper($item->vat_category ?? '') === 'C');
+
     // Calculer la remise si présente
     // Remise appliquée sur HT + TVA (pas sur taxe spécifique)
     $totalAvantRemise = $rawTotalHt + $rawTotalVat;
@@ -530,7 +533,7 @@
                 </div>
             @endif
             <h1>{{ $company->name ?: 'Votre Entreprise' }}</h1>
-            <p class="subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : 'Facture de vente' }}</p>
+            <p class="subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : ($isExportInvoice ? 'Facture de vente à l\'exportation' : 'Facture de vente') }}</p>
             <div class="company-details">
                 @if($company->address){{ $company->address }}<br>@endif
                 @if($company->phone)Tél: {{ $company->phone }}@endif
@@ -540,7 +543,7 @@
         </div>
         <div class="invoice-meta">
             <div class="invoice-number">
-                <span>{{ $sale->type === 'credit_note' ? 'Avoir N°' : 'Facture N°' }}</span>
+                <span>{{ $sale->type === 'credit_note' ? 'Avoir N°' : ($isExportInvoice ? 'Facture Export N°' : 'Facture N°') }}</span>
                 {{ $sale->invoice_number }}
             </div>
             <div class="invoice-date">
@@ -811,7 +814,9 @@
     @endif
 
     <footer class="invoice-footer">
-        @if($isVatFranchise)
+        @if($isExportInvoice)
+            <p style="font-weight: 600; margin-bottom: 6px;"><strong>Exonération de TVA — Exportation de biens (Art. 262 CGI)</strong></p>
+        @elseif($isVatFranchise)
             <p style="font-weight: 600; margin-bottom: 6px;"><strong>Exonéré de TVA</strong></p>
         @endif
         @if($company->footer_text)
