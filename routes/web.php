@@ -195,6 +195,17 @@ Route::middleware('auth')->group(function () {
         ->name('products.labels.print');
 });
 
+// Ticket de caisse (impression thermique 80mm)
+Route::get('/sales/{sale}/receipt', function (Sale $sale) {
+    $sale->load(['items.product', 'customer', 'cashSession.user']);
+    $company = \App\Models\Company::find($sale->company_id);
+    
+    return view('prints.receipt', [
+        'sale' => $sale,
+        'company' => $company,
+    ]);
+})->middleware('auth')->name('sales.receipt');
+
 // Routes publiques signées pour vérification d'authenticité d'une facture
 Route::get('/verify/purchase/{purchase}', function (Request $request, Purchase $purchase) {
     if (! $request->hasValidSignature()) {

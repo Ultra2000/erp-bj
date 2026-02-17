@@ -576,6 +576,13 @@
                         class="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-semibold hover:from-violet-700 hover:to-purple-700 transition-all">
                     Continuer
                 </button>
+                <button @click="printCashReceipt()" 
+                        class="w-full py-3 px-4 mt-2 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                    </svg>
+                    Imprimer le ticket
+                </button>
             </div>
         </div>
 
@@ -935,6 +942,7 @@
                 showSuccessModal: false,
                 showReportModal: false,
                 lastSaleAmount: 0,
+                lastSaleDbId: null,
                 lastInvoiceNumber: null,
                 lastEmcefResult: null,
 
@@ -1000,6 +1008,16 @@
                 playSuccess() {
                     this.playBeep(880, 100);
                     setTimeout(() => this.playBeep(1100, 150), 120);
+                },
+
+                // Impression ticket de caisse
+                printCashReceipt() {
+                    if (!this.lastSaleDbId) return;
+                    const url = '/sales/' + this.lastSaleDbId + '/receipt?print=1';
+                    const printWindow = window.open(url, '_blank', 'width=350,height=700,scrollbars=yes');
+                    if (!printWindow) {
+                        window.open(url, '_blank');
+                    }
                 },
 
                 // Son d'erreur (bip grave)
@@ -1354,6 +1372,7 @@
                         if (data.success) {
                             this.playSuccess();
                             this.lastSaleAmount = this.cartTotal;
+                            this.lastSaleDbId = data.sale_id || null;
                             this.lastInvoiceNumber = data.invoice_number || null;
                             this.lastEmcefResult = data.emcef || null;
                             this.showSuccessModal = true;

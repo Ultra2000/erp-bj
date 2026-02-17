@@ -319,20 +319,68 @@
             </div>
         </div>
 
-        {{-- Notification succès --}}
-        <template x-if="showSuccess">
-            <div class="fixed top-4 right-4 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-lg z-50 animate-bounce">
-                <div class="flex items-center gap-3">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <div>
-                        <div class="font-bold">Vente enregistrée !</div>
-                        <div class="text-sm" x-text="'Ticket #' + lastSaleId"></div>
+        {{-- Modal Ticket de Caisse (après vente réussie) --}}
+        <div x-show="showReceiptModal" x-cloak class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" @keydown.escape.window="showReceiptModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" @click.away="showReceiptModal = false">
+                {{-- Header succès --}}
+                <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-6 text-center">
+                    <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold">Vente enregistrée !</h3>
+                    <p class="text-emerald-100 mt-1" x-text="'Ticket ' + lastSaleId"></p>
+                </div>
+
+                {{-- Résumé de la vente --}}
+                <div class="p-5">
+                    <div class="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-gray-500 text-sm">Total TTC</span>
+                            <span class="text-2xl font-black text-emerald-600" x-text="formatPrice(lastSaleTotal)"></span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-500">Mode de paiement</span>
+                            <span class="font-medium" x-text="{
+                                'cash': 'Espèces',
+                                'card': 'Carte bancaire', 
+                                'mobile': 'Mobile Money',
+                                'mixed': 'Paiement mixte'
+                            }[lastPaymentMethod] || lastPaymentMethod"></span>
+                        </div>
+                        <template x-if="lastEmcefNim">
+                            <div class="flex justify-between items-center text-sm mt-2">
+                                <span class="text-gray-500">e-MCeF</span>
+                                <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-mono" x-text="lastEmcefNim"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Boutons d'action --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <button 
+                            @click="printReceipt()"
+                            class="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-semibold text-sm"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            Imprimer ticket
+                        </button>
+                        <button 
+                            @click="showReceiptModal = false"
+                            class="flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition font-semibold text-sm"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                            </svg>
+                            Vente suivante
+                        </button>
                     </div>
                 </div>
             </div>
-        </template>
+        </div>
         
         {{-- Indicateur de scan douchette --}}
         <template x-if="scannerBuffer.length > 0">
@@ -403,9 +451,13 @@
                 scanMessageType: '', // 'success' ou 'error'
                 showScanMessage: false,
                 
-                // Feedback
-                showSuccess: false,
+                // Feedback - Modal ticket
+                showReceiptModal: false,
                 lastSaleId: null,
+                lastSaleDbId: null,
+                lastSaleTotal: 0,
+                lastPaymentMethod: '',
+                lastEmcefNim: null,
                 
                 // Session stats
                 sessionStats: {
@@ -655,8 +707,11 @@
 
                         if (result.success) {
                             this.lastSaleId = result.invoice_number;
-                            this.showSuccess = true;
-                            setTimeout(() => this.showSuccess = false, 3000);
+                            this.lastSaleDbId = result.sale_id;
+                            this.lastSaleTotal = result.total;
+                            this.lastPaymentMethod = this.paymentMethod;
+                            this.lastEmcefNim = result.emcef_nim;
+                            this.showReceiptModal = true;
                             this.clearCart();
                             this.refreshSessionStats();
                             this.playBeep();
@@ -790,6 +845,17 @@
                     setTimeout(() => {
                         this.showScanMessage = false;
                     }, 3000);
+                },
+
+                // === Impression ticket de caisse ===
+                printReceipt() {
+                    if (!this.lastSaleDbId) return;
+                    const url = '/sales/' + this.lastSaleDbId + '/receipt?print=1';
+                    const printWindow = window.open(url, '_blank', 'width=350,height=700,scrollbars=yes');
+                    if (!printWindow) {
+                        // Popup bloquée, ouvrir dans un nouvel onglet
+                        window.open(url, '_blank');
+                    }
                 }
             };
         }
