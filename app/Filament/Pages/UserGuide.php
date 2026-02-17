@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\TutorialVideo;
 use Filament\Pages\Page;
 
 class UserGuide extends Page
@@ -33,5 +34,16 @@ class UserGuide extends Page
             'invoicing' => ['icon' => 'heroicon-o-document-text', 'label' => 'Facturation & DGI'],
             'admin' => ['icon' => 'heroicon-o-cog-6-tooth', 'label' => 'Administration'],
         ];
+    }
+
+    /**
+     * Récupère les vidéos tutoriels pour la section active
+     */
+    public function getSectionVideos(): \Illuminate\Database\Eloquent\Collection
+    {
+        return TutorialVideo::active()
+            ->forSection($this->activeSection)
+            ->ordered()
+            ->get();
     }
 }

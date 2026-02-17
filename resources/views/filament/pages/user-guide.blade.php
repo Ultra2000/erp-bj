@@ -816,6 +816,49 @@
                 </div>
                 @endif
 
+                {{-- ============================================================ --}}
+                {{-- VIDÉOS TUTORIELS (affiché sous chaque section si videos dispo) --}}
+                {{-- ============================================================ --}}
+                @php
+                    $sectionVideos = $this->getSectionVideos();
+                @endphp
+                @if($sectionVideos->count() > 0)
+                <div class="mt-6">
+                    <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-6">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <x-heroicon-o-play-circle class="h-5 w-5 text-red-500" />
+                            Vidéos tutoriels
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            @foreach($sectionVideos as $video)
+                            <div class="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden hover:shadow-md transition-shadow">
+                                <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+                                    <iframe
+                                        src="{{ $video->embed_url }}"
+                                        style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
+                                        allowfullscreen
+                                        loading="lazy"
+                                    ></iframe>
+                                </div>
+                                <div class="p-4">
+                                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm">{{ $video->title }}</h4>
+                                    @if($video->description)
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $video->description }}</p>
+                                    @endif
+                                    @if($video->formatted_duration)
+                                        <span class="inline-flex items-center gap-1 mt-2 text-xs text-gray-400 dark:text-gray-500">
+                                            <x-heroicon-m-clock class="h-3 w-3" />
+                                            {{ $video->formatted_duration }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
             </div>
         </div>
     </div>
