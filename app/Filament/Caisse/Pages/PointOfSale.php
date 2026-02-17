@@ -132,6 +132,35 @@ class PointOfSale extends Page
     }
 
     /**
+     * Récupère la dernière vente de la session en cours
+     */
+    public function getLastSessionSale(): ?array
+    {
+        $tenant = Filament::getTenant();
+        if (!$tenant) return null;
+
+        $session = CashSession::where('company_id', $tenant->id)
+            ->where('user_id', auth()->id())
+            ->where('status', 'open')
+            ->first();
+
+        if (!$session) return null;
+
+        $lastSale = Sale::withoutGlobalScopes()
+            ->where('cash_session_id', $session->id)
+            ->where('status', 'completed')
+            ->latest()
+            ->first();
+
+        if (!$lastSale) return null;
+
+        return [
+            'id' => $lastSale->id,
+            'invoice_number' => $lastSale->invoice_number,
+        ];
+    }
+
+    /**
      * Vérifie si une session de caisse est ouverte
      */
     public function hasOpenSession(): bool

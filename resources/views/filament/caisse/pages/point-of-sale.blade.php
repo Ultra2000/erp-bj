@@ -483,6 +483,15 @@
                     this.hasSession = response;
                     if (this.hasSession) {
                         this.refreshSessionStats();
+                        this.loadLastSale();
+                    }
+                },
+
+                async loadLastSale() {
+                    const sale = await this.$wire.getLastSessionSale();
+                    if (sale && !this.lastSaleDbId) {
+                        this.lastSaleDbId = sale.id;
+                        this.lastSaleId = sale.invoice_number;
                     }
                 },
 
