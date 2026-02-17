@@ -34,19 +34,19 @@ class AccountingBalanceWidget extends BaseWidget
             ->count();
 
         return [
-            Stat::make('Total Débits', number_format($totalDebit, 2, ',', ' ') . ' €')
+            Stat::make('Total Débits', number_format($totalDebit, 2, ',', ' ') . ' FCFA')
                 ->description('Grand livre')
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->color('danger')
                 ->chart([7, 3, 4, 5, 6, 3, 5, 3]),
 
-            Stat::make('Total Crédits', number_format($totalCredit, 2, ',', ' ') . ' €')
+            Stat::make('Total Crédits', number_format($totalCredit, 2, ',', ' ') . ' FCFA')
                 ->description('Grand livre')
                 ->descriptionIcon('heroicon-m-arrow-trending-down')
                 ->color('success')
                 ->chart([3, 5, 4, 3, 6, 5, 3, 7]),
 
-            Stat::make('Balance', number_format(abs($balance), 2, ',', ' ') . ' €')
+            Stat::make('Balance', number_format(abs($balance), 2, ',', ' ') . ' FCFA')
                 ->description($balance == 0 ? 'Équilibrée ✓' : ($balance > 0 ? 'Débit excédentaire' : 'Crédit excédentaire'))
                 ->descriptionIcon($balance == 0 ? 'heroicon-m-check-circle' : 'heroicon-m-exclamation-triangle')
                 ->color($balance == 0 ? 'success' : 'warning'),

@@ -125,18 +125,18 @@ class CalculateCommissions extends Command
                 $totalCommissions += $commissionAmount;
                 $commissionsCreated++;
 
-                $this->line("  - Sale #{$sale->reference}: {$baseAmount} € HT → Commission: " . number_format($commissionAmount, 2) . " €");
+                $this->line("  - Sale #{$sale->reference}: {$baseAmount} FCFA HT → Commission: " . number_format($commissionAmount, 2) . " FCFA");
             }
 
             // Calculate total for this employee
             $employeeTotal = $employee->calculateCommission($startDate, $endDate);
-            $this->info("  Total commissions: " . number_format($employeeTotal, 2) . " €");
+            $this->info("  Total commissions: " . number_format($employeeTotal, 2) . " FCFA");
             $this->newLine();
         }
 
         $this->info("Summary:");
         $this->line("  - Commissions created: {$commissionsCreated}");
-        $this->line("  - Total amount: " . number_format($totalCommissions, 2) . " €");
+        $this->line("  - Total amount: " . number_format($totalCommissions, 2) . " FCFA");
 
         return 0;
     }

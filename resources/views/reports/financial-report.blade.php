@@ -221,16 +221,16 @@
         <table class="summary-grid">
             <tr>
                 <td width="25%">
-                    <div class="summary-value highlight-green">{{ number_format($summary['revenue'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value highlight-green">{{ number_format($summary['revenue'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Chiffre d'affaires HT</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value highlight-red">{{ number_format($summary['expenses'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value highlight-red">{{ number_format($summary['expenses'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Achats HT</div>
                 </td>
                 <td width="25%">
                     <div class="summary-value {{ $summary['gross_profit'] >= 0 ? 'profit-positive' : 'profit-negative' }}">
-                        {{ number_format($summary['gross_profit'], 2, ',', ' ') }} €
+                        {{ number_format($summary['gross_profit'], 2, ',', ' ') }} FCFA
                     </div>
                     <div class="summary-label">Marge brute</div>
                 </td>
@@ -255,15 +255,15 @@
                         </tr>
                         <tr>
                             <td>Total HT</td>
-                            <td class="right highlight-green"><strong>{{ number_format($sales['total_ht'], 2, ',', ' ') }} €</strong></td>
+                            <td class="right highlight-green"><strong>{{ number_format($sales['total_ht'], 2, ',', ' ') }} FCFA</strong></td>
                         </tr>
                         <tr>
                             <td>TVA collectée</td>
-                            <td class="right">{{ number_format($sales['total_tva'], 2, ',', ' ') }} €</td>
+                            <td class="right">{{ number_format($sales['total_tva'], 2, ',', ' ') }} FCFA</td>
                         </tr>
                         <tr class="total-row">
                             <td>Total TTC</td>
-                            <td class="right"><strong>{{ number_format($sales['total_ttc'], 2, ',', ' ') }} €</strong></td>
+                            <td class="right"><strong>{{ number_format($sales['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
                         </tr>
                     </table>
                 </div>
@@ -278,15 +278,15 @@
                         </tr>
                         <tr>
                             <td>Total HT</td>
-                            <td class="right highlight-red"><strong>{{ number_format($purchases['total_ht'], 2, ',', ' ') }} €</strong></td>
+                            <td class="right highlight-red"><strong>{{ number_format($purchases['total_ht'], 2, ',', ' ') }} FCFA</strong></td>
                         </tr>
                         <tr>
                             <td>TVA déductible</td>
-                            <td class="right">{{ number_format($purchases['total_tva'], 2, ',', ' ') }} €</td>
+                            <td class="right">{{ number_format($purchases['total_tva'], 2, ',', ' ') }} FCFA</td>
                         </tr>
                         <tr class="total-row">
                             <td>Total TTC</td>
-                            <td class="right"><strong>{{ number_format($purchases['total_ttc'], 2, ',', ' ') }} €</strong></td>
+                            <td class="right"><strong>{{ number_format($purchases['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
                         </tr>
                     </table>
                 </div>
@@ -301,16 +301,16 @@
             <tr>
                 <td width="33%">
                     <div class="card-sub">TVA collectée (ventes)</div>
-                    <div style="font-size: 14px; font-weight: bold; color: #10b981;">{{ number_format($summary['tva_collected'], 2, ',', ' ') }} €</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #10b981;">{{ number_format($summary['tva_collected'], 2, ',', ' ') }} FCFA</div>
                 </td>
                 <td width="33%">
                     <div class="card-sub">TVA déductible (achats)</div>
-                    <div style="font-size: 14px; font-weight: bold; color: #ef4444;">{{ number_format($summary['tva_deductible'], 2, ',', ' ') }} €</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #ef4444;">{{ number_format($summary['tva_deductible'], 2, ',', ' ') }} FCFA</div>
                 </td>
                 <td width="34%">
                     <div class="card-sub">TVA à reverser</div>
                     <div style="font-size: 14px; font-weight: bold; color: {{ $summary['tva_to_pay'] >= 0 ? '#7c3aed' : '#10b981' }};">
-                        {{ number_format($summary['tva_to_pay'], 2, ',', ' ') }} €
+                        {{ number_format($summary['tva_to_pay'], 2, ',', ' ') }} FCFA
                         @if($summary['tva_to_pay'] < 0)
                             (crédit)
                         @endif
@@ -329,9 +329,9 @@
                 <tr>
                     <th>Mois</th>
                     <th>Ventes (nb)</th>
-                    <th>Ventes (€)</th>
+                    <th>Ventes (FCFA)</th>
                     <th>Achats (nb)</th>
-                    <th>Achats (€)</th>
+                    <th>Achats (FCFA)</th>
                     <th>Résultat</th>
                 </tr>
             </thead>
@@ -360,10 +360,10 @@
                     <tr>
                         <td><strong>{{ $monthNames[$m['month']] }} {{ $m['year'] }}</strong></td>
                         <td>{{ $m['sales_count'] }}</td>
-                        <td class="positive">{{ number_format($m['sales_total'], 2, ',', ' ') }} €</td>
+                        <td class="positive">{{ number_format($m['sales_total'], 2, ',', ' ') }} FCFA</td>
                         <td>{{ $m['purchases_count'] }}</td>
-                        <td class="negative">{{ number_format($m['purchases_total'], 2, ',', ' ') }} €</td>
-                        <td class="{{ $result >= 0 ? 'positive' : 'negative' }}"><strong>{{ number_format($result, 2, ',', ' ') }} €</strong></td>
+                        <td class="negative">{{ number_format($m['purchases_total'], 2, ',', ' ') }} FCFA</td>
+                        <td class="{{ $result >= 0 ? 'positive' : 'negative' }}"><strong>{{ number_format($result, 2, ',', ' ') }} FCFA</strong></td>
                     </tr>
                 @endforeach
             </tbody>
@@ -390,7 +390,7 @@
                         <tr>
                             <td>{{ Str::limit($customer->name, 25) }}</td>
                             <td class="center">{{ $customer->orders_count }}</td>
-                            <td class="right highlight-green">{{ number_format($customer->total_amount, 2, ',', ' ') }} €</td>
+                            <td class="right highlight-green">{{ number_format($customer->total_amount, 2, ',', ' ') }} FCFA</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -413,7 +413,7 @@
                         <tr>
                             <td>{{ Str::limit($supplier->name, 25) }}</td>
                             <td class="center">{{ $supplier->orders_count }}</td>
-                            <td class="right highlight-red">{{ number_format($supplier->total_amount, 2, ',', ' ') }} €</td>
+                            <td class="right highlight-red">{{ number_format($supplier->total_amount, 2, ',', ' ') }} FCFA</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -431,14 +431,14 @@
                 <td>
                     <div class="card">
                         <div class="card-title">Valeur au prix d'achat</div>
-                        <div class="card-value highlight-blue">{{ number_format($stockValue['achat'], 2, ',', ' ') }} €</div>
+                        <div class="card-value highlight-blue">{{ number_format($stockValue['achat'], 2, ',', ' ') }} FCFA</div>
                         <div class="card-sub">Coût d'acquisition du stock actuel</div>
                     </div>
                 </td>
                 <td>
                     <div class="card">
                         <div class="card-title">Valeur au prix de vente</div>
-                        <div class="card-value highlight-green">{{ number_format($stockValue['vente'], 2, ',', ' ') }} €</div>
+                        <div class="card-value highlight-green">{{ number_format($stockValue['vente'], 2, ',', ' ') }} FCFA</div>
                         <div class="card-sub">Potentiel de chiffre d'affaires</div>
                     </div>
                 </td>
@@ -475,7 +475,7 @@
                 <tr>
                     <td>{{ $paymentLabels[$payment->payment_method] ?? ucfirst($payment->payment_method) }}</td>
                     <td class="center">{{ $payment->count }}</td>
-                    <td class="right">{{ number_format($payment->total, 2, ',', ' ') }} €</td>
+                    <td class="right">{{ number_format($payment->total, 2, ',', ' ') }} FCFA</td>
                     <td class="right">{{ $totalPayments > 0 ? number_format(($payment->total / $totalPayments) * 100, 1) : 0 }}%</td>
                 </tr>
                 @endforeach

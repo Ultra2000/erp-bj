@@ -122,7 +122,7 @@ class CountryConfigService
         $config = self::getCountryConfig($countryCode);
         
         if (!$config) {
-            return number_format($amount, 2, ',', ' ') . ' €';
+            return number_format($amount, 2, ',', ' ') . ' FCFA';
         }
 
         $formatted = number_format(

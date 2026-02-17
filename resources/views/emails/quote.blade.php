@@ -70,7 +70,7 @@
                                                         <tr>
                                                             <td style="color: #64748b; font-size: 16px; font-weight: 700;">Montant total TTC :</td>
                                                             <td style="color: #667eea; font-size: 24px; font-weight: 700; text-align: right;">
-                                                                {{ number_format($quote->total, 2, ',', ' ') }} €
+                                                                {{ number_format($quote->total, 2, ',', ' ') }} FCFA
                                                             </td>
                                                         </tr>
                                                     </table>

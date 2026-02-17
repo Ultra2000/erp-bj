@@ -118,14 +118,14 @@ class AccountingCorrection extends Page implements HasForms
                                     ->label('Débit')
                                     ->numeric()
                                     ->default(0)
-                                    ->prefix('€')
+                                    ->suffix('FCFA')
                                     ->live(onBlur: true),
 
                                 Forms\Components\TextInput::make('credit')
                                     ->label('Crédit')
                                     ->numeric()
                                     ->default(0)
-                                    ->prefix('€')
+                                    ->suffix('FCFA')
                                     ->live(onBlur: true),
                             ])
                             ->columns(6)
@@ -150,7 +150,7 @@ class AccountingCorrection extends Page implements HasForms
         if (abs($totalDebit - $totalCredit) > 0.01) {
             Notification::make()
                 ->title('Écriture déséquilibrée')
-                ->body("Total Débit: {$totalDebit}€ ≠ Total Crédit: {$totalCredit}€")
+                ->body("Total Débit: {$totalDebit} FCFA ≠ Total Crédit: {$totalCredit} FCFA")
                 ->danger()
                 ->send();
             return;

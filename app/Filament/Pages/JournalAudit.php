@@ -111,7 +111,7 @@ class JournalAudit extends Page
             'status' => $isValid ? 'success' : 'danger',
             'message' => $isValid 
                 ? "✅ Concordance parfaite ({$salesCount} factures)" 
-                : "⚠️ Écart de " . number_format(abs($difference), 2, ',', ' ') . " €",
+                : "⚠️ Écart de " . number_format(abs($difference), 2, ',', ' ') . " FCFA",
         ];
     }
 
@@ -151,7 +151,7 @@ class JournalAudit extends Page
             'status' => $isValid ? 'success' : 'danger',
             'message' => $isValid 
                 ? "✅ Concordance parfaite ({$purchasesCount} achats)" 
-                : "⚠️ Écart de " . number_format(abs($difference), 2, ',', ' ') . " €",
+                : "⚠️ Écart de " . number_format(abs($difference), 2, ',', ' ') . " FCFA",
         ];
     }
 
@@ -349,7 +349,7 @@ class JournalAudit extends Page
             'status' => ($isValid && $isPendingValid) ? 'success' : 'danger',
             'message' => ($isValid && $isPendingValid)
                 ? "✅ TVA cohérente ({$settings->vat_regime})"
-                : "⚠️ Écart TVA de " . number_format(abs($difference), 2, ',', ' ') . " €",
+                : "⚠️ Écart TVA de " . number_format(abs($difference), 2, ',', ' ') . " FCFA",
         ];
     }
 
@@ -377,7 +377,7 @@ class JournalAudit extends Page
                 'type' => 'danger',
                 'icon' => 'heroicon-o-exclamation-triangle',
                 'title' => "Vente sans écriture",
-                'description' => "Facture {$sale->invoice_number} ({$sale->total} €) n'a pas d'écriture comptable",
+                'description' => "Facture {$sale->invoice_number} ({$sale->total} FCFA) n'a pas d'écriture comptable",
                 'date' => $sale->created_at->format('d/m/Y'),
                 'action' => "Régénérer les écritures",
             ];
@@ -400,7 +400,7 @@ class JournalAudit extends Page
                 'type' => 'danger',
                 'icon' => 'heroicon-o-exclamation-triangle',
                 'title' => "Achat sans écriture",
-                'description' => "Achat {$purchase->reference} ({$purchase->total} €) n'a pas d'écriture comptable",
+                'description' => "Achat {$purchase->reference} ({$purchase->total} FCFA) n'a pas d'écriture comptable",
                 'date' => $purchase->created_at->format('d/m/Y'),
                 'action' => "Régénérer les écritures",
             ];
@@ -421,7 +421,7 @@ class JournalAudit extends Page
                 'type' => 'warning',
                 'icon' => 'heroicon-o-scale',
                 'title' => "Pièce déséquilibrée",
-                'description' => "Pièce {$piece->piece_number} : écart de " . number_format($diff, 2, ',', ' ') . " €",
+                'description' => "Pièce {$piece->piece_number} : écart de " . number_format($diff, 2, ',', ' ') . " FCFA",
                 'date' => '-',
                 'action' => "Vérifier l'écriture",
             ];

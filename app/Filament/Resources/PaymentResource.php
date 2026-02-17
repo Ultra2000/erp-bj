@@ -94,7 +94,7 @@ class PaymentResource extends Resource
                             ->label('Montant')
                             ->required()
                             ->numeric()
-                            ->prefix('€')
+                            ->suffix('FCFA')
                             ->minValue(0.01),
 
                         Forms\Components\Select::make('payment_method')

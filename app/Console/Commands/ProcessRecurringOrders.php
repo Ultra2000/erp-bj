@@ -62,7 +62,7 @@ class ProcessRecurringOrders extends Command
 
             if ($dryRun) {
                 $this->info("  [DRY RUN] Would generate sale for customer: {$order->customer->name}");
-                $this->info("  [DRY RUN] Amount: " . number_format($order->total_amount, 2) . " €");
+                $this->info("  [DRY RUN] Amount: " . number_format($order->total_amount, 2) . " FCFA");
                 continue;
             }
 

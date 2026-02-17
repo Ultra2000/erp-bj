@@ -414,7 +414,7 @@
                 </div>
                 <div class="meta-item">
                     <label>Montant total TTC</label>
-                    <value>{{ number_format($quote->total, 2, ',', ' ') }} €</value>
+                    <value>{{ number_format($quote->total, 2, ',', ' ') }} FCFA</value>
                 </div>
             </div>
 
@@ -453,9 +453,9 @@
                                 @endif
                             </td>
                             <td class="text-center">{{ number_format($item->quantity, 0, ',', ' ') }}</td>
-                            <td class="text-right">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} €</td>
+                            <td class="text-right">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} FCFA</td>
                             <td class="text-center">{{ number_format($item->vat_rate ?? 20, 0) }}%</td>
-                            <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->total_price / (1 + ($item->vat_rate ?? 20) / 100)), 2, ',', ' ') }} €</td>
+                            <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->total_price / (1 + ($item->vat_rate ?? 20) / 100)), 2, ',', ' ') }} FCFA</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -464,21 +464,21 @@
             <div class="totals-box">
                 <div class="total-row">
                     <span>Total HT</span>
-                    <strong>{{ number_format($quote->total_ht, 2, ',', ' ') }} €</strong>
+                    <strong>{{ number_format($quote->total_ht, 2, ',', ' ') }} FCFA</strong>
                 </div>
                 <div class="total-row">
                     <span>TVA</span>
-                    <strong>{{ number_format($quote->total_vat, 2, ',', ' ') }} €</strong>
+                    <strong>{{ number_format($quote->total_vat, 2, ',', ' ') }} FCFA</strong>
                 </div>
                 @if($quote->discount_amount > 0)
                 <div class="total-row" style="color: #ef4444;">
                     <span>Remise</span>
-                    <strong>- {{ number_format($quote->discount_amount, 2, ',', ' ') }} €</strong>
+                    <strong>- {{ number_format($quote->discount_amount, 2, ',', ' ') }} FCFA</strong>
                 </div>
                 @endif
                 <div class="total-row grand-total">
                     <span>Total TTC</span>
-                    <strong>{{ number_format($quote->total, 2, ',', ' ') }} €</strong>
+                    <strong>{{ number_format($quote->total, 2, ',', ' ') }} FCFA</strong>
                 </div>
             </div>
 

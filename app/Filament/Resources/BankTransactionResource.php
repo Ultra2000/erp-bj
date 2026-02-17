@@ -67,7 +67,7 @@ class BankTransactionResource extends Resource
                     ->label('Montant')
                     ->required()
                     ->numeric()
-                    ->prefix('€'),
+                    ->suffix('FCFA'),
                 Forms\Components\Select::make('type')
                     ->label('Type')
                     ->options([

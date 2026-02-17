@@ -554,8 +554,8 @@
                         </div>
                         <div class="audit-detail">
                             <strong>{{ $audit_data['sales_integrity']['count'] }}</strong> factures analysées<br>
-                            CA métier : <strong>{{ number_format($audit_data['sales_integrity']['metier_ht'], 2, ',', ' ') }} €</strong><br>
-                            CA comptable : <strong>{{ number_format($audit_data['sales_integrity']['comptable_ht'], 2, ',', ' ') }} €</strong>
+                            CA métier : <strong>{{ number_format($audit_data['sales_integrity']['metier_ht'], 2, ',', ' ') }} FCFA</strong><br>
+                            CA comptable : <strong>{{ number_format($audit_data['sales_integrity']['comptable_ht'], 2, ',', ' ') }} FCFA</strong>
                         </div>
                     </div>
                     <div class="audit-card {{ $audit_data['purchases_integrity']['is_valid'] ? 'valid' : 'invalid' }}">
@@ -565,8 +565,8 @@
                         </div>
                         <div class="audit-detail">
                             <strong>{{ $audit_data['purchases_integrity']['count'] }}</strong> achats analysés<br>
-                            Charges métier : <strong>{{ number_format($audit_data['purchases_integrity']['metier_ht'], 2, ',', ' ') }} €</strong><br>
-                            Charges comptables : <strong>{{ number_format($audit_data['purchases_integrity']['comptable_ht'], 2, ',', ' ') }} €</strong>
+                            Charges métier : <strong>{{ number_format($audit_data['purchases_integrity']['metier_ht'], 2, ',', ' ') }} FCFA</strong><br>
+                            Charges comptables : <strong>{{ number_format($audit_data['purchases_integrity']['comptable_ht'], 2, ',', ' ') }} FCFA</strong>
                         </div>
                     </div>
                 </div>
@@ -595,11 +595,11 @@
                         </div>
                         <div class="audit-detail">
                             Régime : <strong>{{ $audit_data['vat_coherence']['regime'] === 'encaissements' ? 'Encaissements' : 'Débits' }}</strong><br>
-                            TVA théorique : <strong>{{ number_format($audit_data['vat_coherence']['theoretical_vat'], 2, ',', ' ') }} €</strong><br>
+                            TVA théorique : <strong>{{ number_format($audit_data['vat_coherence']['theoretical_vat'], 2, ',', ' ') }} FCFA</strong><br>
                             @if($audit_data['vat_coherence']['regime'] === 'encaissements')
-                                TVA en attente : <strong>{{ number_format($audit_data['vat_coherence']['pending_vat'], 2, ',', ' ') }} €</strong>
+                                TVA en attente : <strong>{{ number_format($audit_data['vat_coherence']['pending_vat'], 2, ',', ' ') }} FCFA</strong>
                             @else
-                                TVA comptabilisée : <strong>{{ number_format($audit_data['vat_coherence']['accounted_vat'], 2, ',', ' ') }} €</strong>
+                                TVA comptabilisée : <strong>{{ number_format($audit_data['vat_coherence']['accounted_vat'], 2, ',', ' ') }} FCFA</strong>
                             @endif
                         </div>
                     </div>
@@ -619,11 +619,11 @@
                 </tr>
                 <tr>
                     <td>Total des débits</td>
-                    <td>{{ number_format($stats['total_debit'], 2, ',', ' ') }} €</td>
+                    <td>{{ number_format($stats['total_debit'], 2, ',', ' ') }} FCFA</td>
                 </tr>
                 <tr>
                     <td>Total des crédits</td>
-                    <td>{{ number_format($stats['total_credit'], 2, ',', ' ') }} €</td>
+                    <td>{{ number_format($stats['total_credit'], 2, ',', ' ') }} FCFA</td>
                 </tr>
                 <tr>
                     <td>Journaux comptables utilisés</td>

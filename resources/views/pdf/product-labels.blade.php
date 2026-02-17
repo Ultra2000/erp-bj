@@ -20,7 +20,7 @@
     <div class="label">
         <div class="name">{{ Str::limit($product->name, 24) }}</div>
         @if($showPrice)
-            <div class="price">{{ number_format($product->price, 2, ',', ' ') }} €</div>
+            <div class="price">{{ number_format($product->price, 2, ',', ' ') }} FCFA</div>
         @endif
         <div class="barcode">
             {!! DNS1D::getBarcodeHTML($product->code, 'C128', 1, 36) !!}

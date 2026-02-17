@@ -805,8 +805,8 @@ class AccountingEntryService
      * Formule fiscale pour paiement partiel :
      * TVA à basculer = Paiement × (Taux TVA / (1 + Taux TVA))
      * 
-     * Exemple : Paiement de 600€ sur facture à 20%
-     * TVA = 600 × (0.20 / 1.20) = 600 × 0.1667 = 100€
+     * Exemple : Paiement de 600 FCFA sur facture à 20%
+     * TVA = 600 × (0.20 / 1.20) = 600 × 0.1667 = 100 FCFA
      */
     protected function createVatEntriesOnPayment(
         Payment $payment,

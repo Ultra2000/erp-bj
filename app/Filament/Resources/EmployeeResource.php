@@ -152,11 +152,11 @@ class EmployeeResource extends Resource
                                         Forms\Components\TextInput::make('hourly_rate')
                                             ->label('Taux horaire')
                                             ->numeric()
-                                            ->prefix('€'),
+                                            ->suffix('FCFA'),
                                         Forms\Components\TextInput::make('monthly_salary')
                                             ->label('Salaire mensuel')
                                             ->numeric()
-                                            ->prefix('€'),
+                                            ->suffix('FCFA'),
                                     ]),
                                 Forms\Components\Grid::make(2)
                                     ->schema([

@@ -78,7 +78,7 @@ class CashSessionsHistory extends Page implements HasTable
                         if (!$record->closed_at) return '-';
                         $expected = $record->opening_amount + $record->total_sales;
                         $diff = $record->closing_amount - $expected;
-                        return number_format($diff, 2, ',', ' ') . ' €';
+                        return number_format($diff, 2, ',', ' ') . ' FCFA';
                     })
                     ->color(function ($record) {
                         if (!$record->closed_at) return 'gray';

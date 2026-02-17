@@ -48,11 +48,11 @@ class UrssafOverviewWidget extends BaseWidget
         }
 
         return [
-            Stat::make('Solde URSSAF', number_format($data['balance'], 2, ',', ' ') . ' €')
+            Stat::make('Solde URSSAF', number_format($data['balance'], 2, ',', ' ') . ' FCFA')
                 ->description('Dette actuelle')
                 ->color($data['balance'] > 0 ? 'danger' : 'success'),
             
-            Stat::make('Prochaine Échéance', number_format($data['next_due_amount'], 2, ',', ' ') . ' €')
+            Stat::make('Prochaine Échéance', number_format($data['next_due_amount'], 2, ',', ' ') . ' FCFA')
                 ->description('Le ' . \Carbon\Carbon::parse($data['next_due_date'])->format('d/m/Y'))
                 ->color('warning'),
 

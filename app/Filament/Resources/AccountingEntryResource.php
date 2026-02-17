@@ -84,13 +84,13 @@ class AccountingEntryResource extends Resource
                             ->label('Débit')
                             ->numeric()
                             ->disabled()
-                            ->prefix('€'),
+                            ->suffix('FCFA'),
 
                         Forms\Components\TextInput::make('credit')
                             ->label('Crédit')
                             ->numeric()
                             ->disabled()
-                            ->prefix('€'),
+                            ->suffix('FCFA'),
 
                         Forms\Components\TextInput::make('vat_rate')
                             ->label('Taux TVA')
@@ -337,7 +337,7 @@ class AccountingEntryResource extends Resource
                         if (abs($totalDebit - $totalCredit) > 0.01) {
                             \Filament\Notifications\Notification::make()
                                 ->title('Lettrage impossible')
-                                ->body("Les écritures ne sont pas équilibrées (Débit: {$totalDebit}€, Crédit: {$totalCredit}€)")
+                                ->body("Les écritures ne sont pas équilibrées (Débit: {$totalDebit} FCFA, Crédit: {$totalCredit} FCFA)")
                                 ->danger()
                                 ->send();
                             return;

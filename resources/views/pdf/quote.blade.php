@@ -345,17 +345,17 @@
                         @endif
                     </td>
                     <td class="text-center">{{ number_format($item->quantity, 2, ',', ' ') }}</td>
-                    <td class="text-right">{{ number_format($item->unit_price, 2, ',', ' ') }} €</td>
+                    <td class="text-right">{{ number_format($item->unit_price, 2, ',', ' ') }} FCFA</td>
                     <td class="text-center">
                         @if($item->discount_percent > 0)
                             {{ number_format($item->discount_percent, 0) }}%
                         @elseif($item->discount_amount > 0)
-                            {{ number_format($item->discount_amount, 2, ',', ' ') }} €
+                            {{ number_format($item->discount_amount, 2, ',', ' ') }} FCFA
                         @else
                             -
                         @endif
                     </td>
-                    <td class="text-right">{{ number_format($item->total, 2, ',', ' ') }} €</td>
+                    <td class="text-right">{{ number_format($item->total, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -369,12 +369,12 @@
             <table>
                 <tr>
                     <td class="label">Sous-total HT</td>
-                    <td class="value">{{ number_format($quote->subtotal, 2, ',', ' ') }} €</td>
+                    <td class="value">{{ number_format($quote->subtotal, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @if($quote->discount_amount > 0)
                 <tr>
                     <td class="label">Remise</td>
-                    <td class="value">-{{ number_format($quote->discount_amount, 2, ',', ' ') }} €</td>
+                    <td class="value">-{{ number_format($quote->discount_amount, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @endif
                 @if($isVatFranchise)
@@ -384,16 +384,16 @@
                 </tr>
                 <tr class="total-row">
                     <td>TOTAL NET</td>
-                    <td class="value">{{ number_format($quote->subtotal - ($quote->discount_amount ?? 0), 2, ',', ' ') }} €</td>
+                    <td class="value">{{ number_format($quote->subtotal - ($quote->discount_amount ?? 0), 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @else
                 <tr>
                     <td class="label">TVA ({{ $quote->tax_rate ?? 20 }}%)</td>
-                    <td class="value">{{ number_format($quote->tax_amount, 2, ',', ' ') }} €</td>
+                    <td class="value">{{ number_format($quote->tax_amount, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 <tr class="total-row">
                     <td>TOTAL TTC</td>
-                    <td class="value">{{ number_format($quote->total_amount, 2, ',', ' ') }} €</td>
+                    <td class="value">{{ number_format($quote->total_amount, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @endif
             </table>

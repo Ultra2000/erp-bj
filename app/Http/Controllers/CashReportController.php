@@ -259,15 +259,15 @@ class CashReportController extends Controller
 
             // Résumé financier
             fputcsv($file, ['RÉSUMÉ FINANCIER'], ';');
-            fputcsv($file, ['Fond de caisse', number_format($session->opening_amount, 2, ',', ' ') . ' €'], ';');
-            fputcsv($file, ['Total ventes', number_format($session->total_sales, 2, ',', ' ') . ' €'], ';');
-            fputcsv($file, ['Ventes espèces', number_format($session->total_cash, 2, ',', ' ') . ' €'], ';');
-            fputcsv($file, ['Ventes carte', number_format($session->total_card, 2, ',', ' ') . ' €'], ';');
-            fputcsv($file, ['Ventes mobile', number_format($session->total_mobile, 2, ',', ' ') . ' €'], ';');
-            fputcsv($file, ['Attendu en caisse', number_format($session->expected_amount, 2, ',', ' ') . ' €'], ';');
+            fputcsv($file, ['Fond de caisse', number_format($session->opening_amount, 2, ',', ' ') . ' FCFA'], ';');
+            fputcsv($file, ['Total ventes', number_format($session->total_sales, 2, ',', ' ') . ' FCFA'], ';');
+            fputcsv($file, ['Ventes espèces', number_format($session->total_cash, 2, ',', ' ') . ' FCFA'], ';');
+            fputcsv($file, ['Ventes carte', number_format($session->total_card, 2, ',', ' ') . ' FCFA'], ';');
+            fputcsv($file, ['Ventes mobile', number_format($session->total_mobile, 2, ',', ' ') . ' FCFA'], ';');
+            fputcsv($file, ['Attendu en caisse', number_format($session->expected_amount, 2, ',', ' ') . ' FCFA'], ';');
             if ($session->closing_amount !== null) {
-                fputcsv($file, ['Montant compté', number_format($session->closing_amount, 2, ',', ' ') . ' €'], ';');
-                fputcsv($file, ['Différence', number_format($session->difference, 2, ',', ' ') . ' €'], ';');
+                fputcsv($file, ['Montant compté', number_format($session->closing_amount, 2, ',', ' ') . ' FCFA'], ';');
+                fputcsv($file, ['Différence', number_format($session->difference, 2, ',', ' ') . ' FCFA'], ';');
             }
             fputcsv($file, ['Nombre de tickets', $session->sales_count], ';');
             fputcsv($file, [''], ';');
@@ -282,7 +282,7 @@ class CashReportController extends Controller
                     $sale->created_at->format('H:i'),
                     ucfirst($sale->payment_method),
                     $sale->items->sum('quantity'),
-                    number_format($sale->total, 2, ',', ' ') . ' €',
+                    number_format($sale->total, 2, ',', ' ') . ' FCFA',
                 ], ';');
             }
 
@@ -297,11 +297,11 @@ class CashReportController extends Controller
                     fputcsv($file, [
                         $item->product->name ?? 'Produit supprimé',
                         $item->quantity,
-                        number_format($item->unit_price, 2, ',', ' ') . ' €',
-                        number_format($item->total_price, 2, ',', ' ') . ' €',
+                        number_format($item->unit_price, 2, ',', ' ') . ' FCFA',
+                        number_format($item->total_price, 2, ',', ' ') . ' FCFA',
                     ], ';');
                 }
-                fputcsv($file, ['', '', 'Total:', number_format($sale->total, 2, ',', ' ') . ' €'], ';');
+                fputcsv($file, ['', '', 'Total:', number_format($sale->total, 2, ',', ' ') . ' FCFA'], ';');
                 fputcsv($file, [''], ';');
             }
 

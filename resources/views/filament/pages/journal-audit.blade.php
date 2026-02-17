@@ -95,25 +95,25 @@
                         <tr>
                             <td class="py-2 text-gray-600 dark:text-gray-400">∑ Ventes TTC (Métier)</td>
                             <td class="py-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
-                                {{ number_format($audit['sales_integrity']['metier_ttc'], 2, ',', ' ') }} €
+                                {{ number_format($audit['sales_integrity']['metier_ttc'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr>
                             <td class="py-2 text-gray-600 dark:text-gray-400">− TVA Collectée</td>
                             <td class="py-2 text-right font-mono text-gray-900 dark:text-white">
-                                {{ number_format($audit['sales_integrity']['metier_vat'], 2, ',', ' ') }} €
+                                {{ number_format($audit['sales_integrity']['metier_vat'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr class="border-t-2 border-gray-300 dark:border-gray-600">
                             <td class="py-2 font-semibold text-gray-700 dark:text-gray-300">= CA HT Théorique</td>
                             <td class="py-2 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
-                                {{ number_format($audit['sales_integrity']['metier_ht'], 2, ',', ' ') }} €
+                                {{ number_format($audit['sales_integrity']['metier_ht'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr>
                             <td class="py-2 text-gray-600 dark:text-gray-400">∑ Classe 7 (Comptable)</td>
                             <td class="py-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
-                                {{ number_format($audit['sales_integrity']['comptable_ht'], 2, ',', ' ') }} €
+                                {{ number_format($audit['sales_integrity']['comptable_ht'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr class="border-t-2 border-gray-300 dark:border-gray-600">
@@ -127,7 +127,7 @@
                                 @if($audit['sales_integrity']['is_valid']) text-green-600 dark:text-green-400
                                 @else text-red-600 dark:text-red-400
                                 @endif">
-                                {{ number_format($audit['sales_integrity']['difference'], 2, ',', ' ') }} €
+                                {{ number_format($audit['sales_integrity']['difference'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                     </tbody>
@@ -162,25 +162,25 @@
                         <tr>
                             <td class="py-2 text-gray-600 dark:text-gray-400">∑ Achats TTC (Métier)</td>
                             <td class="py-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
-                                {{ number_format($audit['purchases_integrity']['metier_ttc'], 2, ',', ' ') }} €
+                                {{ number_format($audit['purchases_integrity']['metier_ttc'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr>
                             <td class="py-2 text-gray-600 dark:text-gray-400">− TVA Déductible</td>
                             <td class="py-2 text-right font-mono text-gray-900 dark:text-white">
-                                {{ number_format($audit['purchases_integrity']['metier_vat'], 2, ',', ' ') }} €
+                                {{ number_format($audit['purchases_integrity']['metier_vat'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr class="border-t-2 border-gray-300 dark:border-gray-600">
                             <td class="py-2 font-semibold text-gray-700 dark:text-gray-300">= Charges HT Théorique</td>
                             <td class="py-2 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
-                                {{ number_format($audit['purchases_integrity']['metier_ht'], 2, ',', ' ') }} €
+                                {{ number_format($audit['purchases_integrity']['metier_ht'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr>
                             <td class="py-2 text-gray-600 dark:text-gray-400">∑ Classe 6 (Comptable)</td>
                             <td class="py-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
-                                {{ number_format($audit['purchases_integrity']['comptable_ht'], 2, ',', ' ') }} €
+                                {{ number_format($audit['purchases_integrity']['comptable_ht'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                         <tr class="border-t-2 border-gray-300 dark:border-gray-600">
@@ -194,7 +194,7 @@
                                 @if($audit['purchases_integrity']['is_valid']) text-green-600 dark:text-green-400
                                 @else text-red-600 dark:text-red-400
                                 @endif">
-                                {{ number_format($audit['purchases_integrity']['difference'], 2, ',', ' ') }} €
+                                {{ number_format($audit['purchases_integrity']['difference'], 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                     </tbody>
@@ -327,14 +327,14 @@
                 <div class="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">TVA Théorique</p>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white font-mono">
-                        {{ number_format($audit['vat_coherence']['theoretical_vat'], 2, ',', ' ') }} €
+                        {{ number_format($audit['vat_coherence']['theoretical_vat'], 2, ',', ' ') }} FCFA
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-500">Depuis les factures</p>
                 </div>
                 <div class="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">TVA Collectée (4457)</p>
                     <p class="text-2xl font-bold text-gray-900 dark:text-white font-mono">
-                        {{ number_format($audit['vat_coherence']['accounted_vat'], 2, ',', ' ') }} €
+                        {{ number_format($audit['vat_coherence']['accounted_vat'], 2, ',', ' ') }} FCFA
                     </p>
                     <p class="text-xs text-gray-500 dark:text-gray-500">Comptabilisée</p>
                 </div>
@@ -342,7 +342,7 @@
                 <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <p class="text-sm text-purple-600 dark:text-purple-400 mb-1">TVA en Attente (44574)</p>
                     <p class="text-2xl font-bold text-purple-700 dark:text-purple-300 font-mono">
-                        {{ number_format($audit['vat_coherence']['pending_vat'], 2, ',', ' ') }} €
+                        {{ number_format($audit['vat_coherence']['pending_vat'], 2, ',', ' ') }} FCFA
                     </p>
                     <p class="text-xs text-purple-500 dark:text-purple-500">Factures non payées</p>
                 </div>
@@ -356,7 +356,7 @@
                         @if($audit['vat_coherence']['is_valid']) text-green-600 dark:text-green-400
                         @else text-red-600 dark:text-red-400
                         @endif">
-                        {{ number_format($audit['vat_coherence']['difference'], 2, ',', ' ') }} €
+                        {{ number_format($audit['vat_coherence']['difference'], 2, ',', ' ') }} FCFA
                     </p>
                     <p class="text-xs 
                         @if($audit['vat_coherence']['is_valid']) text-green-500

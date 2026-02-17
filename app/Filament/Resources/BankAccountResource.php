@@ -69,12 +69,12 @@ class BankAccountResource extends Resource
                     ->label('Solde initial')
                     ->required()
                     ->numeric()
-                    ->prefix('€')
+                    ->suffix('FCFA')
                     ->default(0),
                 Forms\Components\TextInput::make('current_balance')
                     ->label('Solde actuel')
                     ->numeric()
-                    ->prefix('€')
+                    ->suffix('FCFA')
                     ->default(0)
                     ->disabled()
                     ->dehydrated(false),

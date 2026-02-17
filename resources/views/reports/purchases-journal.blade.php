@@ -129,15 +129,15 @@
                     <div class="summary-label">Commandes</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value">{{ number_format($totals['total_ht'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value">{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Total HT</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value">{{ number_format($totals['total_tva'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value">{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">TVA déductible</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value">{{ number_format($totals['total_ttc'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value">{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Total TTC</div>
                 </td>
             </tr>
@@ -180,17 +180,17 @@
                     <td><strong>{{ $purchase->reference ?? $purchase->id }}</strong></td>
                     <td>{{ Str::limit($purchase->supplier?->name ?? 'Fournisseur inconnu', 25) }}</td>
                     <td class="{{ $statusClass }}">{{ $statusLabel }}</td>
-                    <td class="right">{{ number_format($ht, 2, ',', ' ') }} €</td>
-                    <td class="right">{{ number_format($purchase->tax_amount ?? 0, 2, ',', ' ') }} €</td>
-                    <td class="right"><strong>{{ number_format($purchase->total_amount, 2, ',', ' ') }} €</strong></td>
+                    <td class="right">{{ number_format($ht, 2, ',', ' ') }} FCFA</td>
+                    <td class="right">{{ number_format($purchase->tax_amount ?? 0, 2, ',', ' ') }} FCFA</td>
+                    <td class="right"><strong>{{ number_format($purchase->total_amount, 2, ',', ' ') }} FCFA</strong></td>
                     <td>{{ $purchase->items->count() }} art. ({{ $purchase->items->sum('quantity') }} u.)</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td colspan="4"><strong>TOTAUX ({{ $totals['count'] }} commandes)</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_ht'], 2, ',', ' ') }} €</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_tva'], 2, ',', ' ') }} €</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_ttc'], 2, ',', ' ') }} €</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
                 <td></td>
             </tr>
         </tbody>

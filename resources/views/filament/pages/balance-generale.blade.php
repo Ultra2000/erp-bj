@@ -31,7 +31,7 @@
                                 ❌ Déséquilibre Détecté
                             </h2>
                             <p class="text-red-600 dark:text-red-400">
-                                Différence de {{ number_format(abs($totals['difference']), 2) }} € - Vérifiez vos écritures.
+                                Différence de {{ number_format(abs($totals['difference']), 2) }} FCFA - Vérifiez vos écritures.
                             </p>
                         </div>
                     @endif
@@ -52,28 +52,28 @@
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 border-green-500">
             <p class="text-sm text-gray-500 dark:text-gray-400">Total Débits</p>
             <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-                {{ number_format($totals['total_debit'], 2, ',', ' ') }} €
+                {{ number_format($totals['total_debit'], 2, ',', ' ') }} FCFA
             </p>
         </div>
         
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 border-red-500">
             <p class="text-sm text-gray-500 dark:text-gray-400">Total Crédits</p>
             <p class="text-2xl font-bold text-red-600 dark:text-red-400">
-                {{ number_format($totals['total_credit'], 2, ',', ' ') }} €
+                {{ number_format($totals['total_credit'], 2, ',', ' ') }} FCFA
             </p>
         </div>
         
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 border-blue-500">
             <p class="text-sm text-gray-500 dark:text-gray-400">Soldes Débiteurs</p>
             <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {{ number_format($totals['solde_debiteur'], 2, ',', ' ') }} €
+                {{ number_format($totals['solde_debiteur'], 2, ',', ' ') }} FCFA
             </p>
         </div>
         
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 border-purple-500">
             <p class="text-sm text-gray-500 dark:text-gray-400">Soldes Créditeurs</p>
             <p class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {{ number_format($totals['solde_crediteur'], 2, ',', ' ') }} €
+                {{ number_format($totals['solde_crediteur'], 2, ',', ' ') }} FCFA
             </p>
         </div>
     </div>
@@ -115,13 +115,13 @@
                                 </span>
                             </td>
                             <td class="px-4 py-2 text-right font-mono text-green-600 dark:text-green-400">
-                                {{ number_format($class['total_debit'], 2, ',', ' ') }} €
+                                {{ number_format($class['total_debit'], 2, ',', ' ') }} FCFA
                             </td>
                             <td class="px-4 py-2 text-right font-mono text-red-600 dark:text-red-400">
-                                {{ number_format($class['total_credit'], 2, ',', ' ') }} €
+                                {{ number_format($class['total_credit'], 2, ',', ' ') }} FCFA
                             </td>
                             <td class="px-4 py-2 text-right font-mono font-bold {{ $class['solde'] >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                {{ $class['solde'] >= 0 ? '' : '-' }}{{ number_format(abs($class['solde']), 2, ',', ' ') }} €
+                                {{ $class['solde'] >= 0 ? '' : '-' }}{{ number_format(abs($class['solde']), 2, ',', ' ') }} FCFA
                             </td>
                         </tr>
                     @endforeach
@@ -130,13 +130,13 @@
                     <tr>
                         <td class="px-4 py-2">TOTAL</td>
                         <td class="px-4 py-2 text-right font-mono text-green-700 dark:text-green-300">
-                            {{ number_format($totals['total_debit'], 2, ',', ' ') }} €
+                            {{ number_format($totals['total_debit'], 2, ',', ' ') }} FCFA
                         </td>
                         <td class="px-4 py-2 text-right font-mono text-red-700 dark:text-red-300">
-                            {{ number_format($totals['total_credit'], 2, ',', ' ') }} €
+                            {{ number_format($totals['total_credit'], 2, ',', ' ') }} FCFA
                         </td>
                         <td class="px-4 py-2 text-right font-mono {{ $totals['is_balanced'] ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300' }}">
-                            {{ $totals['is_balanced'] ? '✓ 0,00 €' : number_format($totals['difference'], 2, ',', ' ') . ' €' }}
+                            {{ $totals['is_balanced'] ? '✓ 0,00 FCFA' : number_format($totals['difference'], 2, ',', ' ') . ' FCFA' }}
                         </td>
                     </tr>
                 </tfoot>

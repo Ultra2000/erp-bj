@@ -55,7 +55,7 @@ class SaleItemResource extends Resource
                 Forms\Components\TextInput::make('unit_price')
                     ->required()
                     ->numeric()
-                    ->prefix('€')
+                    ->suffix('FCFA')
                     ->live()
                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                         $set('total_price', $state * $get('quantity'));
@@ -63,7 +63,7 @@ class SaleItemResource extends Resource
                 Forms\Components\TextInput::make('total_price')
                     ->required()
                     ->numeric()
-                    ->prefix('€')
+                    ->suffix('FCFA')
                     ->disabled(),
             ]);
     }

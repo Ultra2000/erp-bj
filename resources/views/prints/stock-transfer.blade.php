@@ -286,7 +286,7 @@
             </tr>
             <tr class="total-row">
                 <td>Valeur totale:</td>
-                <td class="text-right">{{ number_format($transfer->total_value, 2, ',', ' ') }} €</td>
+                <td class="text-right">{{ number_format($transfer->total_value, 2, ',', ' ') }} FCFA</td>
             </tr>
         </table>
     </div>

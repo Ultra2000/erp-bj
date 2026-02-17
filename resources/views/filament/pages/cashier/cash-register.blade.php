@@ -25,7 +25,7 @@
                             
                             <div class="relative mb-6">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <span class="text-xl font-semibold" style="color: #9ca3af;">€</span>
+                                    <span class="text-xl font-semibold" style="color: #9ca3af;">FCFA</span>
                                 </div>
                                 <input type="number" 
                                        x-model="openingAmount" 
@@ -76,7 +76,7 @@
                             {{-- Stats rapides --}}
                             <div class="hidden md:flex items-center gap-6">
                                 <div class="text-center px-4 py-2 rounded-xl" style="background: rgba(255,255,255,0.1);">
-                                    <div class="text-2xl font-bold text-white" x-text="formatPrice(sessionStats.total_sales)">0€</div>
+                                    <div class="text-2xl font-bold text-white" x-text="formatPrice(sessionStats.total_sales)">0 FCFA</div>
                                     <div class="text-xs" style="color: rgba(255,255,255,0.7);">Ventes</div>
                                 </div>
                                 <div class="text-center px-4 py-2 rounded-xl" style="background: rgba(255,255,255,0.1);">
@@ -84,7 +84,7 @@
                                     <div class="text-xs" style="color: rgba(255,255,255,0.7);">Tickets</div>
                                 </div>
                                 <div class="text-center px-4 py-2 rounded-xl" style="background: rgba(255,255,255,0.1);">
-                                    <div class="text-2xl font-bold text-white" x-text="formatPrice(sessionStats.cash_in_drawer)">0€</div>
+                                    <div class="text-2xl font-bold text-white" x-text="formatPrice(sessionStats.cash_in_drawer)">0 FCFA</div>
                                     <div class="text-xs" style="color: rgba(255,255,255,0.7);">En caisse</div>
                                 </div>
                             </div>
@@ -365,7 +365,7 @@
                                                                class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-300 dark:border-emerald-700 rounded-lg py-2 pl-3 pr-8 text-right text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" 
                                                                placeholder="0.00"
                                                                step="0.01">
-                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">€</span>
+                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">FCFA</span>
                                                     </div>
                                                 </div>
                                                 <div class="flex-1">
@@ -374,7 +374,7 @@
                                                          :class="changeAmount >= 0 ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'">
                                                         <span class="font-black text-xl" 
                                                               :class="changeAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
-                                                              x-text="receivedAmount ? formatPrice(Math.abs(changeAmount)) : '0,00 €'">
+                                                              x-text="receivedAmount ? formatPrice(Math.abs(changeAmount)) : '0,00 FCFA'">
                                                         </span>
                                                     </div>
                                                 </div>
@@ -385,7 +385,7 @@
                                                     <button type="button" 
                                                             @click="receivedAmount = amount"
                                                             class="flex-1 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
-                                                            x-text="amount + '€'">
+                                                            x-text="amount + ' FCFA'">
                                                     </button>
                                                 </template>
                                             </div>
@@ -402,7 +402,7 @@
                                             <p class="text-sm text-slate-500" x-text="cart.length + ' produit(s)'"></p>
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-4xl font-black text-white tracking-tight" x-text="formatPrice(cartTotal)">0,00 €</span>
+                                            <span class="text-4xl font-black text-white tracking-tight" x-text="formatPrice(cartTotal)">0,00 FCFA</span>
                                         </div>
                                     </div>
                                 </div>
@@ -484,7 +484,7 @@
                     
                     {{-- Montant compté --}}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Montant compté (€)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Montant compté (FCFA)</label>
                         <input type="number" 
                                x-model="closingAmount" 
                                step="0.01"

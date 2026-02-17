@@ -238,6 +238,40 @@
                         </div>
                     </template>
 
+                    {{-- Paiement mixte : répartition --}}
+                    <template x-if="paymentMethod === 'mixed'">
+                        <div class="space-y-2">
+                            <div class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Répartition du paiement</div>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="text-xs text-gray-500">💵 Espèces</label>
+                                    <input type="number" x-model.number="mixedCash" min="0" @input="updateMixedTotal()" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500">💳 Carte</label>
+                                    <input type="number" x-model.number="mixedCard" min="0" @input="updateMixedTotal()" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500">📱 Mobile</label>
+                                    <input type="number" x-model.number="mixedMobile" min="0" @input="updateMixedTotal()" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm pt-1 border-t">
+                                <span class="text-gray-500">Total saisi</span>
+                                <span class="font-bold" :class="mixedTotal >= grandTotal ? 'text-emerald-600' : 'text-red-600'" x-text="formatPrice(mixedTotal) + ' / ' + formatPrice(grandTotal)"></span>
+                            </div>
+                            <template x-if="mixedTotal > grandTotal">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-500">Monnaie à rendre</span>
+                                    <span class="font-bold text-emerald-600" x-text="formatPrice(mixedTotal - grandTotal)"></span>
+                                </div>
+                            </template>
+                            <template x-if="mixedTotal < grandTotal">
+                                <div class="text-xs text-red-500 text-center">⚠ Il manque <span x-text="formatPrice(grandTotal - mixedTotal)"></span></div>
+                            </template>
+                        </div>
+                    </template>
+
                     {{-- Bouton encaisser --}}
                     <button 
                         @click="submitSale()"
@@ -266,11 +300,11 @@
             </div>
         </div>
 
-        {{-- Modal Scanner Caméra --}}
+        {{-- Modal Scanner Caméra (html5-qrcode) --}}
         <div x-show="showCameraModal" x-cloak class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
                 <div class="bg-emerald-600 text-white p-4 flex justify-between items-center">
-                    <h3 class="text-lg font-bold">Scanner code-barres</h3>
+                    <h3 class="text-lg font-bold">📷 Scanner code-barres</h3>
                     <button @click="closeCameraScanner()" class="hover:bg-emerald-700 rounded-full p-1">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -278,26 +312,9 @@
                     </button>
                 </div>
                 <div class="p-4">
-                    {{-- Vidéo native --}}
-                    <div class="relative bg-black rounded-lg overflow-hidden" style="min-height: 300px;">
-                        <video x-ref="cameraVideo" 
-                            class="w-full h-full object-cover"
-                            style="min-height: 300px;"
-                            autoplay 
-                            muted 
-                            playsinline></video>
-                        {{-- Cadre de scan --}}
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div class="w-64 h-32 border-2 border-emerald-400 rounded-lg"></div>
-                        </div>
-                        {{-- Message d'état --}}
-                        <div x-show="cameraStatus" class="absolute bottom-2 left-2 right-2 bg-black/70 text-white text-xs p-2 rounded" x-text="cameraStatus"></div>
-                    </div>
-                    <div class="mt-4 text-center text-sm text-gray-500" x-text="lastScannedCode ? 'Dernier code: ' + lastScannedCode : 'Placez le code-barres dans le cadre'"></div>
-                    {{-- Bouton pour changer de caméra --}}
-                    <button @click="switchCameraFacing()" class="mt-2 w-full py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm">
-                        🔄 Changer de caméra (Frontale/Dorsale)
-                    </button>
+                    <div id="qr-reader" style="min-height: 300px; border-radius: 8px; overflow: hidden;"></div>
+                    <div class="mt-4 text-center text-sm" :class="lastScannedCode ? 'text-emerald-600 font-semibold' : 'text-gray-500'" x-text="lastScannedCode ? '✓ Dernier code: ' + lastScannedCode : 'Placez le code-barres dans le cadre'"></div>
+                    <div x-show="cameraStatus" class="mt-2 text-center text-xs text-gray-400" x-text="cameraStatus"></div>
                 </div>
             </div>
         </div>
@@ -347,6 +364,7 @@
         </template>
     </div>
 
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
         function pointOfSale() {
             return {
@@ -363,12 +381,17 @@
                 paymentMethod: 'cash',
                 receivedAmount: 0,
                 
+                // Paiement mixte
+                mixedCash: 0,
+                mixedCard: 0,
+                mixedMobile: 0,
+                mixedTotal: 0,
+                
                 // Scanner
                 showCameraModal: false,
                 lastScannedCode: '',
                 cameraStatus: '',
-                cameraStream: null,
-                useFrontCamera: false,
+                html5QrCode: null,
                 
                 // Détection douchette automatique
                 scannerBuffer: '',
@@ -422,19 +445,20 @@
                     this.$refs.barcodeInput?.focus();
                 },
                 
+                // === Paiement mixte ===
+                updateMixedTotal() {
+                    this.mixedTotal = (this.mixedCash || 0) + (this.mixedCard || 0) + (this.mixedMobile || 0);
+                },
+                
                 /**
                  * Détection automatique de la douchette USB
-                 * Les scanners laser comme DST X-9100 envoient les caractères très rapidement (<50ms entre chaque)
-                 * puis un Enter. Cette fonction capture cette séquence.
                  */
                 handleBarcodeScanner(event) {
-                    // Ignorer si on tape dans un input/textarea
                     const target = event.target;
                     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
                         return;
                     }
                     
-                    // Ignorer les touches de fonction et modificateurs
                     if (event.ctrlKey || event.altKey || event.metaKey || event.key.length > 1 && event.key !== 'Enter') {
                         return;
                     }
@@ -442,31 +466,26 @@
                     const now = Date.now();
                     const timeSinceLastKey = now - this.scannerLastKeyTime;
                     
-                    // Si Enter et on a des données dans le buffer
                     if (event.key === 'Enter' && this.scannerBuffer.length > 0) {
                         event.preventDefault();
                         const scannedCode = this.scannerBuffer.trim();
                         this.scannerBuffer = '';
                         
-                        // Traiter le code-barres scanné
-                        if (scannedCode.length >= 3) { // Code-barres minimum 3 caractères
+                        if (scannedCode.length >= 3) {
                             this.scanBarcode(scannedCode);
                         }
                         return;
                     }
                     
-                    // Reset du buffer si trop de temps entre les touches (>100ms = saisie humaine)
                     if (timeSinceLastKey > 100) {
                         this.scannerBuffer = '';
                     }
                     
-                    // Accumuler les caractères si saisie rapide (<50ms = scanner)
                     if (event.key.length === 1 && timeSinceLastKey < 100) {
                         event.preventDefault();
                         this.scannerBuffer += event.key;
                         this.scannerLastKeyTime = now;
                         
-                        // Safety timeout: traiter le buffer après 200ms d'inactivité
                         clearTimeout(this.scannerTimeout);
                         this.scannerTimeout = setTimeout(() => {
                             if (this.scannerBuffer.length >= 3) {
@@ -498,12 +517,10 @@
                     const product = await this.$wire.getProductByBarcode(code.trim());
                     if (product) {
                         this.addToCart(product);
-                        this.playBeep(true); // Beep succès
-                        
-                        // Flash visuel de succès
+                        this.playBeep(true);
                         this.showScanSuccess(product.name);
                     } else {
-                        this.playBeep(false); // Beep échec
+                        this.playBeep(false);
                         this.showScanError('Produit non trouvé: ' + code);
                     }
                 },
@@ -518,20 +535,18 @@
                             alert('Stock insuffisant');
                         }
                     } else {
-                        // Utiliser sale_price_ht (toujours HT) pour le backend
                         const priceHt = parseFloat(product.sale_price_ht) || parseFloat(product.price);
                         const vatRate = parseFloat(product.vat_rate_sale) || 18;
-                        // Prix TTC pour l'affichage client
                         const priceTtc = Math.round(priceHt * (1 + vatRate / 100));
                         
                         this.cart.push({
                             id: product.id,
                             name: product.name,
-                            unit_price: priceHt,         // HT - envoyé au backend
-                            display_price: priceTtc,     // TTC - affiché au client
+                            unit_price: priceHt,
+                            display_price: priceTtc,
                             vat_rate: vatRate,
                             quantity: 1,
-                            total: priceTtc,             // TTC total pour affichage
+                            total: priceTtc,
                             stock: product.stock
                         });
                     }
@@ -566,6 +581,10 @@
                     this.cart = [];
                     this.discount = 0;
                     this.receivedAmount = 0;
+                    this.mixedCash = 0;
+                    this.mixedCard = 0;
+                    this.mixedMobile = 0;
+                    this.mixedTotal = 0;
                 },
 
                 get subtotal() {
@@ -575,7 +594,6 @@
                 get grandTotal() {
                     const discountAmt = this.subtotal * (this.discount / 100);
                     const afterDiscount = this.subtotal - discountAmt;
-                    // Les totaux sont en TTC (calculés à partir du HT + TVA par produit)
                     return Math.round(afterDiscount);
                 },
 
@@ -586,9 +604,17 @@
                 async submitSale() {
                     if (this.cart.length === 0 || !this.hasSession) return;
                     
+                    // Validation paiement mixte
+                    if (this.paymentMethod === 'mixed') {
+                        this.updateMixedTotal();
+                        if (this.mixedTotal < this.grandTotal) {
+                            alert('Le total du paiement mixte (' + this.formatPrice(this.mixedTotal) + ') est inférieur au total de la vente (' + this.formatPrice(this.grandTotal) + ').');
+                            return;
+                        }
+                    }
+                    
                     this.saving = true;
                     try {
-                        // Vérifier le stock en temps réel avant validation
                         const stockCheck = await this.$wire.verifyCartStock(this.cart.map(i => ({
                             product_id: i.id,
                             quantity: i.quantity
@@ -596,7 +622,6 @@
                         
                         if (!stockCheck.valid) {
                             alert('Stock insuffisant pour : ' + stockCheck.errors.join(', '));
-                            // Mettre à jour les stocks locaux
                             if (stockCheck.updatedStocks) {
                                 for (const [productId, newStock] of Object.entries(stockCheck.updatedStocks)) {
                                     const item = this.cart.find(i => i.id == productId);
@@ -607,6 +632,16 @@
                             return;
                         }
                         
+                        // Construire les détails de paiement
+                        let paymentDetails = null;
+                        if (this.paymentMethod === 'mixed') {
+                            paymentDetails = {
+                                cash: this.mixedCash || 0,
+                                card: this.mixedCard || 0,
+                                mobile: this.mixedMobile || 0,
+                            };
+                        }
+                        
                         const result = await this.$wire.recordSale({
                             items: this.cart.map(i => ({
                                 product_id: i.id,
@@ -615,7 +650,7 @@
                             })),
                             discount_percent: this.discount,
                             payment_method: this.paymentMethod,
-                            payment_details: this.paymentMethod === 'mixed' ? { cash: this.receivedAmount } : null
+                            payment_details: paymentDetails
                         });
 
                         if (result.success) {
@@ -633,138 +668,91 @@
                     }
                 },
 
-                // Scanner caméra
+                // === Scanner caméra avec html5-qrcode ===
                 async openCameraScanner() {
-                    console.log('openCameraScanner called');
                     this.showCameraModal = true;
                     this.cameraStatus = 'Démarrage de la caméra...';
                     await this.$nextTick();
-                    await this.startCamera();
+                    
+                    try {
+                        this.html5QrCode = new Html5Qrcode("qr-reader");
+                        
+                        const config = {
+                            fps: 10,
+                            qrbox: { width: 280, height: 120 },
+                            aspectRatio: 1.5,
+                            formatsToSupport: [
+                                Html5QrcodeSupportedFormats.EAN_13,
+                                Html5QrcodeSupportedFormats.EAN_8,
+                                Html5QrcodeSupportedFormats.UPC_A,
+                                Html5QrcodeSupportedFormats.UPC_E,
+                                Html5QrcodeSupportedFormats.CODE_128,
+                                Html5QrcodeSupportedFormats.CODE_39,
+                                Html5QrcodeSupportedFormats.CODE_93,
+                                Html5QrcodeSupportedFormats.ITF,
+                                Html5QrcodeSupportedFormats.QR_CODE,
+                            ]
+                        };
+                        
+                        await this.html5QrCode.start(
+                            { facingMode: "environment" },
+                            config,
+                            (decodedText) => {
+                                // Code-barres détecté !
+                                this.lastScannedCode = decodedText;
+                                this.playBeep(true);
+                                this.scanBarcode(decodedText);
+                                
+                                // Pause brève pour éviter les doublons
+                                this.html5QrCode.pause(true);
+                                setTimeout(() => {
+                                    if (this.html5QrCode && this.showCameraModal) {
+                                        try { this.html5QrCode.resume(); } catch(e) {}
+                                    }
+                                }, 1500);
+                            },
+                            (errorMessage) => {
+                                // Scan en cours, pas de code trouvé - silencieux
+                            }
+                        );
+                        
+                        this.cameraStatus = 'Caméra active — placez le code-barres dans le cadre';
+                        
+                    } catch (err) {
+                        console.error('Camera error:', err);
+                        let message = 'Erreur caméra';
+                        if (err.toString().includes('NotAllowedError')) {
+                            message = 'Accès à la caméra refusé. Autorisez dans les paramètres du navigateur.';
+                        } else if (err.toString().includes('NotFoundError')) {
+                            message = 'Aucune caméra trouvée sur cet appareil.';
+                        } else {
+                            message = 'Erreur: ' + err;
+                        }
+                        this.cameraStatus = message;
+                    }
                 },
 
-                closeCameraScanner() {
-                    this.stopCamera();
+                async closeCameraScanner() {
+                    if (this.html5QrCode) {
+                        try {
+                            await this.html5QrCode.stop();
+                        } catch(e) {}
+                        this.html5QrCode = null;
+                    }
                     this.showCameraModal = false;
                     this.cameraStatus = '';
                 },
 
-                async startCamera() {
-                    const video = this.$refs.cameraVideo;
-                    
-                    if (!video) {
-                        console.error('Video element not found');
-                        this.cameraStatus = 'Erreur: élément vidéo non trouvé';
-                        return;
-                    }
-                    
-                    console.log('Video element:', video);
-                    
-                    // Vérifier si getUserMedia est disponible
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                        this.cameraStatus = 'Caméra non supportée par ce navigateur';
-                        alert('Votre navigateur ne supporte pas l\'accès à la caméra.\nUtilisez Chrome ou Firefox avec HTTPS.');
-                        return;
-                    }
-                    
-                    try {
-                        this.cameraStatus = 'Demande d\'accès à la caméra...';
-                        
-                        // Contraintes vidéo
-                        const constraints = {
-                            video: {
-                                facingMode: this.useFrontCamera ? 'user' : 'environment',
-                                width: { ideal: 1280 },
-                                height: { ideal: 720 }
-                            },
-                            audio: false
-                        };
-                        
-                        console.log('Requesting camera with constraints:', constraints);
-                        
-                        // Demander l'accès à la caméra
-                        this.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                        
-                        console.log('Got stream:', this.cameraStream);
-                        console.log('Video tracks:', this.cameraStream.getVideoTracks());
-                        
-                        // Assigner le flux à la vidéo
-                        video.srcObject = this.cameraStream;
-                        
-                        // Attendre que la vidéo soit prête
-                        video.onloadedmetadata = () => {
-                            console.log('Video metadata loaded, playing...');
-                            video.play().then(() => {
-                                console.log('Video playing!');
-                                this.cameraStatus = 'Caméra active - Scannez un code-barres';
-                            }).catch(err => {
-                                console.error('Play error:', err);
-                                this.cameraStatus = 'Erreur lecture vidéo: ' + err.message;
-                            });
-                        };
-                        
-                    } catch (err) {
-                        console.error('Camera error:', err);
-                        
-                        let message = 'Erreur caméra: ' + err.message;
-                        if (err.name === 'NotAllowedError') {
-                            message = 'Accès à la caméra refusé. Autorisez l\'accès dans les paramètres du navigateur.';
-                        } else if (err.name === 'NotFoundError') {
-                            message = 'Aucune caméra trouvée sur cet appareil.';
-                        } else if (err.name === 'NotReadableError') {
-                            message = 'La caméra est utilisée par une autre application.';
-                        } else if (err.name === 'OverconstrainedError') {
-                            // Essayer sans contraintes spécifiques
-                            try {
-                                this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                                video.srcObject = this.cameraStream;
-                                video.onloadedmetadata = () => video.play();
-                                this.cameraStatus = 'Caméra active (mode basique)';
-                                return;
-                            } catch (e2) {
-                                message = 'Impossible d\'accéder à la caméra: ' + e2.message;
-                            }
-                        }
-                        
-                        this.cameraStatus = message;
-                        alert(message);
-                    }
-                },
-                
-                async switchCameraFacing() {
-                    this.useFrontCamera = !this.useFrontCamera;
-                    this.stopCamera();
-                    await this.startCamera();
-                },
-
-                stopCamera() {
-                    if (this.cameraStream) {
-                        this.cameraStream.getTracks().forEach(track => {
-                            track.stop();
-                            console.log('Track stopped:', track.label);
-                        });
-                        this.cameraStream = null;
-                    }
-                    
-                    const video = this.$refs.cameraVideo;
-                    if (video) {
-                        video.srcObject = null;
-                    }
-                },
-
                 playBeep(success = true) {
-                    // Vibration si disponible
                     if (navigator.vibrate) {
                         navigator.vibrate(success ? 50 : [100, 50, 100]);
                     }
                     
-                    // Beep audio - créer AudioContext uniquement après interaction utilisateur
                     try {
-                        // Réutiliser ou créer l'AudioContext
                         if (!this.audioContext) {
                             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
                         }
                         
-                        // Reprendre si suspendu (politiques navigateur)
                         if (this.audioContext.state === 'suspended') {
                             this.audioContext.resume();
                         }
@@ -783,9 +771,7 @@
                         
                         oscillator.start(this.audioContext.currentTime);
                         oscillator.stop(this.audioContext.currentTime + 0.1);
-                    } catch (e) {
-                        // Ignorer silencieusement si l'audio n'est pas disponible
-                    }
+                    } catch (e) {}
                 },
                 
                 showScanSuccess(productName) {

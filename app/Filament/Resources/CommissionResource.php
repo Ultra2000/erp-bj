@@ -76,7 +76,7 @@ class CommissionResource extends Resource
                         Forms\Components\TextInput::make('sale_amount')
                             ->label('Montant des ventes')
                             ->numeric()
-                            ->prefix('€')
+                            ->suffix('FCFA')
                             ->required()
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
@@ -96,7 +96,7 @@ class CommissionResource extends Resource
                         Forms\Components\TextInput::make('commission_amount')
                             ->label('Montant de la commission')
                             ->numeric()
-                            ->prefix('€')
+                            ->suffix('FCFA')
                             ->required(),
                         Forms\Components\DatePicker::make('paid_at')
                             ->label('Date de paiement')

@@ -74,7 +74,7 @@ class OrdersStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-document-text')
                 ->color('primary'),
 
-            Stat::make('CA Devis (mois)', number_format($quotesThisMonth, 0, ',', ' ') . ' €')
+            Stat::make('CA Devis (mois)', number_format($quotesThisMonth, 0, ',', ' ') . ' FCFA')
                 ->description('Taux conversion: ' . $conversionRate . '%')
                 ->descriptionIcon('heroicon-m-currency-euro')
                 ->color($conversionRate > 30 ? 'success' : 'warning'),

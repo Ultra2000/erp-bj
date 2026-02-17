@@ -32,7 +32,7 @@
         </div>
         <div class="box">
             <span class="label">Montant total</span>
-            <div><strong>{{ number_format($amount, 2, ',', ' ') }} €</strong></div>
+            <div><strong>{{ number_format($amount, 2, ',', ' ') }} FCFA</strong></div>
         </div>
         <div class="box">
             <span class="label">Date</span>
@@ -59,8 +59,8 @@
             <tr>
                 <td>{{ $it->product->name ?? 'Produit supprimé' }}</td>
                 <td>{{ $it->quantity }}</td>
-                <td>{{ number_format($it->unit_price, 2, ',', ' ') }} €</td>
-                <td>{{ number_format($it->total_price, 2, ',', ' ') }} €</td>
+                <td>{{ number_format($it->unit_price, 2, ',', ' ') }} FCFA</td>
+                <td>{{ number_format($it->total_price, 2, ',', ' ') }} FCFA</td>
             </tr>
         @endforeach
         </tbody>

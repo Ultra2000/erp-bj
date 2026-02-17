@@ -34,19 +34,19 @@
     <div class="space-y-2">
         <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Fond de caisse</span>
-            <span class="font-medium">{{ number_format($session->opening_amount, 2, ',', ' ') }} €</span>
+            <span class="font-medium">{{ number_format($session->opening_amount, 2, ',', ' ') }} FCFA</span>
         </div>
         <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Total des ventes</span>
-            <span class="font-medium text-success-600">{{ number_format($session->total_sales ?? 0, 2, ',', ' ') }} €</span>
+            <span class="font-medium text-success-600">{{ number_format($session->total_sales ?? 0, 2, ',', ' ') }} FCFA</span>
         </div>
         <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Espèces encaissées</span>
-            <span class="font-medium">{{ number_format($session->cash_payments ?? 0, 2, ',', ' ') }} €</span>
+            <span class="font-medium">{{ number_format($session->cash_payments ?? 0, 2, ',', ' ') }} FCFA</span>
         </div>
         <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">CB encaissées</span>
-            <span class="font-medium">{{ number_format($session->card_payments ?? 0, 2, ',', ' ') }} €</span>
+            <span class="font-medium">{{ number_format($session->card_payments ?? 0, 2, ',', ' ') }} FCFA</span>
         </div>
     </div>
 
@@ -56,7 +56,7 @@
     <div class="space-y-2">
         <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Montant déclaré à la clôture</span>
-            <span class="font-medium">{{ number_format($session->closing_amount, 2, ',', ' ') }} €</span>
+            <span class="font-medium">{{ number_format($session->closing_amount, 2, ',', ' ') }} FCFA</span>
         </div>
         @php
             $expectedCash = $session->opening_amount + ($session->cash_payments ?? 0);
@@ -64,11 +64,11 @@
         @endphp
         <div class="flex justify-between">
             <span class="text-gray-600 dark:text-gray-400">Attendu en caisse</span>
-            <span class="font-medium">{{ number_format($expectedCash, 2, ',', ' ') }} €</span>
+            <span class="font-medium">{{ number_format($expectedCash, 2, ',', ' ') }} FCFA</span>
         </div>
         <div class="flex justify-between {{ $difference == 0 ? 'text-success-600' : ($difference > 0 ? 'text-warning-600' : 'text-danger-600') }}">
             <span>Écart</span>
-            <span class="font-bold">{{ number_format($difference, 2, ',', ' ') }} €</span>
+            <span class="font-bold">{{ number_format($difference, 2, ',', ' ') }} FCFA</span>
         </div>
     </div>
     @endif

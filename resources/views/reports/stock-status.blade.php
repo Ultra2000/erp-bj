@@ -171,13 +171,13 @@
             </td>
             <td width="20%">
                 <div class="stat-box success">
-                    <div class="stat-value">{{ number_format($stats['total_value'], 2, ',', ' ') }} €</div>
+                    <div class="stat-value">{{ number_format($stats['total_value'], 2, ',', ' ') }} FCFA</div>
                     <div class="stat-label">Valeur (prix achat)</div>
                 </div>
             </td>
             <td width="20%">
                 <div class="stat-box success">
-                    <div class="stat-value">{{ number_format($stats['total_sell_value'], 2, ',', ' ') }} €</div>
+                    <div class="stat-value">{{ number_format($stats['total_sell_value'], 2, ',', ' ') }} FCFA</div>
                     <div class="stat-label">Valeur (prix vente)</div>
                 </div>
             </td>
@@ -240,9 +240,9 @@
                         <td>{{ $product->warehouses->first()?->name ?? 'Principal' }}</td>
                         <td class="center {{ $stockClass }}">{{ number_format($stock) }}</td>
                         <td class="center">{{ number_format($minStock) }}</td>
-                        <td class="right">{{ number_format($product->purchase_price ?? 0, 2, ',', ' ') }} €</td>
-                        <td class="right">{{ number_format($product->price ?? 0, 2, ',', ' ') }} €</td>
-                        <td class="right">{{ number_format($value, 2, ',', ' ') }} €</td>
+                        <td class="right">{{ number_format($product->purchase_price ?? 0, 2, ',', ' ') }} FCFA</td>
+                        <td class="right">{{ number_format($product->price ?? 0, 2, ',', ' ') }} FCFA</td>
+                        <td class="right">{{ number_format($value, 2, ',', ' ') }} FCFA</td>
                         <td class="center {{ $stockClass }}">{{ $stockStatus }}</td>
                     </tr>
                 @endforeach

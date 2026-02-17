@@ -225,7 +225,7 @@
 
         <div class="summary-box">
             <h3>TOTAL DES VENTES</h3>
-            <div class="total">{{ number_format($session->total_sales, 2, ',', ' ') }} €</div>
+            <div class="total">{{ number_format($session->total_sales, 2, ',', ' ') }} FCFA</div>
             <div class="sub">{{ $session->sales_count }} ticket(s) - Caissier: {{ $session->user->name ?? 'N/A' }}</div>
         </div>
 
@@ -260,7 +260,7 @@
                             @if($session->sales_count > 0)
                             <div class="info-row">
                                 <div class="info-label">Panier moyen</div>
-                                <div class="info-value">{{ number_format($session->total_sales / $session->sales_count, 2, ',', ' ') }} €</div>
+                                <div class="info-value">{{ number_format($session->total_sales / $session->sales_count, 2, ',', ' ') }} FCFA</div>
                             </div>
                             @endif
                         </div>
@@ -272,25 +272,25 @@
                         <div class="info-grid">
                             <div class="info-row highlight">
                                 <div class="info-label">Fond de caisse</div>
-                                <div class="info-value">{{ number_format($session->opening_amount, 2, ',', ' ') }} €</div>
+                                <div class="info-value">{{ number_format($session->opening_amount, 2, ',', ' ') }} FCFA</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">+ Ventes espèces</div>
-                                <div class="info-value">{{ number_format($session->total_cash, 2, ',', ' ') }} €</div>
+                                <div class="info-value">{{ number_format($session->total_cash, 2, ',', ' ') }} FCFA</div>
                             </div>
                             <div class="info-row highlight">
                                 <div class="info-label">= Attendu en caisse</div>
-                                <div class="info-value">{{ number_format($session->expected_amount, 2, ',', ' ') }} €</div>
+                                <div class="info-value">{{ number_format($session->expected_amount, 2, ',', ' ') }} FCFA</div>
                             </div>
                             @if($session->closing_amount !== null)
                             <div class="info-row">
                                 <div class="info-label">Montant compté</div>
-                                <div class="info-value">{{ number_format($session->closing_amount, 2, ',', ' ') }} €</div>
+                                <div class="info-value">{{ number_format($session->closing_amount, 2, ',', ' ') }} FCFA</div>
                             </div>
                             <div class="info-row highlight">
                                 <div class="info-label">Différence</div>
                                 <div class="info-value {{ $session->difference >= 0 ? 'difference-positive' : 'difference-negative' }}">
-                                    {{ $session->difference >= 0 ? '+' : '' }}{{ number_format($session->difference, 2, ',', ' ') }} €
+                                    {{ $session->difference >= 0 ? '+' : '' }}{{ number_format($session->difference, 2, ',', ' ') }} FCFA
                                 </div>
                             </div>
                             @endif
@@ -315,26 +315,26 @@
                     <tr>
                         <td>Espèces</td>
                         <td class="count">{{ $paymentStats->get('cash')->count ?? 0 }}</td>
-                        <td class="amount">{{ number_format($paymentStats->get('cash')->total ?? 0, 2, ',', ' ') }} €</td>
+                        <td class="amount">{{ number_format($paymentStats->get('cash')->total ?? 0, 2, ',', ' ') }} FCFA</td>
                         <td class="amount">{{ $session->total_sales > 0 ? number_format((($paymentStats->get('cash')->total ?? 0) / $session->total_sales) * 100, 1) : 0 }}%</td>
                     </tr>
                     <tr>
                         <td>Carte bancaire</td>
                         <td class="count">{{ $paymentStats->get('card')->count ?? 0 }}</td>
-                        <td class="amount">{{ number_format($paymentStats->get('card')->total ?? 0, 2, ',', ' ') }} €</td>
+                        <td class="amount">{{ number_format($paymentStats->get('card')->total ?? 0, 2, ',', ' ') }} FCFA</td>
                         <td class="amount">{{ $session->total_sales > 0 ? number_format((($paymentStats->get('card')->total ?? 0) / $session->total_sales) * 100, 1) : 0 }}%</td>
                     </tr>
                     <tr>
                         <td>Paiement mobile</td>
                         <td class="count">{{ $paymentStats->get('mobile')->count ?? 0 }}</td>
-                        <td class="amount">{{ number_format($paymentStats->get('mobile')->total ?? 0, 2, ',', ' ') }} €</td>
+                        <td class="amount">{{ number_format($paymentStats->get('mobile')->total ?? 0, 2, ',', ' ') }} FCFA</td>
                         <td class="amount">{{ $session->total_sales > 0 ? number_format((($paymentStats->get('mobile')->total ?? 0) / $session->total_sales) * 100, 1) : 0 }}%</td>
                     </tr>
                     @if(($paymentStats->get('mixed')->count ?? 0) > 0)
                     <tr>
                         <td>Mixte</td>
                         <td class="count">{{ $paymentStats->get('mixed')->count ?? 0 }}</td>
-                        <td class="amount">{{ number_format($paymentStats->get('mixed')->total ?? 0, 2, ',', ' ') }} €</td>
+                        <td class="amount">{{ number_format($paymentStats->get('mixed')->total ?? 0, 2, ',', ' ') }} FCFA</td>
                         <td class="amount">{{ $session->total_sales > 0 ? number_format((($paymentStats->get('mixed')->total ?? 0) / $session->total_sales) * 100, 1) : 0 }}%</td>
                     </tr>
                     @endif
@@ -350,7 +350,7 @@
                 <li>
                     <span class="name">{{ $product->name }}</span>
                     <span class="qty">{{ $product->total_quantity }} unités</span>
-                    <span class="amount">{{ number_format($product->total_amount, 2, ',', ' ') }} €</span>
+                    <span class="amount">{{ number_format($product->total_amount, 2, ',', ' ') }} FCFA</span>
                 </li>
                 @endforeach
             </ul>
@@ -384,7 +384,7 @@
                             @endswitch
                         </td>
                         <td class="center">{{ $sale->items->sum('quantity') }}</td>
-                        <td class="right">{{ number_format($sale->total, 2, ',', ' ') }} €</td>
+                        <td class="right">{{ number_format($sale->total, 2, ',', ' ') }} FCFA</td>
                     </tr>
                     @endforeach
                 </tbody>

@@ -26,11 +26,11 @@ class QuoteStatsWidget extends BaseWidget
             : 0;
 
         return [
-            Stat::make('Devis en attente', number_format($pendingAmount, 2, ',', ' ') . ' €')
+            Stat::make('Devis en attente', number_format($pendingAmount, 2, ',', ' ') . ' FCFA')
                 ->description('Montant total en cours')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),
-            Stat::make('Acceptés ce mois', number_format($acceptedThisMonth, 2, ',', ' ') . ' €')
+            Stat::make('Acceptés ce mois', number_format($acceptedThisMonth, 2, ',', ' ') . ' FCFA')
                 ->description('Devis acceptés')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),

@@ -130,15 +130,15 @@
                     <div class="summary-label">Factures</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value">{{ number_format($totals['total_ht'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value">{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Total HT</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value">{{ number_format($totals['total_tva'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value">{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">TVA collectée</div>
                 </td>
                 <td width="25%">
-                    <div class="summary-value">{{ number_format($totals['total_ttc'], 2, ',', ' ') }} €</div>
+                    <div class="summary-value">{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Total TTC</div>
                 </td>
             </tr>
@@ -183,17 +183,17 @@
                     <td><strong>{{ $sale->invoice_number }}</strong></td>
                     <td>{{ Str::limit($sale->customer?->name ?? 'Client comptoir', 25) }}</td>
                     <td class="{{ $paymentClass }}">{{ $paymentLabel }}</td>
-                    <td class="right">{{ number_format($ht, 2, ',', ' ') }} €</td>
-                    <td class="right">{{ number_format($sale->tax_amount ?? 0, 2, ',', ' ') }} €</td>
-                    <td class="right"><strong>{{ number_format($sale->total, 2, ',', ' ') }} €</strong></td>
+                    <td class="right">{{ number_format($ht, 2, ',', ' ') }} FCFA</td>
+                    <td class="right">{{ number_format($sale->tax_amount ?? 0, 2, ',', ' ') }} FCFA</td>
+                    <td class="right"><strong>{{ number_format($sale->total, 2, ',', ' ') }} FCFA</strong></td>
                     <td>{{ $sale->items->count() }} art. ({{ $sale->items->sum('quantity') }} u.)</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td colspan="4"><strong>TOTAUX ({{ $totals['count'] }} factures)</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_ht'], 2, ',', ' ') }} €</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_tva'], 2, ',', ' ') }} €</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_ttc'], 2, ',', ' ') }} €</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
                 <td></td>
             </tr>
         </tbody>

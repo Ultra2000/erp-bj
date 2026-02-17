@@ -15,11 +15,11 @@
                 <div class="flex items-center gap-6 text-sm">
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-gray-500 dark:text-gray-400">Total Débit:</span>
-                        <span class="font-bold text-primary-600">{{ number_format($totalDebit, 2, ',', ' ') }} €</span>
+                        <span class="font-bold text-primary-600">{{ number_format($totalDebit, 2, ',', ' ') }} FCFA</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-gray-500 dark:text-gray-400">Total Crédit:</span>
-                        <span class="font-bold text-primary-600">{{ number_format($totalCredit, 2, ',', ' ') }} €</span>
+                        <span class="font-bold text-primary-600">{{ number_format($totalCredit, 2, ',', ' ') }} FCFA</span>
                     </div>
                     <div class="flex items-center gap-2">
                         @if($isBalanced && ($totalDebit > 0 || $totalCredit > 0))
@@ -28,7 +28,7 @@
                         @elseif($totalDebit > 0 || $totalCredit > 0)
                             <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-danger-500" />
                             <span class="text-danger-600 font-medium">
-                                Écart: {{ number_format(abs($totalDebit - $totalCredit), 2, ',', ' ') }} €
+                                Écart: {{ number_format(abs($totalDebit - $totalCredit), 2, ',', ' ') }} FCFA
                             </span>
                         @endif
                     </div>
@@ -62,9 +62,9 @@
                     <li>Ligne 2 : Imputer le nouveau compte (même sens que l'original)</li>
                 </ul>
                 <div class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-                    <strong>Exemple :</strong> Reclasser 100€ de 707000 vers 706000<br>
-                    • 707000 : Débit 100€ (annule le crédit original)<br>
-                    • 706000 : Crédit 100€ (nouvelle imputation)
+                    <strong>Exemple :</strong> Reclasser 100 FCFA de 707000 vers 706000<br>
+                    • 707000 : Débit 100 FCFA (annule le crédit original)<br>
+                    • 706000 : Crédit 100 FCFA (nouvelle imputation)
                 </div>
             </div>
 

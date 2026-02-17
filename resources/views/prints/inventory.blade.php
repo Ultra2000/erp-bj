@@ -297,16 +297,16 @@
         <table>
             <tr>
                 <td>Valeur attendue:</td>
-                <td class="text-right">{{ number_format($inventory->total_value_expected, 2, ',', ' ') }} €</td>
+                <td class="text-right">{{ number_format($inventory->total_value_expected, 2, ',', ' ') }} FCFA</td>
             </tr>
             <tr>
                 <td>Valeur comptée:</td>
-                <td class="text-right">{{ number_format($inventory->total_value_counted, 2, ',', ' ') }} €</td>
+                <td class="text-right">{{ number_format($inventory->total_value_counted, 2, ',', ' ') }} FCFA</td>
             </tr>
             <tr class="total-row">
                 <td>Différence:</td>
                 <td class="text-right" style="color: {{ $inventory->value_difference >= 0 ? '#059669' : '#dc2626' }};">
-                    {{ $inventory->value_difference >= 0 ? '+' : '' }}{{ number_format($inventory->value_difference, 2, ',', ' ') }} €
+                    {{ $inventory->value_difference >= 0 ? '+' : '' }}{{ number_format($inventory->value_difference, 2, ',', ' ') }} FCFA
                 </td>
             </tr>
         </table>

@@ -139,7 +139,7 @@ class QuoteResource extends Resource
                                     ->label('P.U. HT')
                                     ->numeric()
                                     ->required()
-                                    ->prefix(fn () => Filament::getTenant()->currency ?? '€')
+                                    ->prefix(fn () => Filament::getTenant()->currency ?? 'FCFA')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         self::calculateLineTotal($get, $set);
@@ -174,7 +174,7 @@ class QuoteResource extends Resource
                                         $discount = floatval($get('discount_percent') ?? 0);
                                         $subtotal = $qty * $price;
                                         $total = $subtotal - ($subtotal * $discount / 100);
-                                        $currency = Filament::getTenant()->currency ?? '€';
+                                        $currency = Filament::getTenant()->currency ?? 'FCFA';
                                         return number_format($total, 2, ',', ' ') . ' ' . $currency;
                                     })
                                     ->columnSpan(1),
@@ -189,7 +189,7 @@ class QuoteResource extends Resource
                                         $totalHt = $subtotal - ($subtotal * $discount / 100);
                                         $vat = $totalHt * ($vatRate / 100);
                                         $totalTtc = $totalHt + $vat;
-                                        $currency = Filament::getTenant()->currency ?? '€';
+                                        $currency = Filament::getTenant()->currency ?? 'FCFA';
                                         return number_format($totalTtc, 2, ',', ' ') . ' ' . $currency;
                                     })
                                     ->columnSpan(1),
@@ -214,22 +214,22 @@ class QuoteResource extends Resource
                                     ->label('Remise globale')
                                     ->numeric()
                                     ->default(0)
-                                    ->prefix(fn () => Filament::getTenant()->currency ?? '€')
+                                    ->prefix(fn () => Filament::getTenant()->currency ?? 'FCFA')
                                     ->helperText('Appliquée sur le total'),
                                 Forms\Components\Placeholder::make('calculated_total_ht')
                                     ->label('Total HT')
                                     ->content(fn ($record) => $record 
-                                        ? number_format($record->total_ht ?? $record->subtotal ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? '€')
+                                        ? number_format($record->total_ht ?? $record->subtotal ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'FCFA')
                                         : '-'),
                                 Forms\Components\Placeholder::make('calculated_total_vat')
                                     ->label('Total TVA')
                                     ->content(fn ($record) => $record 
-                                        ? number_format($record->total_vat ?? $record->tax_amount ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? '€')
+                                        ? number_format($record->total_vat ?? $record->tax_amount ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'FCFA')
                                         : '-'),
                                 Forms\Components\Placeholder::make('total_display')
                                     ->label('Total TTC')
                                     ->content(fn ($record) => $record 
-                                        ? number_format($record->total ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? '€')
+                                        ? number_format($record->total ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'FCFA')
                                         : '-'),
                             ]),
                     ])

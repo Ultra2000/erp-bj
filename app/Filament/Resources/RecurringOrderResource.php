@@ -142,7 +142,7 @@ class RecurringOrderResource extends Resource
                                         Forms\Components\TextInput::make('unit_price')
                                             ->label('Prix unit.')
                                             ->numeric()
-                                            ->prefix('€')
+                                            ->suffix('FCFA')
                                             ->required()
                                             ->live()
                                             ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
@@ -152,7 +152,7 @@ class RecurringOrderResource extends Resource
                                         Forms\Components\TextInput::make('total')
                                             ->label('Total')
                                             ->numeric()
-                                            ->prefix('€')
+                                            ->suffix('FCFA')
                                             ->disabled()
                                             ->dehydrated()
                                             ->columnSpan(2),
@@ -200,7 +200,7 @@ class RecurringOrderResource extends Resource
                                     ->content(fn ($record) => $record?->last_execution ? $record->last_execution->format('d/m/Y') : '-'),
                                 Forms\Components\Placeholder::make('total_amount')
                                     ->label('CA généré')
-                                    ->content(fn ($record) => $record ? number_format($record->sales->sum('total_amount'), 2, ',', ' ') . ' €' : '0,00 €'),
+                                    ->content(fn ($record) => $record ? number_format($record->sales->sum('total_amount'), 2, ',', ' ') . ' FCFA' : '0,00 FCFA'),
                             ])
                             ->visible(fn ($record) => $record !== null),
 
@@ -211,7 +211,7 @@ class RecurringOrderResource extends Resource
                                     ->content(function (Forms\Get $get) {
                                         $items = $get('items') ?? [];
                                         $subtotal = collect($items)->sum(fn ($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0));
-                                        return number_format($subtotal, 2, ',', ' ') . ' €';
+                                        return number_format($subtotal, 2, ',', ' ') . ' FCFA';
                                     }),
                                 Forms\Components\TextInput::make('tax_rate')
                                     ->label('Taux TVA (%)')
@@ -226,7 +226,7 @@ class RecurringOrderResource extends Resource
                                         $subtotal = collect($items)->sum(fn ($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0));
                                         $taxRate = $get('tax_rate') ?? 20;
                                         $total = $subtotal * (1 + $taxRate / 100);
-                                        return number_format($total, 2, ',', ' ') . ' €';
+                                        return number_format($total, 2, ',', ' ') . ' FCFA';
                                     }),
                             ]),
 

@@ -37,7 +37,7 @@ class CreatePayment extends CreateRecord
 
             Notification::make()
                 ->title('Règlement enregistré')
-                ->body("Paiement de {$payment->amount}€ enregistré pour {$payable->invoice_number}")
+                ->body("Paiement de {$payment->amount} FCFA enregistré pour {$payable->invoice_number}")
                 ->success()
                 ->send();
         }

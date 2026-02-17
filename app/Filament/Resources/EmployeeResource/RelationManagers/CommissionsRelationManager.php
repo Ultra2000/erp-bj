@@ -34,7 +34,7 @@ class CommissionsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('sale_amount')
                             ->label('Montant des ventes')
                             ->numeric()
-                            ->prefix('€')
+                            ->suffix('FCFA')
                             ->required(),
                         Forms\Components\TextInput::make('commission_rate')
                             ->label('Taux')
@@ -44,7 +44,7 @@ class CommissionsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('commission_amount')
                             ->label('Commission')
                             ->numeric()
-                            ->prefix('€')
+                            ->suffix('FCFA')
                             ->required(),
                     ]),
                 Forms\Components\Select::make('status')
