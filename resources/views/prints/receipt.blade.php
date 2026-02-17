@@ -365,7 +365,16 @@
     {{-- QR Code e-MCeF --}}
     @if($sale->emcef_qr_code)
     <div class="qr-code">
-        <img src="data:image/png;base64,{{ $sale->emcef_qr_code }}" alt="QR Code e-MCeF">
+        @php
+            try {
+                $qrSvg = base64_encode(\SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(150)->margin(0)->generate($sale->emcef_qr_code));
+            } catch (\Throwable $e) {
+                $qrSvg = null;
+            }
+        @endphp
+        @if($qrSvg)
+            <img src="data:image/svg+xml;base64,{{ $qrSvg }}" alt="QR Code e-MCeF">
+        @endif
     </div>
     @endif
     @endif

@@ -99,7 +99,12 @@ class CashSession extends Model
      */
     public function recalculate(): self
     {
-        $sales = $this->sales()->where('status', 'completed')->get();
+        // Bypasser les global scopes (BelongsToCompany, WarehouseScope) pour compter
+        // toutes les ventes liées à cette session sans filtrage contextuel
+        $sales = Sale::withoutGlobalScopes()
+            ->where('cash_session_id', $this->id)
+            ->where('status', 'completed')
+            ->get();
         
         $this->sales_count = $sales->count();
         $this->total_sales = $sales->sum('total');

@@ -132,9 +132,17 @@
                     {{-- Stats Session --}}
                     <div class="mt-2 text-emerald-100 text-xs flex justify-between items-center" x-show="hasSession">
                         <span x-text="cart.length + ' article(s)'"></span>
-                        <div class="flex gap-3">
+                        <div class="flex items-center gap-3">
                             <span x-text="sessionStats.sales_count + ' ventes'"></span>
                             <span class="font-bold" x-text="formatPrice(sessionStats.total_sales)"></span>
+                            <button 
+                                x-show="lastSaleDbId" 
+                                @click="printReceipt()" 
+                                class="bg-white/20 hover:bg-white/30 rounded px-2 py-0.5 text-xs transition flex items-center gap-1"
+                                title="Réimprimer dernier ticket"
+                            >
+                                🖨️ <span x-text="lastSaleId"></span>
+                            </button>
                         </div>
                     </div>
                 </div>
