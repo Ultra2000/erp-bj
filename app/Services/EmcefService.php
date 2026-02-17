@@ -600,8 +600,8 @@ class EmcefService
      */
     protected function getInvoiceType(Sale $sale): string
     {
-        // Vérifier si c'est une vente à l'export (au moins un article Groupe C)
-        $isExport = $sale->items->contains(function ($item) {
+        // Vérifier si c'est une vente à l'export (flag is_export ou au moins un article Groupe C)
+        $isExport = $sale->is_export || $sale->items->contains(function ($item) {
             return strtoupper($item->vat_category ?? '') === 'C';
         });
 

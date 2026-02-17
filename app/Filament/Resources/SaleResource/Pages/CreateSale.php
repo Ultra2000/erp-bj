@@ -33,16 +33,17 @@ class CreateSale extends CreateRecord
     {
         $sale = $this->record;
         $items = $this->data['items'] ?? [];
+        $isExport = filter_var($this->data['is_export'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         foreach ($items as $item) {
             $sale->items()->create([
                 'product_id' => $item['product_id'],
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
-                'vat_rate' => $item['vat_rate'] ?? null,
-                'vat_category' => $item['vat_category'] ?? null,
-                'tax_specific_amount' => $item['tax_specific_amount'] ?? null,
-                'tax_specific_label' => $item['tax_specific_label'] ?? null,
+                'vat_rate' => $isExport ? 0 : ($item['vat_rate'] ?? null),
+                'vat_category' => $isExport ? 'C' : ($item['vat_category'] ?? null),
+                'tax_specific_amount' => $isExport ? null : ($item['tax_specific_amount'] ?? null),
+                'tax_specific_label' => $isExport ? null : ($item['tax_specific_label'] ?? null),
                 'is_wholesale' => $item['is_wholesale'] ?? false,
                 'retail_unit_price' => $item['retail_unit_price'] ?? null,
                 'total_price' => $item['total_price'],

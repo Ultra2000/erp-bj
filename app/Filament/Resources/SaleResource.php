@@ -132,6 +132,55 @@ class SaleResource extends Resource
                                 ];
                             })
                             ->required(),
+                        Forms\Components\Radio::make('is_export')
+                            ->label('Type de vente')
+                            ->options([
+                                false => '🏠 Vente locale',
+                                true => '✈️ Vente à l\'exportation',
+                            ])
+                            ->default(false)
+                            ->inline()
+                            ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                $isExport = filter_var($state, FILTER_VALIDATE_BOOLEAN);
+                                $items = $get('items') ?? [];
+                                foreach ($items as $index => $item) {
+                                    if ($isExport) {
+                                        // Export : forcer Groupe C, TVA 0%
+                                        $set("items.{$index}.vat_category", 'C');
+                                        $set("items.{$index}.vat_rate", 0);
+                                        $set("items.{$index}.tax_specific_amount", null);
+                                        $set("items.{$index}.tax_specific_label", null);
+                                        // Recalculer le total = HT pur (pas de TVA, pas de taxe spécifique)
+                                        $qty = floatval($item['quantity'] ?? 0);
+                                        $unitPrice = floatval($item['unit_price'] ?? 0);
+                                        $set("items.{$index}.total_price", $qty * $unitPrice);
+                                    } else {
+                                        // Retour à la vente locale : restaurer depuis le produit
+                                        $productId = $item['product_id'] ?? null;
+                                        if ($productId) {
+                                            $product = \App\Models\Product::find($productId);
+                                            if ($product) {
+                                                $company = \Filament\Facades\Filament::getTenant();
+                                                $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+                                                $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
+                                                $set("items.{$index}.vat_category", $product->vat_category ?? ($company?->emcef_enabled ? 'A' : 'S'));
+                                                $set("items.{$index}.vat_rate", $vatRate);
+                                                $set("items.{$index}.tax_specific_amount", $product->tax_specific_amount);
+                                                $set("items.{$index}.tax_specific_label", $product->tax_specific_label);
+                                                $qty = floatval($item['quantity'] ?? 0);
+                                                $unitPrice = floatval($item['unit_price'] ?? 0);
+                                                $totalHt = $qty * $unitPrice;
+                                                $vat = round($totalHt * ($vatRate / 100), 2);
+                                                $taxSpec = $product->tax_specific_amount > 0 ? round($product->tax_specific_amount * $qty, 2) : 0;
+                                                $set("items.{$index}.total_price", $totalHt + $vat + $taxSpec);
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            ->helperText('Exportation : TVA exonérée, type EV pour e-MCeF')
+                            ->visible(fn () => Filament::getTenant()?->emcef_enabled),
                     ])->columns(2),
 
                 // Section e-MCeF (Bénin) - Affichée uniquement si certifiée
@@ -226,26 +275,36 @@ class SaleResource extends Resource
                                             $product = Product::find($state);
                                             if ($product) {
                                                 $company = Filament::getTenant();
+                                                $isExport = filter_var($get('../../is_export'), FILTER_VALIDATE_BOOLEAN);
                                                 // Taux TVA par défaut: 18% si e-MCeF, sinon celui du produit
                                                 $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
                                                 $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
                                                 
                                                 // Utiliser le prix de vente HT du produit (quantité initiale = 1)
                                                 $set('unit_price', $product->sale_price_ht);
-                                                $set('vat_rate', $product->vat_rate_sale ?? $defaultVatRate);
-                                                $set('vat_category', $product->vat_category ?? $defaultVatCategory);
-                                                $set('tax_specific_amount', $product->tax_specific_amount);
-                                                $set('tax_specific_label', $product->tax_specific_label);
                                                 $set('quantity', 1);
                                                 $set('is_wholesale', false);
                                                 $set('retail_unit_price', null);
-                                                
-                                                // Calculer le total TTC = HT + TVA + taxe spécifique
-                                                $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
-                                                $totalHt = $product->sale_price_ht;
-                                                $vat = round($totalHt * ($vatRate / 100), 2);
-                                                $taxSpec = $product->tax_specific_amount > 0 ? round($product->tax_specific_amount * 1, 2) : 0;
-                                                $set('total_price', $totalHt + $vat + $taxSpec);
+
+                                                if ($isExport) {
+                                                    // Export : forcer Groupe C, TVA 0%, pas de taxe spécifique
+                                                    $set('vat_rate', 0);
+                                                    $set('vat_category', 'C');
+                                                    $set('tax_specific_amount', null);
+                                                    $set('tax_specific_label', null);
+                                                    $set('total_price', $product->sale_price_ht);
+                                                } else {
+                                                    $set('vat_rate', $product->vat_rate_sale ?? $defaultVatRate);
+                                                    $set('vat_category', $product->vat_category ?? $defaultVatCategory);
+                                                    $set('tax_specific_amount', $product->tax_specific_amount);
+                                                    $set('tax_specific_label', $product->tax_specific_label);
+                                                    // Calculer le total TTC = HT + TVA + taxe spécifique
+                                                    $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
+                                                    $totalHt = $product->sale_price_ht;
+                                                    $vat = round($totalHt * ($vatRate / 100), 2);
+                                                    $taxSpec = $product->tax_specific_amount > 0 ? round($product->tax_specific_amount * 1, 2) : 0;
+                                                    $set('total_price', $totalHt + $vat + $taxSpec);
+                                                }
                                                 
                                                 // Info prix de gros si disponible
                                                 if ($product->hasWholesalePrice()) {
