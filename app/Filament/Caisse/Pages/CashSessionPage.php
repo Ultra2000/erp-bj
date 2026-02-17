@@ -63,6 +63,8 @@ class CashSessionPage extends Page implements HasForms
             ->send();
 
         $this->openingAmount = 0;
+        
+        $this->dispatch('session-updated');
     }
 
     /**
@@ -96,6 +98,8 @@ class CashSessionPage extends Page implements HasForms
         $this->currentSession = null;
         $this->closingAmount = null;
         $this->notes = null;
+        
+        $this->dispatch('session-updated');
     }
 
     /**

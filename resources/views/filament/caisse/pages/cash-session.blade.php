@@ -201,6 +201,16 @@
                 async init() {
                     await this.loadStats();
                     await this.loadHistory();
+                    
+                    // Écouter les mises à jour de session (ouverture/fermeture)
+                    Livewire.on('session-updated', () => {
+                        this.refreshSession();
+                    });
+                },
+
+                async refreshSession() {
+                    // Recharger la page pour resynchroniser l'état complet
+                    window.location.reload();
                 },
 
                 async loadStats() {
