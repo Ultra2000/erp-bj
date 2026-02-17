@@ -217,8 +217,9 @@
                 },
 
                 printReceipt(sale) {
-                    // TODO: Implémenter impression
-                    window.open('/sales/' + sale.id + '/invoice', '_blank');
+                    const url = '/sales/' + sale.id + '/receipt?print=1';
+                    const popup = window.open(url, 'receipt_' + sale.id, 'width=350,height=700,scrollbars=yes');
+                    if (popup) popup.focus();
                 }
             };
         }

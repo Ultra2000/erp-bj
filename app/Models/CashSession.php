@@ -108,10 +108,34 @@ class CashSession extends Model
         
         $this->sales_count = $sales->count();
         $this->total_sales = $sales->sum('total');
-        $this->total_cash = $sales->where('payment_method', 'cash')->sum('total');
-        $this->total_card = $sales->where('payment_method', 'card')->sum('total');
-        $this->total_mobile = $sales->where('payment_method', 'mobile')->sum('total');
-        $this->total_other = $sales->whereNotIn('payment_method', ['cash', 'card', 'mobile'])->sum('total');
+        
+        // Ventiler les montants par mode de paiement (y compris paiements mixtes)
+        $totalCash = 0;
+        $totalCard = 0;
+        $totalMobile = 0;
+        $totalOther = 0;
+        
+        foreach ($sales as $sale) {
+            if ($sale->payment_method === 'mixed' && $sale->payment_details) {
+                $details = is_array($sale->payment_details) ? $sale->payment_details : json_decode($sale->payment_details, true);
+                $totalCash += floatval($details['cash'] ?? 0);
+                $totalCard += floatval($details['card'] ?? 0);
+                $totalMobile += floatval($details['mobile'] ?? 0);
+            } elseif ($sale->payment_method === 'cash') {
+                $totalCash += floatval($sale->total);
+            } elseif ($sale->payment_method === 'card') {
+                $totalCard += floatval($sale->total);
+            } elseif ($sale->payment_method === 'mobile') {
+                $totalMobile += floatval($sale->total);
+            } else {
+                $totalOther += floatval($sale->total);
+            }
+        }
+        
+        $this->total_cash = $totalCash;
+        $this->total_card = $totalCard;
+        $this->total_mobile = $totalMobile;
+        $this->total_other = $totalOther;
         
         // Montant attendu = fond de caisse + ventes espèces
         $this->expected_amount = $this->opening_amount + $this->total_cash;

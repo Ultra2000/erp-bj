@@ -339,6 +339,7 @@ class PointOfSale extends Page
                     'warehouse_id' => $warehouse->id,
                     'cash_session_id' => $session->id,
                     'payment_method' => $payload['payment_method'] ?? 'cash',
+                    'payment_details' => $payload['payment_details'] ?? null,
                     'discount_percent' => $discountPercent,
                     'status' => 'completed',
                     'total_ht' => $totalHt,
