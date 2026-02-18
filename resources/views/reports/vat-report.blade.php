@@ -242,14 +242,14 @@
         <div class="legal-note">
             <strong>⚠️ Avertissement :</strong> Ce document est fourni à titre indicatif uniquement et ne constitue pas 
             une déclaration fiscale officielle. Les montants doivent être vérifiés par un expert-comptable avant toute 
-            déclaration de TVA (CA3, CA12...).
+            déclaration de TVA auprès de la DGI.
         </div>
 
         <!-- Pied de page -->
         <div class="footer">
             <p>
                 Document généré le {{ now()->translatedFormat('d F Y à H:i') }}<br>
-                {{ $company->name }} - SIRET : {{ $company->siret ?? 'Non renseigné' }}<br>
+                {{ $company->name }} - {{ $company->getTaxIdLabel() }} : {{ $company->tax_number ?? 'Non renseigné' }}<br>
                 {{ $company->address ?? '' }}
             </p>
         </div>

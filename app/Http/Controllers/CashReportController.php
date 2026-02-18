@@ -42,14 +42,16 @@ class CashReportController extends Controller
         $session->recalculate();
 
         // Récupérer les ventes détaillées
-        $sales = Sale::with(['items.product', 'customer'])
+        $sales = Sale::withoutGlobalScopes()
+            ->with(['items.product', 'customer'])
             ->where('cash_session_id', $session->id)
             ->where('status', 'completed')
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Statistiques par mode de paiement
-        $paymentStats = Sale::where('cash_session_id', $session->id)
+        $paymentStats = Sale::withoutGlobalScopes()
+            ->where('cash_session_id', $session->id)
             ->where('status', 'completed')
             ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as total'))
             ->groupBy('payment_method')
@@ -91,7 +93,8 @@ class CashReportController extends Controller
         $hourSql = $isSqlite ? "strftime('%H', created_at)" : "HOUR(created_at)";
 
         // Ventes par heure
-        $salesByHour = Sale::where('cash_session_id', $session->id)
+        $salesByHour = Sale::withoutGlobalScopes()
+            ->where('cash_session_id', $session->id)
             ->where('status', 'completed')
             ->select(
                 DB::raw("$hourSql as hour"),
@@ -169,14 +172,16 @@ class CashReportController extends Controller
         $session->recalculate();
 
         // Récupérer les ventes
-        $sales = Sale::with(['items.product'])
+        $sales = Sale::withoutGlobalScopes()
+            ->with(['items.product'])
             ->where('cash_session_id', $session->id)
             ->where('status', 'completed')
             ->orderBy('created_at')
             ->get();
 
         // Stats par paiement
-        $paymentStats = Sale::where('cash_session_id', $session->id)
+        $paymentStats = Sale::withoutGlobalScopes()
+            ->where('cash_session_id', $session->id)
             ->where('status', 'completed')
             ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as total'))
             ->groupBy('payment_method')
@@ -229,7 +234,8 @@ class CashReportController extends Controller
         $session->recalculate();
 
         // Récupérer les ventes avec détails
-        $sales = Sale::with(['items.product'])
+        $sales = Sale::withoutGlobalScopes()
+            ->with(['items.product'])
             ->where('cash_session_id', $session->id)
             ->where('status', 'completed')
             ->orderBy('created_at')

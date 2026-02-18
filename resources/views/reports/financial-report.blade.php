@@ -485,8 +485,8 @@
     @endif
 
     <div class="footer">
-        {{ $company->name ?? 'GestStock' }} - Bilan comptable généré le {{ $generatedAt->format('d/m/Y à H:i') }}<br>
-        Ce document est un récapitulatif à usage interne et ne constitue pas un document comptable officiel.
+        {{ $company->name ?? 'GestStock' }} - {{ $company->getTaxIdLabel() }} : {{ $company->tax_number ?? 'N/A' }}<br>
+        Bilan comptable généré le {{ $generatedAt->format('d/m/Y à H:i') }} - Document à usage interne.
     </div>
 </body>
 </html>

@@ -161,7 +161,7 @@
         <tbody>
             @foreach($sales as $sale)
                 @php
-                    $ht = $sale->total - ($sale->tax_amount ?? 0);
+                    $ht = $sale->total_ht ?? ($sale->total - ($sale->total_vat ?? 0));
                     $paymentClass = match($sale->payment_method) {
                         'cash' => 'payment-cash',
                         'card' => 'payment-card',
@@ -184,7 +184,7 @@
                     <td>{{ Str::limit($sale->customer?->name ?? 'Client comptoir', 25) }}</td>
                     <td class="{{ $paymentClass }}">{{ $paymentLabel }}</td>
                     <td class="right">{{ number_format($ht, 2, ',', ' ') }} FCFA</td>
-                    <td class="right">{{ number_format($sale->tax_amount ?? 0, 2, ',', ' ') }} FCFA</td>
+                    <td class="right">{{ number_format($sale->total_vat ?? 0, 2, ',', ' ') }} FCFA</td>
                     <td class="right"><strong>{{ number_format($sale->total, 2, ',', ' ') }} FCFA</strong></td>
                     <td>{{ $sale->items->count() }} art. ({{ $sale->items->sum('quantity') }} u.)</td>
                 </tr>

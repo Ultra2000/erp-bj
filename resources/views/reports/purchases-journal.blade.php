@@ -160,7 +160,7 @@
         <tbody>
             @foreach($purchases as $purchase)
                 @php
-                    $ht = $purchase->total_amount - ($purchase->tax_amount ?? 0);
+                    $ht = $purchase->total_ht ?? ($purchase->total - ($purchase->total_vat ?? 0));
                     $statusClass = match($purchase->status) {
                         'received', 'completed' => 'status-received',
                         'paid' => 'status-paid',
@@ -181,16 +181,16 @@
                     <td>{{ Str::limit($purchase->supplier?->name ?? 'Fournisseur inconnu', 25) }}</td>
                     <td class="{{ $statusClass }}">{{ $statusLabel }}</td>
                     <td class="right">{{ number_format($ht, 2, ',', ' ') }} FCFA</td>
-                    <td class="right">{{ number_format($purchase->tax_amount ?? 0, 2, ',', ' ') }} FCFA</td>
-                    <td class="right"><strong>{{ number_format($purchase->total_amount, 2, ',', ' ') }} FCFA</strong></td>
+                    <td class="right">{{ number_format($purchase->total_vat ?? 0, 2, ',', ' ') }} FCFA</td>
+                    <td class="right"><strong>{{ number_format($purchase->total, 2, ',', ' ') }} FCFA</strong></td>
                     <td>{{ $purchase->items->count() }} art. ({{ $purchase->items->sum('quantity') }} u.)</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td colspan="4"><strong>TOTAUX ({{ $totals['count'] }} commandes)</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</strong></td>
-                <td class="right"><strong>{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_ht'] ?? 0, 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_tva'] ?? 0, 2, ',', ' ') }} FCFA</strong></td>
+                <td class="right"><strong>{{ number_format($totals['total_ttc'] ?? 0, 2, ',', ' ') }} FCFA</strong></td>
                 <td></td>
             </tr>
         </tbody>
