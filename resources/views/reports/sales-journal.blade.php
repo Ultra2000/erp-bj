@@ -125,19 +125,25 @@
     <div class="summary">
         <table class="summary-grid">
             <tr>
-                <td width="25%">
+                <td width="20%">
                     <div class="summary-value">{{ number_format($totals['count']) }}</div>
                     <div class="summary-label">Factures</div>
                 </td>
-                <td width="25%">
+                <td width="20%">
                     <div class="summary-value">{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Total HT</div>
                 </td>
-                <td width="25%">
+                <td width="20%">
                     <div class="summary-value">{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">TVA collectée</div>
                 </td>
-                <td width="25%">
+                @if(($totals['total_aib'] ?? 0) > 0)
+                <td width="20%">
+                    <div class="summary-value">{{ number_format($totals['total_aib'], 2, ',', ' ') }} FCFA</div>
+                    <div class="summary-label">AIB retenu</div>
+                </td>
+                @endif
+                <td width="20%">
                     <div class="summary-value">{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</div>
                     <div class="summary-label">Total TTC</div>
                 </td>
@@ -150,12 +156,15 @@
             <tr>
                 <th width="8%">Date</th>
                 <th width="12%">N° Facture</th>
-                <th width="20%">Client</th>
-                <th width="10%">Paiement</th>
+                <th width="18%">Client</th>
+                <th width="8%">Paiement</th>
                 <th width="12%" class="right">HT</th>
                 <th width="10%" class="right">TVA</th>
+                @if(($totals['total_aib'] ?? 0) > 0)
+                <th width="8%" class="right">AIB</th>
+                @endif
                 <th width="12%" class="right">TTC</th>
-                <th width="16%">Articles</th>
+                <th width="12%">Articles</th>
             </tr>
         </thead>
         <tbody>
@@ -185,6 +194,9 @@
                     <td class="{{ $paymentClass }}">{{ $paymentLabel }}</td>
                     <td class="right">{{ number_format($ht, 2, ',', ' ') }} FCFA</td>
                     <td class="right">{{ number_format($sale->total_vat ?? 0, 2, ',', ' ') }} FCFA</td>
+                    @if(($totals['total_aib'] ?? 0) > 0)
+                    <td class="right">{{ number_format($sale->aib_amount ?? 0, 2, ',', ' ') }} FCFA</td>
+                    @endif
                     <td class="right"><strong>{{ number_format($sale->total, 2, ',', ' ') }} FCFA</strong></td>
                     <td>{{ $sale->items->count() }} art. ({{ $sale->items->sum('quantity') }} u.)</td>
                 </tr>
@@ -193,6 +205,9 @@
                 <td colspan="4"><strong>TOTAUX ({{ $totals['count'] }} factures)</strong></td>
                 <td class="right"><strong>{{ number_format($totals['total_ht'], 2, ',', ' ') }} FCFA</strong></td>
                 <td class="right"><strong>{{ number_format($totals['total_tva'], 2, ',', ' ') }} FCFA</strong></td>
+                @if(($totals['total_aib'] ?? 0) > 0)
+                <td class="right"><strong>{{ number_format($totals['total_aib'], 2, ',', ' ') }} FCFA</strong></td>
+                @endif
                 <td class="right"><strong>{{ number_format($totals['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
                 <td></td>
             </tr>

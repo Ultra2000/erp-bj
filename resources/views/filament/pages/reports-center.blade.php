@@ -145,6 +145,62 @@
                     </button>
                 </div>
             </div>
+
+            {{-- Carte Rapport TVA --}}
+            <div style="background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e5e7eb;" class="dark:!bg-gray-800 dark:!border-gray-700">
+                <div style="background: #2563eb; padding: 1rem;">
+                    <div class="flex items-center gap-3" style="color: white;">
+                        <x-heroicon-o-receipt-percent class="w-6 h-6" />
+                        <h3 style="font-size: 1.125rem; font-weight: bold; color: white;">Rapport TVA</h3>
+                    </div>
+                    <p style="color: #bfdbfe; font-size: 0.875rem; margin-top: 0.25rem;">Déclaration TVA collectée / déductible</p>
+                </div>
+                <div style="padding: 1.5rem;" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;" class="dark:!text-gray-300">Date début</label>
+                            <input type="date" wire:model="vat_start_date" style="width: 100%; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 0.5rem;" class="dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;" class="dark:!text-gray-300">Date fin</label>
+                            <input type="date" wire:model="vat_end_date" style="width: 100%; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 0.5rem;" class="dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white">
+                        </div>
+                    </div>
+                    <div style="background: #eff6ff; border-radius: 0.75rem; padding: 1rem;" class="dark:!bg-blue-900/20">
+                        <p style="font-size: 0.875rem; color: #1d4ed8;" class="dark:!text-blue-300">
+                            <strong>Inclut :</strong> TVA collectée par taux, TVA déductible, solde à reverser à la DGI
+                        </p>
+                    </div>
+                    <button wire:click="downloadVatReport" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #2563eb; color: white !important; font-weight: 600; border-radius: 0.75rem; border: none; cursor: pointer;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                        <x-heroicon-o-arrow-down-tray class="w-5 h-5" />
+                        <span style="color: white !important;">Télécharger PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Carte e-MCeF --}}
+            <div style="background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e5e7eb;" class="dark:!bg-gray-800 dark:!border-gray-700">
+                <div style="background: #f59e0b; padding: 1rem;">
+                    <div class="flex items-center gap-3" style="color: white;">
+                        <x-heroicon-o-shield-check class="w-6 h-6" />
+                        <h3 style="font-size: 1.125rem; font-weight: bold; color: white;">Déclaration e-MCeF</h3>
+                    </div>
+                    <p style="color: #fef3c7; font-size: 0.875rem; margin-top: 0.25rem;">Rapport mensuel DGI Bénin</p>
+                </div>
+                <div style="padding: 1.5rem;" class="space-y-4">
+                    <div style="background: #fffbeb; border-radius: 0.75rem; padding: 1rem;" class="dark:!bg-amber-900/20">
+                        <p style="font-size: 0.875rem; color: #92400e;" class="dark:!text-amber-300">
+                            <strong>Inclut :</strong> Factures certifiées, NIM/MECeF, ventilation TVA, avoirs, totaux déclarés
+                        </p>
+                    </div>
+                    <a href="{{ \App\Filament\Pages\EmcefReport::getUrl() }}" 
+                       style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #f59e0b; color: white !important; font-weight: 600; border-radius: 0.75rem; border: none; cursor: pointer; text-decoration: none;" 
+                       onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                        <x-heroicon-o-arrow-right class="w-5 h-5" />
+                        <span style="color: white !important;">Accéder au rapport e-MCeF</span>
+                    </a>
+                </div>
+            </div>
         </div>
 
         {{-- Section Rapports Rapides --}}
@@ -187,14 +243,14 @@
                     </div>
                 </a>
                 
-                <a href="{{ route('reports.inventory-export', ['companyId' => $this->getCompanyId()]) }}" 
+                <a href="{{ route('reports.vat-report', ['companyId' => $this->getCompanyId(), 'start_date' => now()->startOfMonth()->toDateString(), 'end_date' => now()->toDateString()]) }}" 
                    target="_blank"
-                   style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #f0fdf4; border-radius: 0.75rem; text-decoration: none; transition: background 0.2s;"
-                   class="dark:!bg-green-900/20 hover:!bg-green-100 dark:hover:!bg-green-900/30">
-                    <x-heroicon-o-table-cells class="w-8 h-8" style="color: #22c55e;" />
+                   style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #eff6ff; border-radius: 0.75rem; text-decoration: none; transition: background 0.2s;"
+                   class="dark:!bg-blue-900/20 hover:!bg-blue-100 dark:hover:!bg-blue-900/30">
+                    <x-heroicon-o-receipt-percent class="w-8 h-8" style="color: #2563eb;" />
                     <div>
-                        <p style="font-weight: 600; color: #111827;" class="dark:!text-white">Export Excel</p>
-                        <p style="font-size: 0.75rem; color: #6b7280;" class="dark:!text-gray-400">Inventaire CSV</p>
+                        <p style="font-weight: 600; color: #111827;" class="dark:!text-white">TVA du mois</p>
+                        <p style="font-size: 0.75rem; color: #6b7280;" class="dark:!text-gray-400">Mois en cours</p>
                     </div>
                 </a>
             </div>
@@ -205,6 +261,7 @@
             <p style="font-size: 0.875rem; color: #4b5563;" class="dark:!text-gray-400">
                 <strong>💡 Astuce :</strong> Les factures individuelles peuvent être téléchargées depuis les pages Ventes et Achats. 
                 Les rapports de caisse sont disponibles depuis l'historique des sessions POS.
+                Le rapport e-MCeF mensuel est accessible depuis le menu Comptabilité.
             </p>
         </div>
     </div>

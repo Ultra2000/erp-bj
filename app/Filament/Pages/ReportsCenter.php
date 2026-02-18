@@ -66,6 +66,10 @@ class ReportsCenter extends Page implements HasForms
     public ?string $purchases_start_date = null;
     public ?string $purchases_end_date = null;
 
+    // Formulaire rapport TVA
+    public ?string $vat_start_date = null;
+    public ?string $vat_end_date = null;
+
     public function mount(): void
     {
         $this->financial_start_date = now()->startOfYear()->toDateString();
@@ -74,6 +78,8 @@ class ReportsCenter extends Page implements HasForms
         $this->sales_end_date = now()->toDateString();
         $this->purchases_start_date = now()->startOfMonth()->toDateString();
         $this->purchases_end_date = now()->toDateString();
+        $this->vat_start_date = now()->startOfMonth()->toDateString();
+        $this->vat_end_date = now()->toDateString();
     }
 
     public function getCompanyId(): ?int
@@ -131,6 +137,18 @@ class ReportsCenter extends Page implements HasForms
         ];
         
         $url = route('reports.purchases-journal', ['companyId' => $this->getCompanyId()]) . '?' . http_build_query($params);
+        
+        $this->js("window.open('{$url}', '_blank')");
+    }
+
+    public function downloadVatReport(): void
+    {
+        $params = [
+            'start_date' => $this->vat_start_date,
+            'end_date' => $this->vat_end_date,
+        ];
+        
+        $url = route('reports.vat-report', ['companyId' => $this->getCompanyId()]) . '?' . http_build_query($params);
         
         $this->js("window.open('{$url}', '_blank')");
     }

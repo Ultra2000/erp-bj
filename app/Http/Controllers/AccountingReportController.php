@@ -36,19 +36,22 @@ class AccountingReportController extends Controller
         $monthSql = $isSqlite ? "strftime('%m', created_at)" : "DATE_FORMAT(created_at, '%m')";
         
         // Ventes de la période
-        $salesData = Sale::where('company_id', $companyId)
+        $salesData = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('
                 COUNT(*) as count,
                 SUM(total) as total_ttc,
                 SUM(COALESCE(total_ht, total)) as total_ht,
-                SUM(COALESCE(total_vat, 0)) as total_tva
+                SUM(COALESCE(total_vat, 0)) as total_tva,
+                SUM(COALESCE(aib_amount, 0)) as total_aib
             ')
             ->first();
         
         // Achats de la période
-        $purchasesData = Purchase::where('company_id', $companyId)
+        $purchasesData = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('
@@ -60,7 +63,8 @@ class AccountingReportController extends Controller
             ->first();
         
         // Ventes par mois
-        $salesByMonth = Sale::where('company_id', $companyId)
+        $salesByMonth = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw("
@@ -75,7 +79,8 @@ class AccountingReportController extends Controller
             ->get();
         
         // Achats par mois
-        $purchasesByMonth = Purchase::where('company_id', $companyId)
+        $purchasesByMonth = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw("
@@ -90,7 +95,8 @@ class AccountingReportController extends Controller
             ->get();
         
         // Ventes par mode de paiement
-        $salesByPayment = Sale::where('company_id', $companyId)
+        $salesByPayment = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('payment_method, COUNT(*) as count, SUM(total) as total')
@@ -98,7 +104,8 @@ class AccountingReportController extends Controller
             ->get();
         
         // Top 10 clients
-        $topCustomers = Sale::where('sales.company_id', $companyId)
+        $topCustomers = Sale::withoutGlobalScopes()
+            ->where('sales.company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('sales.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNotNull('customer_id')
@@ -110,7 +117,8 @@ class AccountingReportController extends Controller
             ->get();
         
         // Top 10 fournisseurs
-        $topSuppliers = Purchase::where('purchases.company_id', $companyId)
+        $topSuppliers = Purchase::withoutGlobalScopes()
+            ->where('purchases.company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('purchases.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNotNull('supplier_id')
@@ -136,6 +144,7 @@ class AccountingReportController extends Controller
         $tvaCollected = floatval($salesData->total_tva ?? 0);
         $tvaDeductible = floatval($purchasesData->total_tva ?? 0);
         $tvaToPay = $tvaCollected - $tvaDeductible;
+        $totalAib = floatval($salesData->total_aib ?? 0);
         
         $data = [
             'company' => $company,
@@ -146,6 +155,7 @@ class AccountingReportController extends Controller
                 'total_ttc' => floatval($salesData->total_ttc ?? 0),
                 'total_ht' => floatval($salesData->total_ht ?? 0),
                 'total_tva' => floatval($salesData->total_tva ?? 0),
+                'total_aib' => $totalAib,
             ],
             'purchases' => [
                 'count' => $purchasesData->count ?? 0,
@@ -170,6 +180,7 @@ class AccountingReportController extends Controller
                 'tva_collected' => $tvaCollected,
                 'tva_deductible' => $tvaDeductible,
                 'tva_to_pay' => $tvaToPay,
+                'total_aib' => $totalAib,
             ],
             'generatedAt' => now(),
         ];
@@ -202,18 +213,21 @@ class AccountingReportController extends Controller
         $monthSql = $isSqlite ? "strftime('%m', created_at)" : "DATE_FORMAT(created_at, '%m')";
         
         // Même logique que financialReport...
-        $salesData = Sale::where('company_id', $companyId)
+        $salesData = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('
                 COUNT(*) as count,
                 SUM(total) as total_ttc,
                 SUM(COALESCE(total_ht, total)) as total_ht,
-                SUM(COALESCE(total_vat, 0)) as total_tva
+                SUM(COALESCE(total_vat, 0)) as total_tva,
+                SUM(COALESCE(aib_amount, 0)) as total_aib
             ')
             ->first();
         
-        $purchasesData = Purchase::where('company_id', $companyId)
+        $purchasesData = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('
@@ -224,7 +238,8 @@ class AccountingReportController extends Controller
             ')
             ->first();
         
-        $salesByMonth = Sale::where('company_id', $companyId)
+        $salesByMonth = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw("$yearSql as year, $monthSql as month, COUNT(*) as count, SUM(total) as total")
@@ -232,7 +247,8 @@ class AccountingReportController extends Controller
             ->orderBy('year')->orderBy('month')
             ->get();
         
-        $purchasesByMonth = Purchase::where('company_id', $companyId)
+        $purchasesByMonth = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw("$yearSql as year, $monthSql as month, COUNT(*) as count, SUM(total) as total")
@@ -240,14 +256,16 @@ class AccountingReportController extends Controller
             ->orderBy('year')->orderBy('month')
             ->get();
         
-        $salesByPayment = Sale::where('company_id', $companyId)
+        $salesByPayment = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('payment_method, COUNT(*) as count, SUM(total) as total')
             ->groupBy('payment_method')
             ->get();
         
-        $topCustomers = Sale::where('sales.company_id', $companyId)
+        $topCustomers = Sale::withoutGlobalScopes()
+            ->where('sales.company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('sales.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNotNull('customer_id')
@@ -258,7 +276,8 @@ class AccountingReportController extends Controller
             ->limit(10)
             ->get();
         
-        $topSuppliers = Purchase::where('purchases.company_id', $companyId)
+        $topSuppliers = Purchase::withoutGlobalScopes()
+            ->where('purchases.company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('purchases.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNotNull('supplier_id')
@@ -279,6 +298,7 @@ class AccountingReportController extends Controller
         $tvaCollected = floatval($salesData->total_tva ?? 0);
         $tvaDeductible = floatval($purchasesData->total_tva ?? 0);
         $tvaToPay = $tvaCollected - $tvaDeductible;
+        $totalAib = floatval($salesData->total_aib ?? 0);
         
         return view('reports.financial-report', [
             'company' => $company,
@@ -289,6 +309,7 @@ class AccountingReportController extends Controller
                 'total_ttc' => floatval($salesData->total_ttc ?? 0),
                 'total_ht' => floatval($salesData->total_ht ?? 0),
                 'total_tva' => floatval($salesData->total_tva ?? 0),
+                'total_aib' => $totalAib,
             ],
             'purchases' => [
                 'count' => $purchasesData->count ?? 0,
@@ -313,6 +334,7 @@ class AccountingReportController extends Controller
                 'tva_collected' => $tvaCollected,
                 'tva_deductible' => $tvaDeductible,
                 'tva_to_pay' => $tvaToPay,
+                'total_aib' => $totalAib,
             ],
             'generatedAt' => now(),
             'previewMode' => true,
@@ -335,7 +357,8 @@ class AccountingReportController extends Controller
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
         
-        $sales = Sale::where('company_id', $companyId)
+        $sales = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->with(['customer', 'items.product'])
@@ -346,6 +369,7 @@ class AccountingReportController extends Controller
             'count' => $sales->count(),
             'total_ht' => $sales->sum(fn($s) => $s->total_ht ?? $s->total),
             'total_tva' => $sales->sum('total_vat'),
+            'total_aib' => $sales->sum('aib_amount'),
             'total_ttc' => $sales->sum('total'),
         ];
         
@@ -379,7 +403,8 @@ class AccountingReportController extends Controller
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
         
-        $purchases = Purchase::where('company_id', $companyId)
+        $purchases = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->whereIn('status', ['received', 'completed', 'paid'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->with(['supplier', 'items.product'])
@@ -403,6 +428,98 @@ class AccountingReportController extends Controller
         ])->setPaper('a4');
 
         $filename = 'journal-achats-' . $startDate . '-' . $endDate . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Rapport de TVA détaillé par taux
+     */
+    public function vatReport(Request $request, $companyId = null)
+    {
+        $companyId = $companyId ?? $request->query('company_id') ?? Filament::getTenant()?->id;
+        
+        if (!$companyId) {
+            abort(400, 'Company ID required');
+        }
+
+        $company = Company::findOrFail($companyId);
+        
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', now()->toDateString());
+        
+        // TVA collectée par taux (ventes)
+        $collected = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->where('sales.company_id', $companyId)
+            ->where('sales.status', 'completed')
+            ->whereBetween('sales.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->select(
+                'sale_items.vat_rate as rate',
+                DB::raw("COALESCE(sale_items.vat_category, 'S') as category"),
+                DB::raw('SUM(sale_items.total_price_ht) as base'),
+                DB::raw('SUM(sale_items.vat_amount) as amount')
+            )
+            ->groupBy('sale_items.vat_rate', 'sale_items.vat_category')
+            ->orderBy('sale_items.vat_rate', 'desc')
+            ->get()
+            ->map(fn($r) => ['rate' => floatval($r->rate), 'category' => $r->category, 'base' => floatval($r->base), 'amount' => floatval($r->amount)])
+            ->toArray();
+
+        // TVA déductible par taux (achats)
+        $deductible = DB::table('purchase_items')
+            ->join('purchases', 'purchase_items.purchase_id', '=', 'purchases.id')
+            ->where('purchases.company_id', $companyId)
+            ->whereIn('purchases.status', ['received', 'completed', 'paid'])
+            ->whereBetween('purchases.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->select(
+                'purchase_items.vat_rate as rate',
+                DB::raw('SUM(purchase_items.total_price_ht) as base'),
+                DB::raw('SUM(purchase_items.vat_amount) as amount')
+            )
+            ->groupBy('purchase_items.vat_rate')
+            ->orderBy('purchase_items.vat_rate', 'desc')
+            ->get()
+            ->map(fn($r) => ['rate' => floatval($r->rate), 'base' => floatval($r->base), 'amount' => floatval($r->amount)])
+            ->toArray();
+
+        $vatCollected = array_sum(array_column($collected, 'amount'));
+        $vatDeductible = array_sum(array_column($deductible, 'amount'));
+        
+        // Totaux HT
+        $salesHt = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->sum(DB::raw('COALESCE(total_ht, total)'));
+        
+        $purchasesHt = Purchase::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->whereIn('status', ['received', 'completed', 'paid'])
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->sum(DB::raw('COALESCE(total_ht, total)'));
+
+        $data = [
+            'company' => $company,
+            'period' => [
+                'start' => Carbon::parse($startDate)->format('d/m/Y'),
+                'end' => Carbon::parse($endDate)->format('d/m/Y'),
+            ],
+            'report' => [
+                'vat_collected' => $vatCollected,
+                'vat_deductible' => $vatDeductible,
+                'vat_to_pay' => $vatCollected - $vatDeductible,
+                'sales_ht' => floatval($salesHt),
+                'purchases_ht' => floatval($purchasesHt),
+            ],
+            'collected' => $collected,
+            'deductible' => $deductible,
+            'currency' => 'FCFA',
+        ];
+        
+        $pdf = Pdf::loadView('reports.vat-report', $data)->setPaper('a4');
+
+        $filename = 'rapport-tva-' . $startDate . '-' . $endDate . '.pdf';
 
         return $pdf->download($filename);
     }

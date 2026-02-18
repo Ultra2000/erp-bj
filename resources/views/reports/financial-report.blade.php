@@ -261,6 +261,12 @@
                             <td>TVA collectée</td>
                             <td class="right">{{ number_format($sales['total_tva'], 2, ',', ' ') }} FCFA</td>
                         </tr>
+                        @if(($sales['total_aib'] ?? 0) > 0)
+                        <tr>
+                            <td>AIB retenu</td>
+                            <td class="right" style="color: #f59e0b;">{{ number_format($sales['total_aib'], 2, ',', ' ') }} FCFA</td>
+                        </tr>
+                        @endif
                         <tr class="total-row">
                             <td>Total TTC</td>
                             <td class="right"><strong>{{ number_format($sales['total_ttc'], 2, ',', ' ') }} FCFA</strong></td>
@@ -299,15 +305,15 @@
         <h3>Synthèse TVA</h3>
         <table class="tva-grid">
             <tr>
-                <td width="33%">
+                <td width="25%">
                     <div class="card-sub">TVA collectée (ventes)</div>
                     <div style="font-size: 14px; font-weight: bold; color: #10b981;">{{ number_format($summary['tva_collected'], 2, ',', ' ') }} FCFA</div>
                 </td>
-                <td width="33%">
+                <td width="25%">
                     <div class="card-sub">TVA déductible (achats)</div>
                     <div style="font-size: 14px; font-weight: bold; color: #ef4444;">{{ number_format($summary['tva_deductible'], 2, ',', ' ') }} FCFA</div>
                 </td>
-                <td width="34%">
+                <td width="25%">
                     <div class="card-sub">TVA à reverser</div>
                     <div style="font-size: 14px; font-weight: bold; color: {{ $summary['tva_to_pay'] >= 0 ? '#7c3aed' : '#10b981' }};">
                         {{ number_format($summary['tva_to_pay'], 2, ',', ' ') }} FCFA
@@ -316,6 +322,12 @@
                         @endif
                     </div>
                 </td>
+                @if(($summary['total_aib'] ?? 0) > 0)
+                <td width="25%">
+                    <div class="card-sub">AIB retenu (ventes)</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #f59e0b;">{{ number_format($summary['total_aib'], 2, ',', ' ') }} FCFA</div>
+                </td>
+                @endif
             </tr>
         </table>
     </div>
