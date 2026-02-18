@@ -123,7 +123,7 @@
                                 </svg>
                             </button>
                             
-                            <button @click="showCloseModal = true" 
+                            <button @click="showCloseModal = true; closeResult = null" 
                                     class="px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 text-white" style="background: rgba(255,255,255,0.2);">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -446,7 +446,7 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-             @click.self="showCloseModal = false">
+             @click.self="showCloseModal = false; closeResult = null">
             <div x-show="showCloseModal"
                  x-transition:enter="transition ease-out duration-300"
                  x-transition:enter-start="opacity-0 scale-95"
@@ -458,59 +458,133 @@
                 
                 <div class="bg-gradient-to-r from-violet-600 to-purple-600 p-6 text-white">
                     <h3 class="text-xl font-bold">Fermeture de Caisse</h3>
-                    <p class="text-white/80 text-sm">Vérifiez le montant en caisse avant de fermer</p>
+                    <p class="text-white/80 text-sm" x-text="closeResult ? 'Résultat du comptage' : 'Comptez les espèces en caisse'"></p>
                 </div>
                 
                 <div class="p-6 space-y-6">
-                    {{-- Résumé de la session --}}
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Montant d'ouverture</p>
-                            <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="formatPrice(sessionStats.opening_amount)"></p>
-                        </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Total ventes</p>
-                            <p class="text-xl font-bold text-green-600" x-text="formatPrice(sessionStats.total_sales)"></p>
-                        </div>
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Ventes cash</p>
-                            <p class="text-xl font-bold text-violet-600" x-text="formatPrice(sessionStats.cash_sales)"></p>
-                        </div>
-                        <div class="bg-violet-50 dark:bg-violet-900/30 rounded-xl p-4 text-center">
-                            <p class="text-sm text-violet-600 dark:text-violet-400">Attendu en caisse</p>
-                            <p class="text-xl font-bold text-violet-600" x-text="formatPrice(sessionStats.cash_in_drawer)"></p>
-                        </div>
-                    </div>
-                    
-                    {{-- Montant compté --}}
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Montant compté (FCFA)</label>
-                        <input type="number" 
-                               x-model="closingAmount" 
-                               step="0.01"
-                               class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 text-xl font-bold text-center text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                               placeholder="0.00">
-                        
-                        {{-- Différence --}}
-                        <div x-show="closingAmount" class="mt-3 p-3 rounded-xl" :class="getDifferenceClass()">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium">Différence</span>
-                                <span class="font-bold" x-text="formatDifference()"></span>
+
+                    {{-- ═══ PHASE 1 : Clôture Aveugle — saisie du comptage ═══ --}}
+                    <template x-if="!closeResult">
+                        <div class="space-y-6">
+                            {{-- Infos non-sensibles uniquement (pas de montants espèces) --}}
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Nombre de ventes</p>
+                                    <p class="text-xl font-bold text-gray-900 dark:text-white" x-text="sessionStats.sales_count || 0"></p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Total ventes</p>
+                                    <p class="text-xl font-bold text-green-600" x-text="formatPrice(sessionStats.total_sales)"></p>
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                                <div class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <p class="text-sm text-amber-700 dark:text-amber-300">
+                                        <strong>Clôture aveugle :</strong> Comptez physiquement les espèces dans le tiroir-caisse avant de saisir le montant.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            {{-- Montant compté --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Montant compté en caisse (FCFA)</label>
+                                <input type="number" 
+                                       x-model="closingAmount" 
+                                       step="1"
+                                       min="0"
+                                       class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 text-xl font-bold text-center text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                                       placeholder="Saisissez le montant compté"
+                                       autofocus>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <button @click="showCloseModal = false" 
+                                        class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500">
+                                    Annuler
+                                </button>
+                                <button @click="closeSession()" 
+                                        :disabled="!closingAmount && closingAmount !== '0' && closingAmount !== 0"
+                                        class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style="background: linear-gradient(to right, #ef4444, #e11d48); color: white; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);">
+                                    Valider mon comptage
+                                </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="p-6 pt-0 flex gap-3">
-                    <button @click="showCloseModal = false" 
-                            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500">
-                        Annuler
-                    </button>
-                    <button @click="closeSession()" 
-                            class="flex-1 py-3 px-4 rounded-xl font-semibold transition-all"
-                            style="background: linear-gradient(to right, #ef4444, #e11d48); color: white; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);">
-                        Confirmer la fermeture
-                    </button>
+                    </template>
+
+                    {{-- ═══ PHASE 2 : Résultats révélés après soumission ═══ --}}
+                    <template x-if="closeResult">
+                        <div class="space-y-4">
+                            {{-- Détail complet --}}
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Fond de caisse</p>
+                                    <p class="text-lg font-bold text-gray-900 dark:text-white" x-text="formatPrice(closeResult.opening_amount)"></p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Total ventes</p>
+                                    <p class="text-lg font-bold text-green-600" x-text="formatPrice(closeResult.total_sales)"></p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Ventes espèces</p>
+                                    <p class="text-lg font-bold text-violet-600" x-text="formatPrice(closeResult.cash_sales)"></p>
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Ventes carte</p>
+                                    <p class="text-lg font-bold text-blue-600" x-text="formatPrice(closeResult.card_sales)"></p>
+                                </div>
+                            </div>
+
+                            {{-- Comparaison aveugle --}}
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                                <div class="flex justify-between items-center px-2">
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Espèces attendues</span>
+                                    <span class="text-lg font-bold text-gray-900 dark:text-white" x-text="formatPrice(closeResult.expected_cash)"></span>
+                                </div>
+                                <div class="flex justify-between items-center px-2">
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Votre comptage</span>
+                                    <span class="text-lg font-bold text-gray-900 dark:text-white" x-text="formatPrice(closeResult.counted)"></span>
+                                </div>
+                            </div>
+
+                            {{-- Écart --}}
+                            <div class="rounded-xl p-4 text-center"
+                                 :class="Math.abs(closeResult.difference) < 1 
+                                    ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-300 dark:border-green-700' 
+                                    : 'bg-red-100 dark:bg-red-900/30 border-2 border-red-300 dark:border-red-700'">
+                                <p class="text-sm font-medium mb-1"
+                                   :class="Math.abs(closeResult.difference) < 1 
+                                      ? 'text-green-700 dark:text-green-400' 
+                                      : 'text-red-700 dark:text-red-400'">
+                                    Écart de caisse
+                                </p>
+                                <p class="text-2xl font-black"
+                                   :class="Math.abs(closeResult.difference) < 1 
+                                      ? 'text-green-700 dark:text-green-400' 
+                                      : 'text-red-700 dark:text-red-400'"
+                                   x-text="Math.abs(closeResult.difference) < 1 
+                                      ? '✓ Caisse juste' 
+                                      : (closeResult.difference > 0 ? '+' : '-') + formatPrice(Math.abs(closeResult.difference))">
+                                </p>
+                                <p class="text-xs mt-1"
+                                   :class="Math.abs(closeResult.difference) < 1 
+                                      ? 'text-green-600 dark:text-green-500' 
+                                      : 'text-red-600 dark:text-red-500'"
+                                   x-show="Math.abs(closeResult.difference) >= 1"
+                                   x-text="closeResult.difference > 0 ? 'Excédent de caisse' : 'Manquant de caisse'">
+                                </p>
+                            </div>
+
+                            <button @click="showCloseModal = false; closeResult = null" 
+                                    class="w-full py-3 px-4 rounded-xl font-semibold transition-all bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 hover:bg-gray-700 dark:hover:bg-gray-300">
+                                Fermer
+                            </button>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -901,6 +975,7 @@
                 sessionOpen: false,
                 openingAmount: '',
                 closingAmount: '',
+                closeResult: null,
                 sessionStats: {
                     opening_amount: 0,
                     total_sales: 0,
@@ -1112,7 +1187,7 @@
                     }
                 },
                 
-                // Fermer la session
+                // Fermer la session (clôture aveugle)
                 async closeSession() {
                     try {
                         const response = await fetch('/api/pos/session/close', {
@@ -1125,13 +1200,24 @@
                         const data = await response.json();
                         if (data.success) {
                             this.playSuccess();
+                            // Phase 2 : afficher les résultats de la clôture aveugle
+                            this.closeResult = data.blind_count_result || {
+                                opening_amount: 0,
+                                total_sales: 0,
+                                cash_sales: 0,
+                                card_sales: 0,
+                                expected_cash: 0,
+                                counted: parseFloat(this.closingAmount) || 0,
+                                difference: data.difference || 0,
+                            };
+                            // Réinitialiser la session
                             this.sessionOpen = false;
-                            this.showCloseModal = false;
                             this.openingAmount = '';
                             this.closingAmount = '';
                             this.cart = [];
                         } else {
                             this.playError();
+                            alert(data.message || 'Erreur lors de la fermeture');
                         }
                     } catch (error) {
                         this.playError();

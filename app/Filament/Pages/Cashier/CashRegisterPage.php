@@ -3,15 +3,17 @@
 namespace App\Filament\Pages\Cashier;
 
 use Filament\Pages\Page;
-use App\Models\Product;
 use App\Models\Sale;
-use App\Models\Customer;
-use App\Models\SaleItem;
-use App\Models\CashSession;
-use Illuminate\Support\Facades\DB;
+use App\Services\PosService;
 use Filament\Facades\Filament;
 use Livewire\Attributes\On;
 
+/**
+ * Page Filament pour le Point de Vente.
+ * 
+ * Rôle : enregistrement navigation Filament + délégation à PosService.
+ * Aucune logique métier dupliquée.
+ */
 class CashRegisterPage extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
@@ -31,7 +33,6 @@ class CashRegisterPage extends Page
         $user = auth()->user();
         if (!$user) return false;
         
-        // Vérifier les permissions ou le rôle
         if (method_exists($user, 'hasPermission')) {
             return $user->hasPermission('sales.create') || $user->hasPermission('sales.*');
         }
@@ -39,25 +40,26 @@ class CashRegisterPage extends Page
         return in_array($user->role ?? '', ['cashier', 'admin', 'manager']);
     }
 
-    public function getCompanyId(): ?int
+    protected function getPosService(): PosService
     {
-        $tenant = Filament::getTenant();
-        return $tenant?->id;
+        return app(PosService::class);
     }
 
-    // Récupérer la session de caisse ouverte
-    public function getOpenSession(): ?CashSession
+    protected function getCompanyId(): ?int
+    {
+        return Filament::getTenant()?->id;
+    }
+
+    // ── Session ─────────────────────────────────
+
+    public function getOpenSession(): ?\App\Models\CashSession
     {
         $companyId = $this->getCompanyId();
         if (!$companyId) return null;
 
-        return CashSession::where('company_id', $companyId)
-            ->where('user_id', auth()->id())
-            ->whereNull('closed_at')
-            ->first();
+        return $this->getPosService()->getOpenSession($companyId, auth()->id());
     }
 
-    // Ouvrir une session de caisse
     public function openSession(float $openingAmount): array
     {
         $companyId = $this->getCompanyId();
@@ -65,64 +67,64 @@ class CashRegisterPage extends Page
             return ['success' => false, 'message' => 'Aucune entreprise sélectionnée'];
         }
 
-        // Vérifier s'il y a déjà une session ouverte
-        $existingSession = $this->getOpenSession();
-        if ($existingSession) {
-            return ['success' => false, 'message' => 'Une session est déjà ouverte'];
-        }
-
-        $session = CashSession::openSession($companyId, auth()->id(), $openingAmount);
-        
-        return ['success' => true, 'session' => $session];
+        return $this->getPosService()->openSession($companyId, auth()->id(), $openingAmount);
     }
 
-    // Fermer la session de caisse
     public function closeSession(float $closingAmount, ?string $notes = null): array
     {
-        $session = $this->getOpenSession();
-        if (!$session) {
-            return ['success' => false, 'message' => 'Aucune session ouverte'];
+        $companyId = $this->getCompanyId();
+        if (!$companyId) {
+            return ['success' => false, 'message' => 'Aucune entreprise sélectionnée'];
         }
 
-        $session->closeSession($closingAmount, $notes);
-        
-        return [
-            'success' => true,
-            'session' => $session,
-            'difference' => $session->difference,
-        ];
+        return $this->getPosService()->closeSession($companyId, auth()->id(), $closingAmount, $notes);
     }
 
-    // Vérifier si une session est ouverte
     public function hasOpenSession(): bool
     {
         return $this->getOpenSession() !== null;
     }
 
-    // Récupérer les statistiques de la session
     public function getSessionStats(): array
     {
-        $session = $this->getOpenSession();
-        if (!$session) {
-            return [];
-        }
+        $companyId = $this->getCompanyId();
+        if (!$companyId) return [];
 
-        $session->recalculate();
-
-        return [
-            'id' => $session->id,
-            'opening_amount' => $session->opening_amount,
-            'total_sales' => $session->total_sales,
-            'total_cash' => $session->total_cash,
-            'total_card' => $session->total_card,
-            'total_mobile' => $session->total_mobile,
-            'sales_count' => $session->sales_count,
-            'expected_cash' => $session->opening_amount + $session->total_cash,
-            'opened_at' => $session->opened_at->format('H:i'),
-        ];
+        $result = $this->getPosService()->checkSession($companyId, auth()->id());
+        return $result['session'] ?? [];
     }
 
-    // Récupérer les ventes du jour
+    // ── Products ────────────────────────────────
+
+    public function searchProducts(string $query): array
+    {
+        $companyId = $this->getCompanyId();
+        if (!$companyId || strlen($query) < 1) return [];
+
+        $warehouse = $this->getPosService()->resolveWarehouse($companyId, auth()->id());
+
+        return $this->getPosService()->searchProducts($companyId, $query, $warehouse);
+    }
+
+    public function getProductByBarcode(string $code): array
+    {
+        $companyId = $this->getCompanyId();
+        if (!$companyId) {
+            return ['success' => false, 'message' => 'Aucune entreprise'];
+        }
+
+        $warehouse = $this->getPosService()->resolveWarehouse($companyId, auth()->id());
+        $product = $this->getPosService()->getProductByBarcode($companyId, $code, $warehouse);
+
+        if (!$product) {
+            return ['success' => false, 'message' => 'Produit introuvable'];
+        }
+
+        return ['success' => true, 'data' => $product];
+    }
+
+    // ── Sales ───────────────────────────────────
+
     public function getTodaySales(): array
     {
         $companyId = $this->getCompanyId();
@@ -136,93 +138,16 @@ class CashRegisterPage extends Page
             ->toArray();
     }
 
-    // Annuler une vente
     public function cancelSale(int $saleId): array
     {
         $companyId = $this->getCompanyId();
-        
-        $sale = Sale::where('id', $saleId)
-            ->where('company_id', $companyId)
-            ->with('items')
-            ->first();
-
-        if (!$sale) {
-            return ['success' => false, 'message' => 'Vente introuvable'];
-        }
-
-        if ($sale->status === 'cancelled') {
-            return ['success' => false, 'message' => 'Vente déjà annulée'];
-        }
-
-        DB::transaction(function () use ($sale) {
-            // Restaurer le stock
-            foreach ($sale->items as $item) {
-                $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->increment('stock', $item->quantity);
-                }
-            }
-
-            $sale->update(['status' => 'cancelled']);
-        });
-
-        // Recalculer la session si elle existe
-        if ($sale->cash_session_id) {
-            $session = CashSession::find($sale->cash_session_id);
-            $session?->recalculate();
-        }
-
-        return ['success' => true];
-    }
-
-    // Rechercher des produits
-    public function searchProducts(string $query): array
-    {
-        $companyId = $this->getCompanyId();
-        if (!$companyId || strlen($query) < 1) return [];
-
-        return Product::where('company_id', $companyId)
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('code', 'like', "%{$query}%");
-            })
-            ->where('stock', '>', 0)
-            ->orderBy('name')
-            ->limit(25)
-            ->get(['id', 'name', 'code', 'price', 'stock', 'min_stock'])
-            ->toArray();
-    }
-
-    // Récupérer un produit par code-barres
-    public function getProductByBarcode(string $code): array
-    {
-        $companyId = $this->getCompanyId();
         if (!$companyId) {
-            return ['success' => false, 'message' => 'Aucune entreprise'];
+            return ['success' => false, 'message' => 'Aucune entreprise sélectionnée'];
         }
 
-        $product = Product::where('company_id', $companyId)
-            ->where('code', $code)
-            ->first();
-
-        if (!$product) {
-            return ['success' => false, 'message' => 'Produit introuvable'];
-        }
-
-        return [
-            'success' => true,
-            'data' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'code' => $product->code,
-                'price' => $product->price,
-                'stock' => $product->stock,
-                'min_stock' => $product->min_stock,
-            ]
-        ];
+        return $this->getPosService()->cancelSale($companyId, $saleId);
     }
 
-    // Enregistrer une vente
     public function recordSale(array $payload): array
     {
         $companyId = $this->getCompanyId();
@@ -230,139 +155,22 @@ class CashRegisterPage extends Page
             return ['success' => false, 'message' => 'Aucune entreprise sélectionnée'];
         }
 
-        // Vérifier la session de caisse
         $session = $this->getOpenSession();
         if (!$session) {
             return ['success' => false, 'message' => 'Veuillez ouvrir une session de caisse'];
         }
 
-        $company = Filament::getTenant();
-        
-        // Déterminer le taux de TVA par défaut selon le pays
-        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
-        $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
+        $warehouse = $this->getPosService()->resolveWarehouse($companyId, auth()->id());
 
-        try {
-            $result = DB::transaction(function () use ($payload, $companyId, $session, $company, $defaultVatRate, $defaultVatCategory) {
-                $sale = new Sale();
-                $sale->company_id = $companyId;
-                $sale->cash_session_id = $session->id;
-                $sale->payment_method = $payload['payment_method'] ?? 'cash';
-                $sale->payment_details = $payload['payment_details'] ?? null;
-
-                // Client comptoir par défaut
-                if (!empty($payload['customer_id'])) {
-                    $sale->customer_id = $payload['customer_id'];
-                } else {
-                    $walkIn = Customer::firstOrCreate(
-                        ['email' => 'walkin@example.com', 'company_id' => $companyId],
-                        [
-                            'name' => 'Client comptoir',
-                            'company_id' => $companyId,
-                            'phone' => null,
-                            'address' => null,
-                            'city' => null,
-                            'country' => null,
-                            'notes' => 'Client généré automatiquement pour ventes comptoir',
-                        ]
-                    );
-                    $sale->customer_id = $walkIn->id;
-                }
-
-                $sale->discount_percent = $payload['discount_percent'] ?? 0;
-                $sale->tax_percent = $payload['tax_percent'] ?? 0;
-                $sale->status = 'completed';
-                
-                // Préparer le statut e-MCeF si activé
-                if ($company?->emcef_enabled) {
-                    $sale->emcef_status = 'pending';
-                }
-                
-                $sale->save();
-
-                $totalHt = 0;
-                $totalVat = 0;
-                
-                foreach ($payload['items'] as $line) {
-                    $product = Product::where('company_id', $companyId)
-                        ->lockForUpdate()
-                        ->findOrFail($line['product_id']);
-                    
-                    $qty = floatval($line['quantity']);
-                    if ($qty <= 0) $qty = 1;
-                    
-                    if ($product->stock < $qty) {
-                        throw new \RuntimeException('Stock insuffisant pour ' . $product->name);
-                    }
-
-                    $unitPrice = $line['unit_price'] ?? $product->price;
-                    $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
-                    $vatCategory = $product->vat_category ?? $defaultVatCategory;
-                    
-                    // Calcul HT et TVA
-                    $lineHt = $qty * $unitPrice;
-                    $lineVat = round($lineHt * ($vatRate / 100), 2);
-                    $lineTtc = $lineHt + $lineVat;
-                    
-                    $totalHt += $lineHt;
-                    $totalVat += $lineVat;
-                    
-                    $product->stock -= $qty;
-                    $product->save();
-
-                    SaleItem::create([
-                        'sale_id' => $sale->id,
-                        'product_id' => $product->id,
-                        'quantity' => $qty,
-                        'unit_price' => $unitPrice,
-                        'unit_price_ht' => $unitPrice,
-                        'vat_rate' => $vatRate,
-                        'vat_category' => $vatCategory,
-                        'vat_amount' => $lineVat,
-                        'total_price_ht' => $lineHt,
-                        'total_price' => $lineTtc,
-                    ]);
-                }
-
-                // Appliquer la remise sur le total
-                $discount = $totalHt * (($sale->discount_percent ?? 0) / 100);
-                $totalHtAfterDiscount = $totalHt - $discount;
-                $totalVatAfterDiscount = round($totalHtAfterDiscount * ($defaultVatRate / 100), 2);
-                
-                $sale->total_ht = round($totalHtAfterDiscount, 2);
-                $sale->total_vat = round($totalVatAfterDiscount, 2);
-                $sale->total = round($totalHtAfterDiscount + $totalVatAfterDiscount, 2);
-                $sale->save();
-
-                // Mettre à jour la session
-                $session->recalculate();
-
-                return $sale;
-            });
-
-            // Certification e-MCeF automatique si activé
-            $emcefResult = null;
-            if ($company?->emcef_enabled && $result) {
-                try {
-                    $emcefService = new \App\Services\EmcefService($company);
-                    $emcefResult = $emcefService->submitInvoice($result);
-                } catch (\Exception $e) {
-                    \Log::error('POS e-MCeF Error', ['sale_id' => $result->id, 'error' => $e->getMessage()]);
-                }
-            }
-
-            return [
-                'success' => true, 
-                'sale_id' => $result->id,
-                'emcef' => $emcefResult ? [
-                    'success' => $emcefResult['success'] ?? false,
-                    'nim' => $result->fresh()->emcef_nim,
-                    'code' => $result->fresh()->emcef_code_mecef,
-                    'error' => $emcefResult['error'] ?? null,
-                ] : null,
-            ];
-        } catch (\Throwable $e) {
-            return ['success' => false, 'message' => $e->getMessage()];
-        }
+        return $this->getPosService()->recordSale(
+            companyId: $companyId,
+            session: $session,
+            items: $payload['items'] ?? [],
+            paymentMethod: $payload['payment_method'] ?? 'cash',
+            paymentDetails: $payload['payment_details'] ?? null,
+            customerId: $payload['customer_id'] ?? null,
+            discountPercent: floatval($payload['discount_percent'] ?? 0),
+            warehouse: $warehouse
+        );
     }
 }
