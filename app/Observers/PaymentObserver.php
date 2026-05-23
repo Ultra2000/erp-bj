@@ -45,12 +45,15 @@ class PaymentObserver
 
         // Recalculer le total payé
         $totalPaid = $payable->payments()->sum('amount');
-        
+
         // Mettre à jour le montant payé
         $payable->amount_paid = $totalPaid;
 
+        // Total exigible = TTC + AIB (si applicable)
+        $totalRequired = $payable->total + floatval($payable->aib_amount ?? 0);
+
         // Déterminer le nouveau statut de paiement
-        if ($totalPaid >= $payable->total) {
+        if ($totalPaid >= $totalRequired) {
             $payable->payment_status = 'paid';
         } elseif ($totalPaid > 0) {
             $payable->payment_status = 'partial';

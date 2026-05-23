@@ -7,8 +7,6 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ItemsRelationManager extends RelationManager
 {
@@ -33,7 +31,10 @@ class ItemsRelationManager extends RelationManager
                         if ($state) {
                             $product = \App\Models\Product::find($state);
                             if ($product) {
-                                $set('unit_price', $product->price);
+                                $price = $product->sale_price_ht ?? $product->price;
+                                $set('unit_price', $price);
+                                $set('vat_rate', $product->vat_rate_sale ?? 18);
+                                $set('tax_specific_amount', $product->tax_specific_amount ?? 0);
                             }
                         }
                     }),
@@ -42,30 +43,30 @@ class ItemsRelationManager extends RelationManager
                     ->required()
                     ->numeric()
                     ->default(1)
-                    ->minValue(1)
+                    ->minValue(0.001)
                     ->live()
-                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                        $this->updateTotalPrice($set, $get);
-                    }),
+                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => $this->updateTotalPrice($set, $get)),
                 Forms\Components\TextInput::make('unit_price')
-                    ->label('Prix unitaire')
+                    ->label('Prix unitaire HT')
                     ->required()
                     ->numeric()
                     ->prefix(fn () => \Filament\Facades\Filament::getTenant()->currency)
-                    ->suffix('F')
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', ' '))
                     ->live()
-                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                        $this->updateTotalPrice($set, $get);
-                    }),
+                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => $this->updateTotalPrice($set, $get)),
+                Forms\Components\TextInput::make('vat_rate')
+                    ->label('TVA (%)')
+                    ->numeric()
+                    ->default(18)
+                    ->live()
+                    ->afterStateUpdated(fn (Forms\Set $set, Forms\Get $get) => $this->updateTotalPrice($set, $get)),
+                Forms\Components\Hidden::make('tax_specific_amount')
+                    ->default(0),
                 Forms\Components\TextInput::make('total_price')
-                    ->label('Prix total')
-                    ->required()
+                    ->label('Prix total TTC')
                     ->numeric()
                     ->prefix(fn () => \Filament\Facades\Filament::getTenant()->currency)
-                    ->suffix('F')
-                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', ' '))
-                    ->disabled(),
+                    ->disabled()
+                    ->dehydrated(),
             ]);
     }
 
@@ -81,86 +82,46 @@ class ItemsRelationManager extends RelationManager
                     ->label('Quantité')
                     ->numeric(),
                 Tables\Columns\TextColumn::make('unit_price')
-                    ->label('Prix unitaire')
+                    ->label('Prix unitaire HT')
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency),
+                Tables\Columns\TextColumn::make('vat_rate')
+                    ->label('TVA')
+                    ->suffix('%'),
                 Tables\Columns\TextColumn::make('total_price')
-                    ->label('Prix total')
+                    ->label('Total TTC')
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Ajouter un article')
-                    ->after(function ($record) {
-                        // Mettre à jour le stock du produit
-                        $product = $record->product;
-                        $product->stock -= $record->quantity;
-                        $product->save();
-
-                        // Mettre à jour le total de la vente
-                        $sale = $record->sale;
-                        $sale->total = $sale->items->sum('total_price');
-                        $sale->save();
-                    }),
+                    ->label('Ajouter un article'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                    ->label('Modifier')
-                    ->after(function ($record) {
-                        // Mettre à jour le stock du produit
-                        $product = $record->product;
-                        $product->stock += $record->getOriginal('quantity') - $record->quantity;
-                        $product->save();
-
-                        // Mettre à jour le total de la vente
-                        $sale = $record->sale;
-                        $sale->total = $sale->items->sum('total_price');
-                        $sale->save();
-                    }),
+                    ->label('Modifier'),
                 Tables\Actions\DeleteAction::make()
-                    ->label('Supprimer')
-                    ->after(function ($record) {
-                        // Remettre le stock du produit
-                        $product = $record->product;
-                        $product->stock += $record->quantity;
-                        $product->save();
-
-                        // Mettre à jour le total de la vente
-                        $sale = $record->sale;
-                        $sale->total = $sale->items->sum('total_price');
-                        $sale->save();
-                    }),
+                    ->label('Supprimer'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->label('Supprimer la sélection')
-                        ->after(function ($records) {
-                            foreach ($records as $record) {
-                                // Remettre le stock du produit
-                                $product = $record->product;
-                                $product->stock += $record->quantity;
-                                $product->save();
-                            }
-
-                            // Mettre à jour le total de la vente
-                            $sale = $records->first()->sale;
-                            $sale->total = $sale->items->sum('total_price');
-                            $sale->save();
-                        }),
+                        ->label('Supprimer la sélection'),
                 ]),
             ]);
     }
 
     protected function updateTotalPrice(Forms\Set $set, Forms\Get $get): void
     {
-        $quantity = $get('quantity');
-        $unitPrice = $get('unit_price');
+        $quantity = floatval($get('quantity'));
+        $unitPrice = floatval($get('unit_price'));
+        $vatRate = floatval($get('vat_rate') ?? 18);
+        $taxSpecific = floatval($get('tax_specific_amount') ?? 0);
 
         if ($quantity && $unitPrice) {
-            $set('total_price', $quantity * $unitPrice);
+            $totalHt = $quantity * $unitPrice;
+            $vat = round($totalHt * ($vatRate / 100), 2);
+            $taxSpecTotal = $taxSpecific > 0 ? round($taxSpecific * $quantity, 2) : 0;
+            $set('total_price', round($totalHt + $vat + $taxSpecTotal));
         }
     }
-} 
+}

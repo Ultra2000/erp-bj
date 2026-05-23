@@ -41,11 +41,18 @@ class PaymentsRelationManager extends RelationManager
                     ->numeric()
                     ->required()
                     ->prefix('FCFA')
+                    ->minValue(1)
                     ->default(function (RelationManager $livewire) {
-                        // Par défaut, le montant restant à payer
                         $sale = $livewire->getOwnerRecord();
-                        $remaining = $sale->total - $sale->amount_paid;
+                        $totalDue = $sale->total + floatval($sale->aib_amount ?? 0);
+                        $remaining = $totalDue - floatval($sale->amount_paid);
                         return $remaining > 0 ? $remaining : 0;
+                    })
+                    ->maxValue(function (RelationManager $livewire) {
+                        $sale = $livewire->getOwnerRecord();
+                        $totalDue = $sale->total + floatval($sale->aib_amount ?? 0);
+                        $remaining = $totalDue - floatval($sale->amount_paid);
+                        return max(0, $remaining);
                     }),
 
                 Forms\Components\TextInput::make('reference')

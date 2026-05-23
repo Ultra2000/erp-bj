@@ -15,7 +15,17 @@ class SaleInvoiceController extends Controller
      */
     protected function findSale(int $id): Sale
     {
-        return Sale::withoutGlobalScopes()->findOrFail($id);
+        $sale = Sale::withoutGlobalScopes()->findOrFail($id);
+
+        $user = auth()->user();
+        if ($user && method_exists($user, 'companies')) {
+            $companyIds = $user->companies()->pluck('companies.id')->toArray();
+            if (!in_array($sale->company_id, $companyIds)) {
+                abort(403);
+            }
+        }
+
+        return $sale;
     }
 
     public function generate(int $sale, FacturXService $facturXService)
@@ -31,7 +41,7 @@ class SaleInvoiceController extends Controller
         $sale->load(['items.product', 'customer', 'warehouse', 'parent']);
         
         $verificationUrl = URL::signedRoute('sales.invoice.verify', ['sale' => $sale->id]);
-        $verificationCode = substr(sha1($sale->id . '|' . $sale->invoice_number . '|' . ($sale->total ?? $sale->items->sum('total_price')) . '|' . $sale->created_at), 0, 12);
+        $verificationCode = substr(sha1($sale->id . '|' . $sale->invoice_number . '|' . (($sale->total ?? $sale->items->sum('total_price')) + floatval($sale->aib_amount ?? 0)) . '|' . $sale->created_at), 0, 12);
         
         $pdf = PDF::loadView('sales.invoice-pdf', [
             'sale' => $sale,
@@ -62,7 +72,7 @@ class SaleInvoiceController extends Controller
         $sale->load(['items.product', 'customer', 'warehouse', 'parent']);
         
         $verificationUrl = URL::signedRoute('sales.invoice.verify', ['sale' => $sale->id]);
-        $verificationCode = substr(sha1($sale->id . '|' . $sale->invoice_number . '|' . ($sale->total ?? $sale->items->sum('total_price')) . '|' . $sale->created_at), 0, 12);
+        $verificationCode = substr(sha1($sale->id . '|' . $sale->invoice_number . '|' . (($sale->total ?? $sale->items->sum('total_price')) + floatval($sale->aib_amount ?? 0)) . '|' . $sale->created_at), 0, 12);
         
         // Generate XML for preview
         $facturxXml = null;

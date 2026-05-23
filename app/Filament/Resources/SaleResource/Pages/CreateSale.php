@@ -3,10 +3,8 @@
 namespace App\Filament\Resources\SaleResource\Pages;
 
 use App\Filament\Resources\SaleResource;
-use Filament\Actions;
+use App\Models\Sale;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class CreateSale extends CreateRecord
 {
@@ -24,7 +22,6 @@ class CreateSale extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Nettoyer les champs de calcul temporaires (pas des colonnes DB)
         unset($data['items'], $data['_aib_amount_calc'], $data['_net_a_payer_calc']);
         return $data;
     }
@@ -35,56 +32,45 @@ class CreateSale extends CreateRecord
         $items = $this->data['items'] ?? [];
         $isExport = filter_var($this->data['is_export'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        foreach ($items as $item) {
-            $sale->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'unit_price' => $item['unit_price'],
-                'vat_rate' => $isExport ? 0 : ($item['vat_rate'] ?? null),
-                'vat_category' => $isExport ? 'C' : ($item['vat_category'] ?? null),
-                'tax_specific_amount' => $isExport ? null : ($item['tax_specific_amount'] ?? null),
-                'tax_specific_label' => $isExport ? null : ($item['tax_specific_label'] ?? null),
-                'is_wholesale' => $item['is_wholesale'] ?? false,
-                'retail_unit_price' => $item['retail_unit_price'] ?? null,
-                'total_price' => $item['total_price'],
-            ]);
+        // Empêcher calculateTotal de se déclencher N fois pendant la création des items
+        Sale::$skipRecalculationForIds[] = $sale->id;
+
+        try {
+            foreach ($items as $item) {
+                $sale->items()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'vat_rate' => $isExport ? 0 : ($item['vat_rate'] ?? null),
+                    'vat_category' => $isExport ? 'C' : ($item['vat_category'] ?? null),
+                    'tax_specific_amount' => $isExport ? null : ($item['tax_specific_amount'] ?? null),
+                    'tax_specific_label' => $isExport ? null : ($item['tax_specific_label'] ?? null),
+                    'is_wholesale' => $item['is_wholesale'] ?? false,
+                    'retail_unit_price' => $item['retail_unit_price'] ?? null,
+                    'total_price' => $item['total_price'],
+                ]);
+            }
+        } finally {
+            Sale::$skipRecalculationForIds = array_diff(
+                Sale::$skipRecalculationForIds, [$sale->id]
+            );
         }
 
-        // Recharger la relation pour avoir tous les items frais
+        // Un seul calculateTotal après tous les items
         $sale->refresh();
         $sale->calculateTotal();
 
-        // Forcer les totaux corrects (sécurité contre observers qui pourraient écraser)
-        $totalHt = $sale->items()->sum('total_price_ht');
-        $totalVat = $sale->items()->sum('vat_amount');
-        $totalTaxSpecific = $sale->items()->sum('tax_specific_total');
-        $discountPercent = floatval($sale->discount_percent ?? 0);
-        $multiplier = 1 - ($discountPercent / 100);
-
-        $finalTotalHt = round($totalHt * $multiplier, 2);
-        // Total TTC = (HT + TVA) après remise + taxe spécifique (non remisée)
-        $finalTotal = round(($totalHt + $totalVat) * $multiplier + $totalTaxSpecific, 2);
-
-        // Calculer l'AIB depuis les données du formulaire (source de vérité)
+        // Appliquer l'AIB depuis les données du formulaire
         $aibRate = $this->data['aib_rate'] ?? $sale->aib_rate ?? null;
-        $aibAmount = 0;
         if ($aibRate) {
             $aibPercent = match ($aibRate) {
                 'A' => 1,
                 'B' => 5,
                 default => 0,
             };
-            $aibAmount = round($finalTotalHt * ($aibPercent / 100), 2);
+            $sale->aib_rate = $aibRate;
+            $sale->aib_amount = round($sale->total_ht * ($aibPercent / 100), 2);
+            $sale->saveQuietly();
         }
-
-        \Log::info("CreateSale::afterCreate - aib_rate from form: " . ($this->data['aib_rate'] ?? 'null') . ", from model: " . ($sale->aib_rate ?? 'null') . ", aib_amount: {$aibAmount}");
-
-        \DB::table('sales')->where('id', $sale->id)->update([
-            'total_ht' => $finalTotalHt,
-            'total_vat' => round($totalVat * $multiplier, 2),
-            'total' => $finalTotal,
-            'aib_rate' => $aibRate,
-            'aib_amount' => $aibAmount,
-        ]);
     }
 }

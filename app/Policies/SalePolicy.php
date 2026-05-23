@@ -10,10 +10,15 @@ class SalePolicy extends BasePolicy
     protected string $module = 'sales';
 
     /**
-     * Un caissier peut modifier une vente en attente de son entrepôt
+     * Un caissier peut modifier une vente en attente de son entrepôt.
+     * Les ventes complétées ou annulées ne sont jamais modifiables (NF525).
      */
     public function update(User $user, $sale): bool
     {
+        if (in_array($sale->status, ['completed', 'cancelled'])) {
+            return false;
+        }
+
         // Permission standard
         if ($user->hasPermission("{$this->module}.update") || $user->hasPermission("{$this->module}.manage")) {
             return true;
@@ -21,7 +26,6 @@ class SalePolicy extends BasePolicy
 
         // Un caissier peut modifier une vente en attente de son entrepôt
         if ($user->isCashier() && $sale->status === 'pending') {
-            // Vérifier que la vente est dans un entrepôt accessible
             if ($sale->warehouse_id && $user->hasAccessToWarehouse($sale->warehouse_id)) {
                 return true;
             }
