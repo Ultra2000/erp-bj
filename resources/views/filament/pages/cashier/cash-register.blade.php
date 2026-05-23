@@ -1229,7 +1229,8 @@
                 async loadProducts() {
                     try {
                         const response = await fetch('/api/pos/products', {
-                            headers: this.getHeaders()
+                            headers: this.getHeaders(),
+                            cache: 'no-store'
                         });
                         this.products = await response.json();
                     } catch (error) {
@@ -1245,7 +1246,8 @@
                     }
                     try {
                         const response = await fetch(`/api/pos/products/search?q=${encodeURIComponent(this.searchQuery)}`, {
-                            headers: this.getHeaders()
+                            headers: this.getHeaders(),
+                            cache: 'no-store'
                         });
                         this.products = await response.json();
                     } catch (error) {
@@ -1258,7 +1260,8 @@
                     if (this.searchQuery.length > 5) {
                         try {
                             const response = await fetch(`/api/pos/products/barcode/${encodeURIComponent(this.searchQuery)}`, {
-                                headers: this.getHeaders()
+                                headers: this.getHeaders(),
+                                cache: 'no-store'
                             });
                             const product = await response.json();
                             if (product && product.id) {

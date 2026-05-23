@@ -103,7 +103,7 @@ class CaisseController extends Controller
 
         return response()->json(
             $this->posService->getProducts($companyId, $warehouse)
-        );
+        )->header('Cache-Control', 'no-store');
     }
 
     public function searchProducts(Request $request)
@@ -117,7 +117,7 @@ class CaisseController extends Controller
 
         return response()->json(
             $this->posService->searchProducts($companyId, $query, $warehouse)
-        );
+        )->header('Cache-Control', 'no-store');
     }
 
     public function productByBarcode(Request $request, string $code)

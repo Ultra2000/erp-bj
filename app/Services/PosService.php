@@ -159,9 +159,14 @@ class PosService
     public function getProducts(int $companyId, ?Warehouse $warehouse = null, int $limit = 50): array
     {
         if ($warehouse) {
-            return $warehouse->products()
-                ->where('product_warehouse.quantity', '>', 0)
-                ->orderBy('name')
+            return Product::select('products.id', 'products.name', 'products.code', 'products.price')
+                ->selectRaw('COALESCE(SUM(product_warehouse.quantity), 0) as total_quantity')
+                ->join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+                ->where('product_warehouse.warehouse_id', $warehouse->id)
+                ->where('products.company_id', $companyId)
+                ->groupBy('products.id', 'products.name', 'products.code', 'products.price')
+                ->havingRaw('COALESCE(SUM(product_warehouse.quantity), 0) > 0')
+                ->orderBy('products.name')
                 ->limit($limit)
                 ->get()
                 ->map(fn($p) => [
@@ -169,7 +174,7 @@ class PosService
                     'name' => $p->name,
                     'code' => $p->code,
                     'selling_price' => $p->price,
-                    'quantity' => $p->pivot->quantity,
+                    'quantity' => $p->total_quantity,
                 ])
                 ->toArray();
         }
@@ -197,12 +202,17 @@ class PosService
         if (strlen($query) < 1) return [];
 
         if ($warehouse) {
-            return $warehouse->products()
+            return Product::select('products.id', 'products.name', 'products.code', 'products.price')
+                ->selectRaw('COALESCE(SUM(product_warehouse.quantity), 0) as total_quantity')
+                ->join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+                ->where('product_warehouse.warehouse_id', $warehouse->id)
+                ->where('products.company_id', $companyId)
                 ->where(function ($q) use ($query) {
                     $q->where('products.name', 'like', "%{$query}%")
                       ->orWhere('products.code', 'like', "%{$query}%");
                 })
-                ->where('product_warehouse.quantity', '>', 0)
+                ->groupBy('products.id', 'products.name', 'products.code', 'products.price')
+                ->havingRaw('COALESCE(SUM(product_warehouse.quantity), 0) > 0')
                 ->orderBy('products.name')
                 ->limit($limit)
                 ->get()
@@ -211,7 +221,7 @@ class PosService
                     'name' => $p->name,
                     'code' => $p->code,
                     'selling_price' => $p->price,
-                    'quantity' => $p->pivot->quantity,
+                    'quantity' => $p->total_quantity,
                 ])
                 ->toArray();
         }
@@ -241,8 +251,13 @@ class PosService
     public function getProductByBarcode(int $companyId, string $code, ?Warehouse $warehouse = null): ?array
     {
         if ($warehouse) {
-            $product = $warehouse->products()
+            $product = Product::select('products.id', 'products.name', 'products.code', 'products.price')
+                ->selectRaw('COALESCE(SUM(product_warehouse.quantity), 0) as total_quantity')
+                ->join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
+                ->where('product_warehouse.warehouse_id', $warehouse->id)
                 ->where('products.code', $code)
+                ->where('products.company_id', $companyId)
+                ->groupBy('products.id', 'products.name', 'products.code', 'products.price')
                 ->first();
 
             if (!$product) return null;
@@ -252,7 +267,7 @@ class PosService
                 'name' => $product->name,
                 'code' => $product->code,
                 'selling_price' => $product->price,
-                'quantity' => $product->pivot->quantity,
+                'quantity' => $product->total_quantity,
             ];
         }
 
