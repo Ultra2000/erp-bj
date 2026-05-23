@@ -580,6 +580,14 @@
                     }
                 },
 
+                async refreshProducts() {
+                    if (this.searchQuery.trim()) {
+                        this.products = await this.$wire.searchProducts(this.searchQuery);
+                    } else if (this.products.length > 0) {
+                        this.products = await this.$wire.searchProducts('');
+                    }
+                },
+
                 async scanBarcode(code) {
                     if (!code.trim()) return;
                     
@@ -733,6 +741,7 @@
                             this.showReceiptModal = true;
                             this.clearCart();
                             this.refreshSessionStats();
+                            this.refreshProducts();
                             this.playBeep();
                         } else {
                             alert(result.message || 'Erreur lors de la vente');
