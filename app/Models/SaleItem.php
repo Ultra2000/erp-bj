@@ -55,7 +55,9 @@ class SaleItem extends Model
         });
 
         static::saved(function ($item) {
-            // Recharger la relation sale pour s'assurer qu'elle existe
+            if (in_array($item->sale_id, Sale::$skipRecalculationForIds)) {
+                return;
+            }
             $sale = $item->sale ?? Sale::find($item->sale_id);
             if ($sale) {
                 $sale->calculateTotal();

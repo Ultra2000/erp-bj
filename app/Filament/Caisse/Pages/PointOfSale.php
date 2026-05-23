@@ -322,16 +322,21 @@ class PointOfSale extends Page
                 $totalVat = round($totalVat * $multiplier, 2);
                 $totalTtc = round($totalTtc * $multiplier, 2);
             }
-            
+
+            // Arrondir les totaux à l'entier (FCFA, pas de sous-unité)
+            $totalHt = round($totalHt);
+            $totalVat = round($totalVat);
+            $totalTtc = round($totalTtc);
+
             // 2. CRÉER la vente
             $sale = DB::transaction(function () use ($tenant, $session, $warehouse, $payload, $itemsToCreate, $totalHt, $totalVat, $totalTtc, $discountPercent) {
-                
+
                 // Client par défaut
                 $customer = Customer::firstOrCreate(
                     ['email' => 'walkin@pos.local', 'company_id' => $tenant->id],
                     ['name' => 'Client comptoir', 'company_id' => $tenant->id]
                 );
-                
+
                 // Créer la vente
                 $saleData = [
                     'company_id' => $tenant->id,
@@ -347,30 +352,31 @@ class PointOfSale extends Page
                     'total_vat' => $totalVat,
                     'total' => $totalTtc,
                 ];
-                
+
                 $company = Company::find($tenant->id);
                 if ($company?->emcef_enabled) {
                     $saleData['emcef_status'] = 'pending';
                 }
-                
+
                 $sale = Sale::create($saleData);
-                
-                // Créer les items
-                foreach ($itemsToCreate as $itemData) {
-                    $itemData['sale_id'] = $sale->id;
-                    SaleItem::create($itemData);
+
+                // Empêcher calculateTotal d'écraser les totaux pré-calculés
+                Sale::$skipRecalculationForIds[] = $sale->id;
+
+                try {
+                    foreach ($itemsToCreate as $itemData) {
+                        $itemData['sale_id'] = $sale->id;
+                        SaleItem::create($itemData);
+                    }
+                } finally {
+                    Sale::$skipRecalculationForIds = array_diff(
+                        Sale::$skipRecalculationForIds, [$sale->id]
+                    );
                 }
-                
-                // FORCER le total correct (au cas où les observers l'écrasent)
-                DB::table('sales')->where('id', $sale->id)->update([
-                    'total_ht' => $totalHt,
-                    'total_vat' => $totalVat,
-                    'total' => $totalTtc,
-                ]);
-                
+
                 // Mettre à jour session
                 $session->recalculate();
-                
+
                 return $sale;
             });
             

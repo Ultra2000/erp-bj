@@ -359,11 +359,16 @@ class PosService
                 ];
             }
 
+            // Arrondir les totaux à l'entier (FCFA, pas de sous-unité)
+            $totalHt = round($totalHt);
+            $totalVat = round($totalVat);
+            $totalTtc = round($totalTtc);
+
             // ── 2. Créer la vente avec totaux pré-calculés ──
             $sale = DB::transaction(function () use (
-                $companyId, $session, $warehouse, $company,
+                $companyId, $session, $company,
                 $paymentMethod, $paymentDetails, $customerId, $discountPercent,
-                $itemsToCreate, $totalHt, $totalVat, $totalTtc
+                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse
             ) {
                 // Client comptoir par défaut
                 $resolvedCustomerId = $customerId;
@@ -401,19 +406,21 @@ class PosService
 
                 $sale = Sale::create($saleData);
 
-                // Créer les items (le déstockage FIFO est géré par SaleItem::created observer)
-                foreach ($itemsToCreate as $itemData) {
-                    $itemData['sale_id'] = $sale->id;
-                    $saleItem = new SaleItem($itemData);
-                    $saleItem->save();
-                }
+                // Empêcher calculateTotal d'écraser les totaux pré-calculés
+                Sale::$skipRecalculationForIds[] = $sale->id;
 
-                // Forcer les totaux corrects (au cas où les observers les écrasent)
-                DB::table('sales')->where('id', $sale->id)->update([
-                    'total_ht' => $totalHt,
-                    'total_vat' => $totalVat,
-                    'total' => $totalTtc,
-                ]);
+                try {
+                    // Créer les items (le déstockage FIFO est géré par SaleItem::created observer)
+                    foreach ($itemsToCreate as $itemData) {
+                        $itemData['sale_id'] = $sale->id;
+                        $saleItem = new SaleItem($itemData);
+                        $saleItem->save();
+                    }
+                } finally {
+                    Sale::$skipRecalculationForIds = array_diff(
+                        Sale::$skipRecalculationForIds, [$sale->id]
+                    );
+                }
 
                 // Recalculer la session
                 $session->recalculate();

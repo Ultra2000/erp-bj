@@ -15,6 +15,12 @@ class Sale extends Model
 {
     use HasFactory, BelongsToCompany, LogsActivity, HasWarehouseScope;
 
+    /**
+     * IDs de ventes pour lesquelles SaleItem::saved() ne doit PAS appeler calculateTotal().
+     * Utilisé par les flux POS qui pré-calculent les totaux avant de créer les items.
+     */
+    public static array $skipRecalculationForIds = [];
+
     protected $fillable = [
         'company_id',
         'cash_session_id',
