@@ -580,12 +580,15 @@
                     }
                 },
 
-                async refreshProducts() {
-                    if (this.searchQuery.trim()) {
-                        this.products = await this.$wire.searchProducts(this.searchQuery);
-                    } else if (this.products.length > 0) {
-                        this.products = await this.$wire.searchProducts('');
-                    }
+                updateDisplayedStock() {
+                    this.cart.forEach(cartItem => {
+                        const product = this.products.find(p => p.id === cartItem.id);
+                        if (product) {
+                            product.stock = Math.max(0, parseFloat(product.stock) - cartItem.quantity);
+                        }
+                    });
+                    // Retirer les produits à stock 0 et forcer la réactivité Alpine
+                    this.products = this.products.filter(p => parseFloat(p.stock) > 0);
                 },
 
                 async scanBarcode(code) {
@@ -739,9 +742,12 @@
                             this.lastPaymentMethod = this.paymentMethod;
                             this.lastEmcefNim = result.emcef_nim;
                             this.showReceiptModal = true;
+
+                            // Mettre à jour le stock affiché immédiatement depuis le panier
+                            this.updateDisplayedStock();
+
                             this.clearCart();
                             this.refreshSessionStats();
-                            this.refreshProducts();
                             this.playBeep();
                         } else {
                             alert(result.message || 'Erreur lors de la vente');
