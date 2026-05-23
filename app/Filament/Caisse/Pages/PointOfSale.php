@@ -220,7 +220,7 @@ class PointOfSale extends Page
                 ->where('product_id', $productId)
                 ->sum('quantity') ?? 0;
             
-            $updatedStocks[$productId] = (int) $currentStock;
+            $updatedStocks[$productId] = (float) $currentStock;
             
             if ($currentStock < $requestedQty) {
                 $product = Product::find($productId);
@@ -315,7 +315,7 @@ class PointOfSale extends Page
             }
             
             // Appliquer remise
-            $discountPercent = floatval($payload['discount_percent'] ?? 0);
+            $discountPercent = max(0, min(100, floatval($payload['discount_percent'] ?? 0)));
             if ($discountPercent > 0) {
                 $multiplier = 1 - ($discountPercent / 100);
                 $totalHt = round($totalHt * $multiplier, 2);
@@ -342,6 +342,7 @@ class PointOfSale extends Page
                     'payment_details' => $payload['payment_details'] ?? null,
                     'discount_percent' => $discountPercent,
                     'status' => 'completed',
+                    'payment_status' => 'paid',
                     'total_ht' => $totalHt,
                     'total_vat' => $totalVat,
                     'total' => $totalTtc,

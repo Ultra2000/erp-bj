@@ -534,27 +534,29 @@
                     
                     const now = Date.now();
                     const timeSinceLastKey = now - this.scannerLastKeyTime;
-                    
+
                     if (event.key === 'Enter' && this.scannerBuffer.length > 0) {
                         event.preventDefault();
+                        clearTimeout(this.scannerTimeout);
                         const scannedCode = this.scannerBuffer.trim();
                         this.scannerBuffer = '';
-                        
+
                         if (scannedCode.length >= 3) {
                             this.scanBarcode(scannedCode);
                         }
                         return;
                     }
-                    
-                    if (timeSinceLastKey > 100) {
-                        this.scannerBuffer = '';
-                    }
-                    
-                    if (event.key.length === 1 && timeSinceLastKey < 100) {
+
+                    if (event.key.length === 1) {
                         event.preventDefault();
+
+                        if (timeSinceLastKey > 100) {
+                            this.scannerBuffer = '';
+                        }
+
                         this.scannerBuffer += event.key;
                         this.scannerLastKeyTime = now;
-                        
+
                         clearTimeout(this.scannerTimeout);
                         this.scannerTimeout = setTimeout(() => {
                             if (this.scannerBuffer.length >= 3) {

@@ -299,6 +299,8 @@ class PosService
             return ['success' => false, 'message' => 'Le panier est vide'];
         }
 
+        $discountPercent = max(0, min(100, $discountPercent));
+
         $company = Company::find($companyId);
 
         try {
@@ -367,7 +369,7 @@ class PosService
                 $resolvedCustomerId = $customerId;
                 if (!$resolvedCustomerId) {
                     $walkIn = Customer::firstOrCreate(
-                        ['email' => 'walkin@example.com', 'company_id' => $companyId],
+                        ['email' => 'walkin@pos.local', 'company_id' => $companyId],
                         [
                             'name' => 'Client comptoir',
                             'company_id' => $companyId,
@@ -399,20 +401,11 @@ class PosService
 
                 $sale = Sale::create($saleData);
 
-                // Créer les items et gérer le déstockage FIFO
+                // Créer les items (le déstockage FIFO est géré par SaleItem::created observer)
                 foreach ($itemsToCreate as $itemData) {
                     $itemData['sale_id'] = $sale->id;
                     $saleItem = new SaleItem($itemData);
                     $saleItem->save();
-
-                    if ($warehouse) {
-                        $warehouse->deductStockFIFO(
-                            $itemData['product_id'],
-                            $itemData['quantity'],
-                            'sale',
-                            "Vente POS " . $sale->invoice_number
-                        );
-                    }
                 }
 
                 // Forcer les totaux corrects (au cas où les observers les écrasent)
@@ -492,10 +485,22 @@ class PosService
         }
 
         DB::transaction(function () use ($sale) {
+            $warehouse = $sale->warehouse ?? Warehouse::getDefault($sale->company_id);
+
             foreach ($sale->items as $item) {
+                if ($warehouse) {
+                    $warehouse->addStockBack(
+                        $item->product_id,
+                        $item->quantity,
+                        'cancellation',
+                        "Annulation vente " . $sale->invoice_number
+                    );
+                }
+
                 $product = Product::find($item->product_id);
                 if ($product) {
                     $product->increment('stock', $item->quantity);
+                    $product->clearStockCache();
                 }
             }
             $sale->update(['status' => 'cancelled']);
