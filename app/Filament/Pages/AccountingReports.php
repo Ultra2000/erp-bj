@@ -121,7 +121,7 @@ class AccountingReports extends Page implements HasForms
         $endDate = $this->data['end_date'] . ' 23:59:59';
 
         // 1. Recettes issues des Ventes (Chiffre d'Affaires)
-        $salesByMethod = Sale::where('company_id', $companyId)
+        $salesByMethod = Sale::withoutGlobalScopes()->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('payment_method, SUM(total) as total')
@@ -133,20 +133,20 @@ class AccountingReports extends Page implements HasForms
         $salesOther = (float) (($salesByMethod['sepa_debit'] ?? 0) + ($salesByMethod['paypal'] ?? 0));
 
         // 2. Dépenses issues des Achats (uniquement achats complétés)
-        $purchasesTotal = Purchase::where('company_id', $companyId)
+        $purchasesTotal = Purchase::withoutGlobalScopes()->where('company_id', $companyId)
             ->whereIn('status', ['completed', 'received', 'paid'])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('total');
 
         // TVA Collectée réelle (depuis les ventes)
-        $salesData = Sale::where('company_id', $companyId)
+        $salesData = Sale::withoutGlobalScopes()->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('COALESCE(SUM(total_ht), 0) as total_ht, COALESCE(SUM(total_vat), 0) as total_vat, COALESCE(SUM(total), 0) as total')
             ->first();
 
         // TVA Déductible réelle (depuis les achats)
-        $purchasesData = Purchase::where('company_id', $companyId)
+        $purchasesData = Purchase::withoutGlobalScopes()->where('company_id', $companyId)
             ->whereIn('status', ['completed', 'received', 'paid'])
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('COALESCE(SUM(total_ht), 0) as total_ht, COALESCE(SUM(total_vat), 0) as total_vat, COALESCE(SUM(total), 0) as total')
@@ -191,7 +191,7 @@ class AccountingReports extends Page implements HasForms
         $startDate = $this->data['start_date'];
         $endDate = $this->data['end_date'] . ' 23:59:59';
 
-        return Sale::where('company_id', $companyId)
+        return Sale::withoutGlobalScopes()->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with('items')
@@ -220,7 +220,7 @@ class AccountingReports extends Page implements HasForms
         $startDate = $this->data['start_date'];
         $endDate = $this->data['end_date'] . ' 23:59:59';
 
-        return Purchase::where('company_id', $companyId)
+        return Purchase::withoutGlobalScopes()->where('company_id', $companyId)
             ->where('status', 'completed')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with('items')
