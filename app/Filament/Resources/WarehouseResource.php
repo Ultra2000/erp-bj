@@ -59,7 +59,12 @@ class WarehouseResource extends Resource
                         Forms\Components\TextInput::make('code')
                             ->label('Code')
                             ->required()
-                            ->unique(ignoreRecord: true)
+                            ->unique(
+                                table: 'warehouses',
+                                column: 'code',
+                                ignoreRecord: true,
+                                modifyRuleUsing: fn ($rule) => $rule->where('company_id', Filament::getTenant()?->id)
+                            )
                             ->maxLength(20)
                             ->placeholder('WH001'),
                         Forms\Components\TextInput::make('name')
