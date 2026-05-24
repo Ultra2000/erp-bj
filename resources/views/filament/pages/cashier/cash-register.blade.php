@@ -990,6 +990,7 @@
                 getHeaders() {
                     const headers = {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     };
                     if (this.companyId) {
@@ -1440,23 +1441,25 @@
                 // Enregistrer la vente
                 async processSale() {
                     if (this.cart.length === 0 || this.processing) return;
-                    
+
+                    const soldItems = this.cart.map(item => ({
+                        product_id: item.id,
+                        quantity: item.quantity,
+                        price: item.price
+                    }));
+
                     this.processing = true;
                     try {
                         const response = await fetch('/api/pos/sale', {
                             method: 'POST',
                             headers: this.getHeaders(),
                             body: JSON.stringify({
-                                items: this.cart.map(item => ({
-                                    product_id: item.id,
-                                    quantity: item.quantity,
-                                    price: item.price
-                                })),
+                                items: soldItems,
                                 payment_method: this.paymentMethod,
                                 total: this.cartTotal
                             })
                         });
-                        
+
                         const data = await response.json();
                         if (data.success) {
                             this.playSuccess();
@@ -1468,7 +1471,12 @@
                             this.cart = [];
                             this.receivedAmount = '';
                             this.sessionStats = data.session;
-                            await this.loadProducts(); // Rafraîchir les stocks
+
+                            // Mise à jour locale immédiate du stock affiché
+                            this.updateDisplayedStock(soldItems);
+
+                            // Puis rafraîchir depuis le serveur
+                            this.loadProducts();
                         } else {
                             this.playError();
                             alert(data.message || 'Erreur lors de l\'enregistrement');
@@ -1479,6 +1487,21 @@
                     } finally {
                         this.processing = false;
                     }
+                },
+
+                // Mise à jour immédiate du stock affiché après vente
+                updateDisplayedStock(soldItems) {
+                    let updated = [...this.products];
+                    for (const sold of soldItems) {
+                        const idx = updated.findIndex(p => p.id === sold.product_id);
+                        if (idx >= 0) {
+                            updated[idx] = {
+                                ...updated[idx],
+                                quantity: Math.max(0, updated[idx].quantity - sold.quantity)
+                            };
+                        }
+                    }
+                    this.products = updated.filter(p => p.quantity > 0);
                 },
                 
                 // Formater le prix
