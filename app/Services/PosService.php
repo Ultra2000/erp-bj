@@ -388,14 +388,19 @@ class PosService
                 // Client comptoir par défaut
                 $resolvedCustomerId = $customerId;
                 if (!$resolvedCustomerId) {
-                    $walkIn = Customer::firstOrCreate(
-                        ['email' => 'walkin@pos.local', 'company_id' => $companyId],
-                        [
-                            'name' => 'Client comptoir',
+                    $walkIn = Customer::withoutGlobalScopes()
+                        ->where('company_id', $companyId)
+                        ->where('email', 'walkin@pos.local')
+                        ->first();
+
+                    if (!$walkIn) {
+                        $walkIn = Customer::withoutGlobalScopes()->create([
+                            'email' => 'walkin@pos.local',
                             'company_id' => $companyId,
+                            'name' => 'Client comptoir',
                             'notes' => 'Client généré automatiquement pour ventes comptoir',
-                        ]
-                    );
+                        ]);
+                    }
                     $resolvedCustomerId = $walkIn->id;
                 }
 
