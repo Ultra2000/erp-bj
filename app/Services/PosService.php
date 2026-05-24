@@ -387,6 +387,7 @@ class PosService
             ) {
                 // Client comptoir par défaut
                 $resolvedCustomerId = $customerId;
+                $isWalkInCustomer = false;
                 if (!$resolvedCustomerId) {
                     $walkIn = Customer::withoutGlobalScopes()
                         ->where('company_id', $companyId)
@@ -398,10 +399,15 @@ class PosService
                             'email' => 'walkin@pos.local',
                             'company_id' => $companyId,
                             'name' => 'Client comptoir',
+                            'customer_type' => 'individual',
                             'notes' => 'Client généré automatiquement pour ventes comptoir',
                         ]);
+                    } elseif ($walkIn->customer_type !== 'individual') {
+                        // Corriger le type si nécessaire (pour les clients comptoir existants)
+                        $walkIn->update(['customer_type' => 'individual']);
                     }
                     $resolvedCustomerId = $walkIn->id;
+                    $isWalkInCustomer = true;
                 }
 
                 $saleData = [
@@ -418,6 +424,8 @@ class PosService
                     'total_ht' => $totalHt,
                     'total_vat' => $totalVat,
                     'total' => $totalTtc,
+                    // Client comptoir (particulier) : pas d'AIB selon la loi des finances du Bénin
+                    'aib_exempt' => $isWalkInCustomer,
                 ];
 
                 if ($company?->emcef_enabled) {

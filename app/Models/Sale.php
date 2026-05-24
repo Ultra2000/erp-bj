@@ -531,14 +531,19 @@ class Sale extends Model
 
         // Si pas de client ou client sans IFU
         if (!$customer || empty($customer->tax_number)) {
-            // Si vente au détail exonérée
+            // Particuliers / ventes au détail : pas d'AIB
+            // (l'AIB est un mécanisme B2B, les particuliers n'en sont pas redevables)
             if ($company->aib_exempt_retail) {
+                return null;
+            }
+            // Client de type particulier : jamais d'AIB
+            if ($customer && $customer->customer_type === 'individual') {
                 return null;
             }
             return 'B'; // 5%
         }
 
-        // Client avec IFU valide
+        // Client avec IFU valide (entreprise)
         return 'A'; // 1%
     }
 
