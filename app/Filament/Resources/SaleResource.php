@@ -85,7 +85,28 @@ class SaleResource extends Resource
                             ->relationship('customer', 'name', fn ($query) => $query->where('company_id', $companyId))
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nom')
+                                    ->required()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('phone')
+                                    ->label('Téléphone')
+                                    ->tel()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('email')
+                                    ->label('Email')
+                                    ->email()
+                                    ->maxLength(255),
+                                Forms\Components\TextInput::make('address')
+                                    ->label('Adresse')
+                                    ->maxLength(255),
+                            ])
+                            ->createOptionUsing(function (array $data) use ($companyId) {
+                                $data['company_id'] = $companyId;
+                                return \App\Models\Customer::create($data)->id;
+                            }),
                         Forms\Components\Select::make('warehouse_id')
                             ->label('Entrepôt source')
                             ->options(fn () => static::getAccessibleWarehouses()->pluck('name', 'id'))
