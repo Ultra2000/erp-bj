@@ -58,15 +58,15 @@ class SaleItem extends Model
             if (in_array($item->sale_id, Sale::$skipRecalculationForIds)) {
                 return;
             }
-            $sale = $item->sale ?? Sale::find($item->sale_id);
+            $sale = Sale::withoutGlobalScopes()->find($item->sale_id);
             if ($sale) {
                 $sale->calculateTotal();
             }
         });
 
         static::created(function ($item) {
-            // Recharger la relation sale
-            $sale = $item->sale ?? Sale::find($item->sale_id);
+            // Charger la vente SANS global scopes pour que ça fonctionne sur les routes API (POS)
+            $sale = Sale::withoutGlobalScopes()->find($item->sale_id);
             if ($sale && $sale->status === 'completed') {
                 $warehouse = $sale->warehouse ?? Warehouse::getDefault($sale->company_id);
                 if ($warehouse) {
@@ -98,7 +98,7 @@ class SaleItem extends Model
         });
 
         static::updated(function ($item) {
-            $sale = $item->sale ?? Sale::find($item->sale_id);
+            $sale = Sale::withoutGlobalScopes()->find($item->sale_id);
             if ($sale && $sale->status === 'completed') {
                 $warehouse = $sale->warehouse ?? Warehouse::getDefault($sale->company_id);
                 if ($warehouse) {
@@ -146,7 +146,7 @@ class SaleItem extends Model
         });
 
         static::deleted(function ($item) {
-            $sale = $item->sale ?? Sale::find($item->sale_id);
+            $sale = Sale::withoutGlobalScopes()->find($item->sale_id);
             if ($sale) {
                 $sale->calculateTotal();
 
