@@ -51,6 +51,22 @@ class Warehouse extends Model
         'settings' => 'array',
     ];
 
+    public static function generateCode(int $companyId): string
+    {
+        $last = static::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('code', 'LIKE', 'WH%')
+            ->orderByRaw('LENGTH(code) DESC, code DESC')
+            ->value('code');
+
+        $next = 1;
+        if ($last && preg_match('/WH(\d+)/', $last, $m)) {
+            $next = (int) $m[1] + 1;
+        }
+
+        return 'WH' . str_pad($next, 3, '0', STR_PAD_LEFT);
+    }
+
     // Relations
     public function locations(): HasMany
     {

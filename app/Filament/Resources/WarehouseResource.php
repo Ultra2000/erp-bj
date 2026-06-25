@@ -59,6 +59,7 @@ class WarehouseResource extends Resource
                         Forms\Components\TextInput::make('code')
                             ->label('Code')
                             ->required()
+                            ->default(fn () => Warehouse::generateCode(Filament::getTenant()?->id ?? 0))
                             ->unique(
                                 table: 'warehouses',
                                 column: 'code',
