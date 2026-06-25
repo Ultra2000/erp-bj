@@ -19,17 +19,15 @@ return new class extends Migration
         DB::table('warehouses')->where('country', 'FR')->update(['country' => 'BJ']);
 
         // 2. Corriger le unique global sur code → unique par company
-        Schema::table('warehouses', function (Blueprint $table) {
-            try {
-                $table->dropUnique(['code']);
-            } catch (\Exception $e) {
-                // L'index n'existe peut-être plus
+        $indexes = collect(DB::select("SHOW INDEX FROM warehouses WHERE Column_name = 'code' AND Non_unique = 0"));
+        foreach ($indexes as $index) {
+            if ($index->Key_name !== 'warehouses_company_code_unique') {
+                DB::statement("ALTER TABLE warehouses DROP INDEX `{$index->Key_name}`");
             }
-        });
+        }
 
-        // Vérifier si l'index company_code existe déjà avant de le créer
-        $indexExists = collect(DB::select("SHOW INDEX FROM warehouses WHERE Key_name = 'warehouses_company_code_unique'"))->isNotEmpty();
-        if (!$indexExists) {
+        $hasCompanyCodeIndex = collect(DB::select("SHOW INDEX FROM warehouses WHERE Key_name = 'warehouses_company_code_unique'"))->isNotEmpty();
+        if (!$hasCompanyCodeIndex) {
             Schema::table('warehouses', function (Blueprint $table) {
                 $table->unique(['company_id', 'code'], 'warehouses_company_code_unique');
             });
