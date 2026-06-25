@@ -100,7 +100,7 @@ class WarehouseResource extends Resource
                             ->maxLength(20),
                         Forms\Components\TextInput::make('country')
                             ->label('Pays')
-                            ->default('Sénégal')
+                            ->default('Bénin')
                             ->maxLength(100),
                     ])->columns(3),
 
