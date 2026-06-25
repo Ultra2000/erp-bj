@@ -41,7 +41,7 @@ class StockTransferResource extends Resource
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $query = parent::getEloquentQuery()
-            ->with(['sourceWarehouse', 'destinationWarehouse', 'createdByUser']);
+            ->with(['sourceWarehouse', 'destinationWarehouse', 'requestedBy']);
         
         $user = auth()->user();
         if ($user && $user->hasWarehouseRestriction()) {
