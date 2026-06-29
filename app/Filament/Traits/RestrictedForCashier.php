@@ -71,8 +71,17 @@ trait RestrictedForCashier
             return false;
         }
 
+        if ($user->isManager()) {
+            return true;
+        }
+
         $module = static::getPermissionModule();
         if (!$module) {
+            return true;
+        }
+
+        $role = $user->currentRole();
+        if ($role && $role->permissions()->count() === 0) {
             return true;
         }
 
@@ -101,34 +110,35 @@ trait RestrictedForCashier
 
     public static function canCreate(): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-        if ($user->is_super_admin || $user->isAdmin()) return true;
-        if ($user->isCashier()) return false;
-
-        $module = static::getPermissionModule();
-        return $module ? $user->hasPermission("{$module}.create") : true;
+        return static::userHasPermission('create');
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
-        if (!$user) return false;
-        if ($user->is_super_admin || $user->isAdmin()) return true;
-        if ($user->isCashier()) return false;
-
-        $module = static::getPermissionModule();
-        return $module ? $user->hasPermission("{$module}.update") : true;
+        return static::userHasPermission('update');
     }
 
     public static function canDelete($record): bool
+    {
+        return static::userHasPermission('delete');
+    }
+
+    protected static function userHasPermission(string $action): bool
     {
         $user = auth()->user();
         if (!$user) return false;
         if ($user->is_super_admin || $user->isAdmin()) return true;
         if ($user->isCashier()) return false;
+        if ($user->isManager()) return true;
 
         $module = static::getPermissionModule();
-        return $module ? $user->hasPermission("{$module}.delete") : true;
+        if (!$module) return true;
+
+        $role = $user->currentRole();
+        if ($role && $role->permissions()->count() === 0) {
+            return true;
+        }
+
+        return $user->hasPermission("{$module}.{$action}");
     }
 }

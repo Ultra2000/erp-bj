@@ -100,7 +100,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
      */
     public function isManager(): bool
     {
-        return $this->hasRole('manager') || $this->hasRole('gestionnaire');
+        $role = $this->currentRole();
+        if (!$role) return false;
+
+        $managerSlugs = ['manager', 'gestionnaire', 'gerant', 'responsable', 'responsable-boutique', 'chef-boutique'];
+        return in_array($role->slug, $managerSlugs);
     }
 
     /**
