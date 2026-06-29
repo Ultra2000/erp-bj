@@ -35,23 +35,7 @@ class UserResource extends Resource
     // Utiliser la relation 'companies' pour la multi-tenancy
     protected static ?string $tenantOwnershipRelationshipName = 'companies';
 
-    /**
-     * Cacher pour les utilisateurs non-admin (vendeurs)
-     */
-    public static function shouldRegisterNavigation(): bool
-    {
-        $user = auth()->user();
-        return !$user?->hasWarehouseRestriction();
-    }
-
-    /**
-     * Restreindre l'accès aux utilisateurs pour les non-admins
-     */
-    public static function canViewAny(): bool
-    {
-        $user = auth()->user();
-        return !$user?->hasWarehouseRestriction();
-    }
+    // Access control handled by RestrictedForCashier trait
 
     public static function form(Form $form): Form
     {

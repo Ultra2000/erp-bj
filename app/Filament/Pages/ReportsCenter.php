@@ -27,7 +27,7 @@ class ReportsCenter extends Page implements HasForms
     protected static function isCashierUser(): bool
     {
         $user = auth()->user();
-        return $user && $user->hasWarehouseRestriction();
+        return $user && !$user->is_super_admin && !$user->isAdmin() && $user->isCashier();
     }
 
     public static function shouldRegisterNavigation(): bool

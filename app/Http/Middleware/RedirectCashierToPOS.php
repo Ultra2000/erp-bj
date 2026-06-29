@@ -15,8 +15,7 @@ class RedirectCashierToPOS
     {
         $user = auth()->user();
         
-        // Si l'utilisateur est un caissier (a une restriction entrepôt)
-        if ($user && $user->hasWarehouseRestriction()) {
+        if ($user && !$user->is_super_admin && !$user->isAdmin() && $user->isCashier()) {
             // Si on essaie d'accéder au dashboard, rediriger vers le POS
             $path = $request->path();
             

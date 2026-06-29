@@ -3,7 +3,7 @@
     @livewire(\App\Filament\Widgets\QuickActionsWidget::class)
 
     {{-- Filtre d'entrepôt pour les admins --}}
-    @if(!auth()->user()?->hasWarehouseRestriction())
+    @if(!auth()->user()?->isCashier())
     <div class="mb-6">
         <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4">
             <div class="flex items-center gap-4">
