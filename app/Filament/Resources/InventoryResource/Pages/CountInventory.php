@@ -26,7 +26,8 @@ class CountInventory extends Page
 
     public function mount(int | string $record): void
     {
-        $this->record = Inventory::with(['items.product', 'items.location', 'warehouse'])
+        $this->record = Inventory::withoutGlobalScopes()
+            ->with(['items.product', 'items.location', 'warehouse'])
             ->findOrFail($record);
 
         if ($this->record->status !== 'in_progress') {
