@@ -602,4 +602,36 @@ class Sale extends Model
             default => '',
         };
     }
+
+    public function getRemainingAmountAttribute(): float
+    {
+        $totalDue = (float) $this->total + (float) ($this->aib_amount ?? 0);
+        return max(0, $totalDue - (float) $this->amount_paid);
+    }
+
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'Payé',
+            'partial' => 'Partiel',
+            default => 'Non payé',
+        };
+    }
+
+    public function updatePaymentStatus(): void
+    {
+        $totalPaid = $this->payments()->sum('amount');
+        $this->amount_paid = $totalPaid;
+        $totalDue = (float) $this->total + (float) ($this->aib_amount ?? 0);
+
+        if ($totalPaid <= 0) {
+            $this->payment_status = 'unpaid';
+        } elseif ($totalPaid >= $totalDue) {
+            $this->payment_status = 'paid';
+        } else {
+            $this->payment_status = 'partial';
+        }
+
+        $this->saveQuietly();
+    }
 }

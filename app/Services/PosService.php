@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\CashSession;
 use App\Models\Company;
 use App\Models\Warehouse;
+use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -308,7 +309,8 @@ class PosService
         ?array $paymentDetails = null,
         ?int $customerId = null,
         float $discountPercent = 0,
-        ?Warehouse $warehouse = null
+        ?Warehouse $warehouse = null,
+        ?float $amountPaid = null
     ): array {
         if (empty($items)) {
             return ['success' => false, 'message' => 'Le panier est vide'];
@@ -383,7 +385,7 @@ class PosService
             $sale = DB::transaction(function () use (
                 $companyId, $session, $company,
                 $paymentMethod, $paymentDetails, $customerId, $discountPercent,
-                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse
+                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse, $amountPaid
             ) {
                 // Client comptoir par défaut
                 $resolvedCustomerId = $customerId;
@@ -410,6 +412,15 @@ class PosService
                     $isWalkInCustomer = true;
                 }
 
+                $effectiveAmountPaid = $amountPaid !== null ? min($amountPaid, $totalTtc) : $totalTtc;
+                if ($effectiveAmountPaid <= 0) {
+                    $paymentStatus = 'unpaid';
+                } elseif ($effectiveAmountPaid >= $totalTtc) {
+                    $paymentStatus = 'paid';
+                } else {
+                    $paymentStatus = 'partial';
+                }
+
                 $saleData = [
                     'company_id' => $companyId,
                     'customer_id' => $resolvedCustomerId,
@@ -417,14 +428,14 @@ class PosService
                     'cash_session_id' => $session->id,
                     'payment_method' => $paymentMethod,
                     'payment_details' => $paymentDetails,
-                    'payment_status' => 'paid',
+                    'payment_status' => $paymentStatus,
+                    'amount_paid' => $effectiveAmountPaid,
                     'status' => 'completed',
                     'discount_percent' => $discountPercent,
                     'tax_percent' => 0,
                     'total_ht' => $totalHt,
                     'total_vat' => $totalVat,
                     'total' => $totalTtc,
-                    // Client comptoir (particulier) : pas d'AIB selon la loi des finances du Bénin
                     'aib_exempt' => $isWalkInCustomer,
                 ];
 
@@ -448,6 +459,20 @@ class PosService
                     Sale::$skipRecalculationForIds = array_diff(
                         Sale::$skipRecalculationForIds, [$sale->id]
                     );
+                }
+
+                if ($effectiveAmountPaid > 0) {
+                    Payment::create([
+                        'company_id' => $companyId,
+                        'payable_type' => Sale::class,
+                        'payable_id' => $sale->id,
+                        'amount' => $effectiveAmountPaid,
+                        'payment_method' => $paymentMethod,
+                        'payment_date' => now(),
+                        'account_number' => Payment::ACCOUNTS[$paymentMethod] ?? '530000',
+                        'cash_session_id' => $session->id,
+                        'created_by' => auth()->id(),
+                    ]);
                 }
 
                 // Recalculer la session
@@ -479,6 +504,9 @@ class PosService
                 'sale_id' => $sale->id,
                 'invoice_number' => $sale->invoice_number,
                 'total' => $sale->total,
+                'amount_paid' => (float) $sale->amount_paid,
+                'payment_status' => $sale->payment_status,
+                'remaining' => $sale->remaining_amount,
                 'emcef' => $emcefResult ? [
                     'success' => $emcefResult['success'] ?? false,
                     'nim' => $sale->emcef_nim,

@@ -633,7 +633,7 @@ class SaleResource extends Resource
                     ->label('Payé')
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
                     ->color('success')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(),
                 // e-MCeF (Bénin)
                 Tables\Columns\TextColumn::make('emcef_status')
                     ->label('e-MCeF')
@@ -709,6 +709,7 @@ class SaleResource extends Resource
                     ->label('Statut paiement')
                     ->options([
                         'pending' => 'Non payé',
+                        'unpaid' => 'Non payé',
                         'partial' => 'Paiement partiel',
                         'paid' => 'Payé',
                     ]),
@@ -750,13 +751,24 @@ class SaleResource extends Resource
                             ->numeric()
                             ->required()
                             ->prefix('FCFA')
-                            ->default(fn (Sale $record) => $record->total - $record->amount_paid),
+                            ->default(fn (Sale $record) => $record->remaining_amount),
                         Forms\Components\TextInput::make('reference')
                             ->label('Référence'),
                         Forms\Components\Textarea::make('notes')
                             ->label('Notes'),
                     ])
                     ->action(function (Sale $record, array $data) {
+                        $totalDue = (float) $record->total + (float) ($record->aib_amount ?? 0);
+                        $newTotal = (float) $record->amount_paid + (float) $data['amount'];
+                        if ($newTotal > $totalDue) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Montant trop élevé')
+                                ->body('Le paiement dépasse le montant restant dû.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
                         $record->payments()->create([
                             'company_id' => $record->company_id,
                             'amount' => $data['amount'],
@@ -767,7 +779,9 @@ class SaleResource extends Resource
                             'notes' => $data['notes'] ?? null,
                             'created_by' => auth()->id(),
                         ]);
-                        
+
+                        $record->updatePaymentStatus();
+
                         \Filament\Notifications\Notification::make()
                             ->title('Paiement enregistré')
                             ->success()

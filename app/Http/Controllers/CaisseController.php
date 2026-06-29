@@ -164,7 +164,8 @@ class CaisseController extends Controller
             paymentDetails: $request->input('payment_details'),
             customerId: $request->input('customer_id'),
             discountPercent: floatval($request->input('discount_percent', 0)),
-            warehouse: $warehouse
+            warehouse: $warehouse,
+            amountPaid: $request->has('amount_paid') ? floatval($request->input('amount_paid')) : null
         );
 
         return response()->json($result, $result['success'] ? 200 : 500);

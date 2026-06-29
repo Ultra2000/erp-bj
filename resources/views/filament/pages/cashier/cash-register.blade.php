@@ -350,8 +350,53 @@
                                         </button>
                                     </div>
                                     
+                                    {{-- Toggle paiement partiel --}}
+                                    <template x-if="cart.length > 0">
+                                        <div class="mt-3 flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer"
+                                             :class="isPartialPayment ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700' : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'"
+                                             @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''">
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-4 h-4" :class="isPartialPayment ? 'text-amber-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span class="text-[10px] font-bold uppercase tracking-wider" :class="isPartialPayment ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'">Paiement partiel</span>
+                                            </div>
+                                            <div class="w-8 h-4 rounded-full transition-all relative"
+                                                 :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'">
+                                                <div class="w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-all shadow-sm"
+                                                     :class="isPartialPayment ? 'left-[18px]' : 'left-0.5'"></div>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    {{-- Montant payé (paiement partiel) --}}
+                                    <template x-if="isPartialPayment && cart.length > 0">
+                                        <div class="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                             x-transition:enter-end="opacity-100 transform translate-y-0">
+                                            <div class="space-y-2">
+                                                <div>
+                                                    <label class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1 block">Montant payé</label>
+                                                    <div class="relative">
+                                                        <input type="number"
+                                                               x-model="amountPaid"
+                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-amber-300 dark:border-amber-700 rounded-lg py-2 pl-3 pr-14 text-right text-lg font-bold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                                               placeholder="0"
+                                                               :max="cartTotal"
+                                                               min="0"
+                                                               step="1">
+                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-sm">FCFA</span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center justify-between text-sm">
+                                                    <span class="text-amber-600 dark:text-amber-400 font-medium">Reste à payer :</span>
+                                                    <span class="font-black text-red-500" x-text="formatPrice(Math.max(0, cartTotal - (parseFloat(amountPaid) || 0)))"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+
                                     {{-- Montant reçu et Relicat (Cash uniquement) --}}
-                                    <template x-if="paymentMethod === 'cash' && cart.length > 0">
+                                    <template x-if="paymentMethod === 'cash' && cart.length > 0 && !isPartialPayment">
                                         <div class="mt-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800" 
                                              x-transition:enter="transition ease-out duration-200" 
                                              x-transition:enter-start="opacity-0 transform -translate-y-2" 
@@ -414,8 +459,8 @@
                                             class="col-span-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-500 hover:text-white disabled:opacity-30 disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-600 border border-gray-200 dark:border-gray-600 flex items-center justify-center">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
-                                    <button @click="processSale()" 
-                                            :disabled="cart.length === 0 || processing || (paymentMethod === 'cash' && receivedAmount && changeAmount < 0)"
+                                    <button @click="processSale()"
+                                            :disabled="cart.length === 0 || processing || (paymentMethod === 'cash' && !isPartialPayment && receivedAmount && changeAmount < 0) || (isPartialPayment && (amountPaid === '' || parseFloat(amountPaid) <= 0 || parseFloat(amountPaid) > cartTotal))"
                                             class="col-span-4 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                             style="background: linear-gradient(to right, #10b981, #14b8a6); color: white; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);"
                                             onmouseover="this.style.background='linear-gradient(to right, #059669, #0d9488)'"
@@ -640,11 +685,29 @@
                     </div>
                 </template>
                 
-                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 mb-6">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Montant encaissé</p>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 mb-4">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total de la vente</p>
                     <p class="text-3xl font-bold text-green-600" x-text="formatPrice(lastSaleAmount)"></p>
                     <p class="text-xs text-gray-400 mt-1" x-text="lastInvoiceNumber ? 'Facture: ' + lastInvoiceNumber : ''"></p>
                 </div>
+
+                {{-- Info paiement partiel --}}
+                <template x-if="lastPaymentStatus === 'partial'">
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 mb-4">
+                        <div class="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 mb-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="font-semibold text-sm">Paiement partiel</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-amber-600 dark:text-amber-400">Payé :</span>
+                            <span class="font-bold text-green-600" x-text="formatPrice(lastAmountPaid)"></span>
+                        </div>
+                        <div class="flex justify-between text-sm mt-1">
+                            <span class="text-amber-600 dark:text-amber-400">Reste à payer :</span>
+                            <span class="font-bold text-red-500" x-text="formatPrice(lastRemaining)"></span>
+                        </div>
+                    </div>
+                </template>
                 
                 <button @click="showSuccessModal = false" 
                         class="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-semibold hover:from-violet-700 hover:to-purple-700 transition-all">
@@ -1007,6 +1070,8 @@
                 cart: [],
                 paymentMethod: 'cash',
                 receivedAmount: '',
+                isPartialPayment: false,
+                amountPaid: '',
                 processing: false,
                 
                 // Scanner
@@ -1021,6 +1086,9 @@
                 lastSaleDbId: null,
                 lastInvoiceNumber: null,
                 lastEmcefResult: null,
+                lastPaymentStatus: null,
+                lastAmountPaid: 0,
+                lastRemaining: 0,
 
                 // Données du rapport
                 reportData: null,
@@ -1425,6 +1493,8 @@
                 clearCart() {
                     this.cart = [];
                     this.receivedAmount = '';
+                    this.isPartialPayment = false;
+                    this.amountPaid = '';
                 },
                 
                 // Total du panier
@@ -1450,14 +1520,19 @@
 
                     this.processing = true;
                     try {
+                        const payload = {
+                            items: soldItems,
+                            payment_method: this.paymentMethod,
+                            total: this.cartTotal
+                        };
+                        if (this.isPartialPayment && this.amountPaid !== '') {
+                            payload.amount_paid = parseFloat(this.amountPaid) || 0;
+                        }
+
                         const response = await fetch('/api/pos/sale', {
                             method: 'POST',
                             headers: this.getHeaders(),
-                            body: JSON.stringify({
-                                items: soldItems,
-                                payment_method: this.paymentMethod,
-                                total: this.cartTotal
-                            })
+                            body: JSON.stringify(payload)
                         });
 
                         const data = await response.json();
@@ -1467,9 +1542,14 @@
                             this.lastSaleDbId = data.sale_id || null;
                             this.lastInvoiceNumber = data.invoice_number || null;
                             this.lastEmcefResult = data.emcef || null;
+                            this.lastPaymentStatus = data.payment_status || 'paid';
+                            this.lastAmountPaid = data.amount_paid || this.cartTotal;
+                            this.lastRemaining = data.remaining || 0;
                             this.showSuccessModal = true;
                             this.cart = [];
                             this.receivedAmount = '';
+                            this.isPartialPayment = false;
+                            this.amountPaid = '';
                             this.sessionStats = data.session;
 
                             // Mise à jour locale immédiate du stock affiché

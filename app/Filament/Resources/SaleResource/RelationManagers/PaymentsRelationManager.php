@@ -121,12 +121,27 @@ class PaymentsRelationManager extends RelationManager
                         $data['account_number'] = Payment::ACCOUNTS[$data['payment_method']] ?? '512000';
                         return $data;
                     })
+                    ->before(function (array $data) {
+                        $sale = $this->getOwnerRecord();
+                        $totalDue = (float) $sale->total + (float) ($sale->aib_amount ?? 0);
+                        $newTotal = (float) $sale->amount_paid + (float) $data['amount'];
+                        if ($newTotal > $totalDue) {
+                            Notification::make()
+                                ->title('Montant trop élevé')
+                                ->body('Le paiement dépasse le montant restant dû.')
+                                ->danger()
+                                ->send();
+                            throw new \Filament\Support\Exceptions\Halt();
+                        }
+                    })
                     ->after(function () {
-                         Notification::make() 
+                        $this->getOwnerRecord()->updatePaymentStatus();
+                        Notification::make()
                             ->title('Paiement enregistré')
                             ->success()
                             ->send();
-                    }),
+                    })
+                    ->visible(fn () => $this->getOwnerRecord()->payment_status !== 'paid'),
             ])
             ->actions([
                 Tables\Actions\Action::make('print_receipt')
@@ -135,8 +150,14 @@ class PaymentsRelationManager extends RelationManager
                     ->color('info')
                     ->url(fn (Payment $record): string => route('payments.receipt', $record))
                     ->openUrlInNewTab(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->after(function () {
+                        $this->getOwnerRecord()->updatePaymentStatus();
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->after(function () {
+                        $this->getOwnerRecord()->updatePaymentStatus();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

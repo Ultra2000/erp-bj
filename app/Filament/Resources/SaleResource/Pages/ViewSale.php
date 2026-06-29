@@ -52,6 +52,17 @@ class ViewSale extends ViewRecord
                         ->label('Notes'),
                 ])
                 ->action(function (array $data) {
+                    $totalDue = (float) $this->record->total + (float) ($this->record->aib_amount ?? 0);
+                    $newTotal = (float) $this->record->amount_paid + (float) $data['amount'];
+                    if ($newTotal > $totalDue) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Montant trop élevé')
+                            ->body('Le paiement dépasse le montant restant dû.')
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
                     $this->record->payments()->create([
                         'company_id' => $this->record->company_id,
                         'amount' => $data['amount'],
@@ -62,6 +73,8 @@ class ViewSale extends ViewRecord
                         'notes' => $data['notes'] ?? null,
                         'created_by' => auth()->id(),
                     ]);
+
+                    $this->record->updatePaymentStatus();
 
                     \Filament\Notifications\Notification::make()
                         ->title('Paiement enregistré')
@@ -121,9 +134,8 @@ class ViewSale extends ViewRecord
                                     ->money('XOF')
                                     ->color('success')
                                     ->weight('bold'),
-                                Components\TextEntry::make('remaining')
+                                Components\TextEntry::make('remaining_amount')
                                     ->label('Reste à payer')
-                                    ->state(fn ($record) => $record->total - $record->amount_paid)
                                     ->money('XOF')
                                     ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
                                     ->weight('bold'),
@@ -133,14 +145,12 @@ class ViewSale extends ViewRecord
                                     ->color(fn (string $state): string => match ($state) {
                                         'paid' => 'success',
                                         'partial' => 'warning',
-                                        'pending' => 'danger',
-                                        default => 'gray',
+                                        default => 'danger',
                                     })
                                     ->formatStateUsing(fn (string $state): string => match ($state) {
                                         'paid' => 'Payé',
                                         'partial' => 'Partiel',
-                                        'pending' => 'Non payé',
-                                        default => $state,
+                                        default => 'Non payé',
                                     }),
                             ]),
                     ]),
