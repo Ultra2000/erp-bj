@@ -23,10 +23,12 @@ class Purchase extends Model
         'warehouse_id',
         'bank_account_id',
         'status',
+        'payment_status',
         'payment_method',
         'total',
         'total_ht',
         'total_vat',
+        'amount_paid',
         'notes',
         'discount_percent',
         'tax_percent',
@@ -36,6 +38,7 @@ class Purchase extends Model
         'total' => 'decimal:2',
         'total_ht' => 'decimal:2',
         'total_vat' => 'decimal:2',
+        'amount_paid' => 'decimal:2',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -235,6 +238,41 @@ class Purchase extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(PurchasePayment::class);
+    }
+
+    public function getRemainingAmountAttribute(): float
+    {
+        return max(0, (float) $this->total - (float) $this->amount_paid);
+    }
+
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'paid' => 'Payé',
+            'partial' => 'Partiel',
+            default => 'Impayé',
+        };
+    }
+
+    public function updatePaymentStatus(): void
+    {
+        $totalPaid = $this->payments()->sum('amount');
+        $this->amount_paid = $totalPaid;
+
+        if ($totalPaid <= 0) {
+            $this->payment_status = 'unpaid';
+        } elseif ($totalPaid >= (float) $this->total) {
+            $this->payment_status = 'paid';
+        } else {
+            $this->payment_status = 'partial';
+        }
+
+        $this->saveQuietly();
     }
 
     public function recalculateTotals(): void

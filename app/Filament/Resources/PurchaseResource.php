@@ -13,6 +13,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components;
 use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 
@@ -292,6 +294,24 @@ class PurchaseResource extends Resource
                     ->label('Total')
                     ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
                     ->sortable(),
+                Tables\Columns\TextColumn::make('amount_paid')
+                    ->label('Payé')
+                    ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
+                    ->sortable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('payment_status')
+                    ->label('Paiement')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state) => match ($state) {
+                        'paid' => 'Payé',
+                        'partial' => 'Partiel',
+                        default => 'Impayé',
+                    })
+                    ->color(fn (string $state) => match ($state) {
+                        'paid' => 'success',
+                        'partial' => 'warning',
+                        default => 'danger',
+                    }),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Date')
                     ->dateTime()
@@ -305,12 +325,21 @@ class PurchaseResource extends Resource
                         'completed' => 'Terminé',
                         'cancelled' => 'Annulé',
                     ]),
+                Tables\Filters\SelectFilter::make('payment_status')
+                    ->label('Paiement')
+                    ->options([
+                        'unpaid' => 'Impayé',
+                        'partial' => 'Partiel',
+                        'paid' => 'Payé',
+                    ]),
             ])
             ->deferLoading() // Optimisation: Chargement différé via AJAX
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('Voir'),
                 Tables\Actions\EditAction::make()
                     ->label('Modifier'),
                 Tables\Actions\DeleteAction::make()
@@ -354,10 +383,93 @@ class PurchaseResource extends Resource
             ]);
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        $currency = Filament::getTenant()->currency ?? 'XOF';
+
+        return $infolist
+            ->schema([
+                Components\Section::make('Informations de l\'achat')
+                    ->schema([
+                        Components\TextEntry::make('invoice_number')
+                            ->label('N° Facture')
+                            ->copyable()
+                            ->weight('bold'),
+                        Components\TextEntry::make('supplier.name')
+                            ->label('Fournisseur'),
+                        Components\TextEntry::make('warehouse.name')
+                            ->label('Entrepôt'),
+                        Components\TextEntry::make('status')
+                            ->label('Statut')
+                            ->badge()
+                            ->formatStateUsing(fn (string $state) => match ($state) {
+                                'completed' => 'Terminé',
+                                'cancelled' => 'Annulé',
+                                default => 'En attente',
+                            })
+                            ->color(fn (string $state) => match ($state) {
+                                'completed' => 'success',
+                                'cancelled' => 'danger',
+                                default => 'warning',
+                            }),
+                        Components\TextEntry::make('created_at')
+                            ->label('Date')
+                            ->dateTime('d/m/Y H:i'),
+                    ])->columns(5),
+
+                Components\Section::make('Montants & Paiement')
+                    ->schema([
+                        Components\TextEntry::make('total_ht')
+                            ->label('Total HT')
+                            ->money($currency),
+                        Components\TextEntry::make('total_vat')
+                            ->label('TVA')
+                            ->money($currency),
+                        Components\TextEntry::make('total')
+                            ->label('Total TTC')
+                            ->money($currency)
+                            ->weight('bold')
+                            ->size(Components\TextEntry\TextEntrySize::Large),
+                        Components\TextEntry::make('amount_paid')
+                            ->label('Montant payé')
+                            ->money($currency)
+                            ->color('success'),
+                        Components\TextEntry::make('remaining_amount')
+                            ->label('Reste à payer')
+                            ->money($currency)
+                            ->color(fn ($state) => $state > 0 ? 'danger' : 'success')
+                            ->weight('bold'),
+                        Components\TextEntry::make('payment_status')
+                            ->label('Statut paiement')
+                            ->badge()
+                            ->formatStateUsing(fn (string $state) => match ($state) {
+                                'paid' => 'Payé',
+                                'partial' => 'Partiel',
+                                default => 'Impayé',
+                            })
+                            ->color(fn (string $state) => match ($state) {
+                                'paid' => 'success',
+                                'partial' => 'warning',
+                                default => 'danger',
+                            }),
+                    ])->columns(6),
+
+                Components\Section::make('Notes')
+                    ->schema([
+                        Components\TextEntry::make('notes')
+                            ->label('')
+                            ->placeholder('Aucune note'),
+                    ])
+                    ->collapsed()
+                    ->visible(fn ($record) => !empty($record->notes)),
+            ]);
+    }
+
     public static function getRelations(): array
     {
         return [
             RelationManagers\ItemsRelationManager::class,
+            RelationManagers\PaymentsRelationManager::class,
         ];
     }
 
@@ -366,6 +478,7 @@ class PurchaseResource extends Resource
         return [
             'index' => Pages\ListPurchases::route('/'),
             'create' => Pages\CreatePurchase::route('/create'),
+            'view' => Pages\ViewPurchase::route('/{record}'),
             'edit' => Pages\EditPurchase::route('/{record}/edit'),
         ];
     }
