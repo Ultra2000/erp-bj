@@ -5,20 +5,21 @@ namespace App\Filament\Resources\InventoryResource\Pages;
 use App\Filament\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
-use Filament\Forms;
 use Filament\Actions;
 use Filament\Resources\Pages\Page;
+use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\Computed;
 
 class CountInventory extends Page
 {
+    use InteractsWithRecord;
+
     protected static string $resource = InventoryResource::class;
 
     protected static string $view = 'filament.resources.inventory-resource.pages.count-inventory';
-
-    public ?Inventory $record = null;
 
     public string $search = '';
     public string $filter = 'all';
@@ -26,9 +27,9 @@ class CountInventory extends Page
 
     public function mount(int | string $record): void
     {
-        $this->record = Inventory::withoutGlobalScopes()
-            ->with(['items.product', 'items.location', 'warehouse'])
-            ->findOrFail($record);
+        $this->record = $this->resolveRecord($record);
+
+        $this->record->load(['items.product', 'items.location', 'warehouse']);
 
         if ($this->record->status !== 'in_progress') {
             Notification::make()
@@ -98,7 +99,7 @@ class CountInventory extends Page
     public function resetItem(int $itemId): void
     {
         $item = InventoryItem::find($itemId);
-        
+
         if ($item) {
             $item->reset();
             $this->counts[$itemId] = null;
@@ -113,7 +114,7 @@ class CountInventory extends Page
     public function copyExpected(int $itemId): void
     {
         $item = InventoryItem::find($itemId);
-        
+
         if ($item) {
             $this->counts[$itemId] = $item->quantity_expected;
         }
