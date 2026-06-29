@@ -239,11 +239,13 @@ Route::get('/verify/sale/{sale}', function (Request $request, Sale $sale) {
 
 // Routes Multi-Entrepôts (impression)
 Route::middleware('auth')->group(function () {
-    Route::get('/stock-transfers/{transfer}/print', function (\App\Models\StockTransfer $transfer) {
+    Route::get('/stock-transfers/{transfer}/print', function (int $transfer) {
+        $transfer = \App\Models\StockTransfer::withoutGlobalScopes()->findOrFail($transfer);
         return view('prints.stock-transfer', ['transfer' => $transfer->load(['sourceWarehouse', 'destinationWarehouse', 'items.product', 'requestedBy', 'approvedBy'])]);
     })->name('stock-transfers.print');
 
-    Route::get('/inventories/{inventory}/print', function (\App\Models\Inventory $inventory) {
+    Route::get('/inventories/{inventory}/print', function (int $inventory) {
+        $inventory = \App\Models\Inventory::withoutGlobalScopes()->findOrFail($inventory);
         return view('prints.inventory', ['inventory' => $inventory->load(['warehouse', 'items.product', 'createdByUser', 'validatedByUser'])]);
     })->name('inventories.print');
 });
