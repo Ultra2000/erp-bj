@@ -9,8 +9,10 @@ use Filament\Facades\Filament;
 
 class PurchaseInvoiceController extends Controller
 {
-    public function generate(Purchase $purchase)
+    public function generate(int $purchase)
     {
+        $purchase = Purchase::withoutGlobalScopes()->findOrFail($purchase);
+
         if ($purchase->company) {
             Filament::setTenant($purchase->company);
         }
@@ -32,8 +34,10 @@ class PurchaseInvoiceController extends Controller
         return $pdf->download('facture-achat-' . $purchase->invoice_number . '.pdf');
     }
 
-    public function preview(Purchase $purchase)
+    public function preview(int $purchase)
     {
+        $purchase = Purchase::withoutGlobalScopes()->findOrFail($purchase);
+
         if ($purchase->company) {
             Filament::setTenant($purchase->company);
         }
