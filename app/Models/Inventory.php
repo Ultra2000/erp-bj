@@ -111,12 +111,16 @@ class Inventory extends Model
         $prefix = 'INV';
         $year = date('Y');
         $month = date('m');
-        
-        $lastInventory = static::where('company_id', $companyId)
-            ->whereYear('created_at', $year)
-            ->whereMonth('created_at', $month)
-            ->orderBy('id', 'desc')
-            ->first();
+
+        try {
+            $lastInventory = static::withoutGlobalScopes()
+                ->where('company_id', $companyId)
+                ->where('reference', 'LIKE', $prefix . $year . $month . '-%')
+                ->orderByRaw('LENGTH(reference) DESC, reference DESC')
+                ->first();
+        } catch (\Throwable $e) {
+            $lastInventory = null;
+        }
 
         $number = 1;
         if ($lastInventory && preg_match('/(\d+)$/', $lastInventory->reference, $matches)) {
