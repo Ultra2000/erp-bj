@@ -183,7 +183,7 @@ class SaleResource extends Resource
                                             $product = \App\Models\Product::find($productId);
                                             if ($product) {
                                                 $company = \Filament\Facades\Filament::getTenant();
-                                                $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+                                                $defaultVatRate = 0;
                                                 $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
                                                 $set("items.{$index}.vat_category", $product->vat_category ?? ($company?->emcef_enabled ? 'A' : 'S'));
                                                 $set("items.{$index}.vat_rate", $vatRate);
@@ -297,9 +297,8 @@ class SaleResource extends Resource
                                             if ($product) {
                                                 $company = Filament::getTenant();
                                                 $isExport = filter_var($get('../../is_export'), FILTER_VALIDATE_BOOLEAN);
-                                                // Taux TVA par défaut: 18% si e-MCeF, sinon celui du produit
-                                                $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
-                                                $defaultVatCategory = $company?->emcef_enabled ? 'A' : 'S';
+                                                $defaultVatRate = 0;
+                                                $defaultVatCategory = $company?->emcef_enabled ? 'B' : 'S';
                                                 
                                                 // Utiliser le prix de vente HT du produit (quantité initiale = 1)
                                                 $set('unit_price', $product->sale_price_ht);
@@ -372,7 +371,7 @@ class SaleResource extends Resource
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $quantity = floatval($state);
                                         $productId = $get('product_id');
-                                        $vatRate = $get('vat_rate') ?? 18;
+                                        $vatRate = $get('vat_rate') ?? 0;
                                         
                                         if ($quantity && $productId) {
                                             $product = Product::find($productId);
@@ -420,7 +419,7 @@ class SaleResource extends Resource
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $company = Filament::getTenant();
-                                        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+                                        $defaultVatRate = 0;
                                         $quantity = $get('quantity');
                                         $unitPrice = $state;
                                         $vatRate = $get('vat_rate') ?? $defaultVatRate;
@@ -439,7 +438,7 @@ class SaleResource extends Resource
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $company = Filament::getTenant();
-                                        $defaultVatRate = $company?->emcef_enabled ? 18 : 20;
+                                        $defaultVatRate = 0;
                                         $quantity = $get('quantity');
                                         $unitPrice = $get('unit_price');
                                         $vatRate = $state ?? $defaultVatRate;
@@ -1003,7 +1002,7 @@ class SaleResource extends Resource
                                 'quantity' => $item->quantity,
                                 'unit_price' => $item->unit_price, // Prix positif
                                 'total_price' => $item->quantity * $item->unit_price, // Total positif (le type credit_note indique l'inversion)
-                                'vat_rate' => $item->vat_rate ?? 18,
+                                'vat_rate' => $item->vat_rate ?? 0,
                                 'vat_category' => $item->vat_category ?? 'A',
                                 'tax_specific_amount' => $item->tax_specific_amount,
                                 'tax_specific_label' => $item->tax_specific_label,
