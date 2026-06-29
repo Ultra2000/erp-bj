@@ -51,6 +51,17 @@ class Permission extends Model
         ];
     }
 
+    public static function moduleGroups(): array
+    {
+        return [
+            'Ventes & Clients' => ['sales', 'customers', 'quotes', 'deliveries', 'pos'],
+            'Stocks & Achats' => ['products', 'purchases', 'suppliers', 'warehouses', 'transfers', 'inventory'],
+            'Comptabilité & Finance' => ['accounting', 'banking'],
+            'Ressources Humaines' => ['hr', 'employees'],
+            'Administration' => ['users', 'roles', 'reports', 'settings'],
+        ];
+    }
+
     /**
      * Actions disponibles par module
      */

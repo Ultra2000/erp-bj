@@ -63,19 +63,7 @@ class RoleResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Permissions')
-                    ->schema([
-                        Forms\Components\CheckboxList::make('permissions')
-                            ->label('')
-                            ->relationship('permissions', 'name')
-                            ->columns(2)
-                            ->gridDirection('row')
-                            ->bulkToggleable()
-                            ->searchable()
-                            ->descriptions(
-                                Permission::pluck('description', 'id')->toArray()
-                            ),
-                    ]),
+                ...static::buildPermissionSections(),
             ]);
     }
 
@@ -167,5 +155,54 @@ class RoleResource extends Resource
     {
         return parent::getEloquentQuery()
             ->withCount(['permissions', 'users']);
+    }
+
+    protected static function buildPermissionSections(): array
+    {
+        $modules = Permission::modules();
+        $groups = Permission::moduleGroups();
+        $allPermissions = Permission::all();
+
+        $sections = [];
+
+        foreach ($groups as $groupLabel => $groupModules) {
+            $checkboxes = [];
+
+            foreach ($groupModules as $module) {
+                $moduleName = $modules[$module] ?? $module;
+                $modulePermissions = $allPermissions->where('module', $module);
+
+                if ($modulePermissions->isEmpty()) {
+                    continue;
+                }
+
+                $options = $modulePermissions->pluck('name', 'id')->toArray();
+                $descriptions = $modulePermissions->pluck('description', 'id')->toArray();
+
+                $checkboxes[] = Forms\Components\CheckboxList::make("perm_{$module}")
+                    ->label($moduleName)
+                    ->relationship('permissions', 'name', fn ($query) => $query->where('module', $module))
+                    ->options($options)
+                    ->descriptions($descriptions)
+                    ->columns(2)
+                    ->bulkToggleable();
+            }
+
+            if (!empty($checkboxes)) {
+                $sections[] = Forms\Components\Section::make($groupLabel)
+                    ->schema($checkboxes)
+                    ->collapsible()
+                    ->icon(match ($groupLabel) {
+                        'Ventes & Clients' => 'heroicon-o-shopping-cart',
+                        'Stocks & Achats' => 'heroicon-o-cube',
+                        'Comptabilité & Finance' => 'heroicon-o-calculator',
+                        'Ressources Humaines' => 'heroicon-o-user-group',
+                        'Administration' => 'heroicon-o-cog-6-tooth',
+                        default => 'heroicon-o-squares-2x2',
+                    });
+            }
+        }
+
+        return $sections;
     }
 }

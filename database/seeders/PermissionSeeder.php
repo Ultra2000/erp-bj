@@ -9,19 +9,7 @@ class PermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $modules = [
-            'products' => 'Produits',
-            'customers' => 'Clients',
-            'suppliers' => 'Fournisseurs',
-            'sales' => 'Ventes',
-            'purchases' => 'Achats',
-            'users' => 'Utilisateurs',
-            'roles' => 'Rôles',
-            'reports' => 'Rapports',
-            'settings' => 'Paramètres',
-        ];
-
-        foreach ($modules as $module => $moduleName) {
+        foreach (Permission::modules() as $module => $moduleName) {
             $permissions = Permission::generateForModule($module, $moduleName);
             foreach ($permissions as $permission) {
                 Permission::updateOrCreate(
@@ -31,6 +19,6 @@ class PermissionSeeder extends Seeder
             }
         }
 
-        $this->command->info('Permissions créées avec succès !');
+        $this->command->info('Permissions créées/mises à jour avec succès !');
     }
 }
