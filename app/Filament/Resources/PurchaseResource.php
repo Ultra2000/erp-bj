@@ -116,7 +116,6 @@ class PurchaseResource extends Resource
                             ->relationship('bankAccount', 'name', fn ($query) => $query->where('company_id', $companyId))
                             ->searchable()
                             ->preload()
-                            ->required(fn (Forms\Get $get) => $get('status') === 'completed')
                             ->visible(fn (Forms\Get $get) => $get('status') === 'completed'),
                     ])->columns(4),
 
