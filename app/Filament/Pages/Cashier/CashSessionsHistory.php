@@ -60,30 +60,38 @@ class CashSessionsHistory extends Page implements HasTable
                     ->sortable(),
                 Tables\Columns\TextColumn::make('opening_amount')
                     ->label('Fond de caisse')
-                    ->money('EUR')
+                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
                     ->alignEnd(),
                 Tables\Columns\TextColumn::make('total_sales')
                     ->label('Total ventes')
-                    ->money('EUR')
+                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
                     ->alignEnd()
                     ->color('success'),
+                Tables\Columns\TextColumn::make('total_cash')
+                    ->label('Espèces')
+                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
+                    ->alignEnd()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('sales_count')
+                    ->label('Tickets')
+                    ->badge()
+                    ->alignEnd(),
                 Tables\Columns\TextColumn::make('closing_amount')
                     ->label('Clôture')
-                    ->money('EUR')
+                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
                     ->alignEnd()
                     ->placeholder('-'),
                 Tables\Columns\TextColumn::make('difference')
                     ->label('Écart')
                     ->formatStateUsing(function ($record) {
                         if (!$record->closed_at) return '-';
-                        $expected = $record->opening_amount + $record->total_sales;
-                        $diff = $record->closing_amount - $expected;
-                        return number_format($diff, 2, ',', ' ') . ' FCFA';
+                        $diff = floatval($record->closing_amount) - (floatval($record->opening_amount) + floatval($record->total_cash));
+                        $sign = $diff >= 0 ? '+' : '';
+                        return $sign . number_format($diff, 0, ',', ' ') . ' FCFA';
                     })
                     ->color(function ($record) {
                         if (!$record->closed_at) return 'gray';
-                        $expected = $record->opening_amount + $record->total_sales;
-                        $diff = $record->closing_amount - $expected;
+                        $diff = floatval($record->closing_amount) - (floatval($record->opening_amount) + floatval($record->total_cash));
                         return $diff == 0 ? 'success' : ($diff > 0 ? 'warning' : 'danger');
                     })
                     ->alignEnd(),
@@ -105,8 +113,22 @@ class CashSessionsHistory extends Page implements HasTable
                 Tables\Actions\Action::make('view')
                     ->label('Détails')
                     ->icon('heroicon-o-eye')
-                    ->modalHeading(fn ($record) => 'Session du ' . $record->opened_at->format('d/m/Y'))
-                    ->modalContent(fn ($record) => view('filament.pages.cashier.session-details', ['session' => $record])),
+                    ->modalHeading(fn ($record) => 'Session du ' . $record->opened_at->format('d/m/Y H:i'))
+                    ->modalContent(fn ($record) => view('filament.pages.cashier.session-details', ['session' => $record->fresh()])),
+                Tables\Actions\Action::make('pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->url(fn ($record) => route('pos.report.pdf', ['sessionId' => $record->id]) . '?company_id=' . Filament::getTenant()?->id)
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record) => $record->closed_at !== null),
+                Tables\Actions\Action::make('excel')
+                    ->label('Excel')
+                    ->icon('heroicon-o-table-cells')
+                    ->color('gray')
+                    ->url(fn ($record) => route('pos.report.excel', ['sessionId' => $record->id]) . '?company_id=' . Filament::getTenant()?->id)
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record) => $record->closed_at !== null),
             ])
             ->emptyStateHeading('Aucune session de caisse')
             ->emptyStateDescription('Les sessions apparaîtront ici une fois ouvertes depuis le point de vente.');
