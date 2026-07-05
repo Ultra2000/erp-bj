@@ -194,12 +194,12 @@
                             <span x-text="formatPrice(subtotal)"></span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Remise (%)</span>
-                            <input type="number" x-model.number="discount" min="0" max="100" step="0.5" class="w-20 text-right border rounded px-2 py-1 text-sm">
+                            <span class="text-gray-600">Remise (FCFA)</span>
+                            <input type="number" x-model.number="discountAmount" @input="discount = subtotal > 0 ? Math.min((discountAmount / subtotal) * 100, 100) : 0" min="0" :max="subtotal" step="1" class="w-28 text-right border rounded px-2 py-1 text-sm">
                         </div>
-                        <div class="flex justify-between items-center text-xs" x-show="discount > 0" x-transition>
-                            <span class="text-red-500">Remise appliquée</span>
-                            <span class="text-red-500 font-semibold" x-text="'- ' + formatPrice(Math.round(subtotal * discount / 100))"></span>
+                        <div class="flex justify-between items-center text-xs" x-show="discountAmount > 0" x-transition>
+                            <span class="text-red-500">Soit</span>
+                            <span class="text-red-500 font-semibold" x-text="discount.toFixed(2) + ' %'"></span>
                         </div>
                         <div class="flex justify-between items-center text-xs text-gray-400">
                             <span>TVA calculée par produit</span>
@@ -438,6 +438,7 @@
                 
                 // Paiement
                 discount: 0,
+                discountAmount: 0,
                 paymentMethod: 'cash',
                 receivedAmount: 0,
                 
@@ -666,6 +667,7 @@
                 clearCart() {
                     this.cart = [];
                     this.discount = 0;
+                    this.discountAmount = 0;
                     this.receivedAmount = 0;
                     this.mixedCash = 0;
                     this.mixedCard = 0;

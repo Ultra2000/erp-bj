@@ -460,31 +460,38 @@ class SaleResource extends Resource
                             ->hidden(fn (Forms\Get $get) => !$get('warehouse_id')),
                     ]),
 
-                Forms\Components\Section::make('Paramètres financiers')
+                Forms\Components\Section::make('Remise & Totaux')
                     ->schema([
-                        Forms\Components\TextInput::make('discount_percent')
-                            ->label('Remise globale %')
-                            ->numeric()->minValue(0)->maxValue(100)->default(0)
+                        Forms\Components\TextInput::make('discount_amount_input')
+                            ->label('Remise (FCFA)')
+                            ->numeric()->minValue(0)->default(0)
                             ->live()
-                            ->helperText('Appliquée sur le total TTC'),
-                        Forms\Components\Placeholder::make('discount_amount_display')
-                            ->label('Montant remise')
-                            ->content(function (Forms\Get $get) {
-                                $discount = floatval($get('discount_percent') ?? 0);
-                                if ($discount <= 0) return '-';
+                            ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
+                            ->dehydrated(false)
+                            ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                $discountAmount = floatval($state ?? 0);
                                 $items = $get('items') ?? [];
                                 $total = 0;
                                 foreach ($items as $item) {
                                     $total += floatval($item['total_price'] ?? 0);
                                 }
-                                if ($total <= 0) return '-';
-                                $amount = round($total * $discount / 100);
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                if ($total > 0 && $discountAmount > 0) {
+                                    $percent = round(($discountAmount / $total) * 100, 2);
+                                    $set('discount_percent', min($percent, 100));
+                                } else {
+                                    $set('discount_percent', 0);
+                                }
+                            }),
+                        Forms\Components\Placeholder::make('discount_percent_display')
+                            ->label('Soit en %')
+                            ->content(function (Forms\Get $get) {
+                                $percent = floatval($get('discount_percent') ?? 0);
+                                if ($percent <= 0) return '-';
                                 return new \Illuminate\Support\HtmlString(
-                                    '<span style="color: #ef4444; font-weight: 600;">- ' . number_format($amount, 0, ',', ' ') . ' ' . $currency . '</span>'
+                                    '<span style="color: #ef4444; font-weight: 600;">' . number_format($percent, 2, ',', ' ') . ' %</span>'
                                 );
-                            })
-                            ->visible(fn (Forms\Get $get) => floatval($get('discount_percent') ?? 0) > 0),
+                            }),
+                        Forms\Components\Hidden::make('discount_percent')->default(0),
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
                             ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
