@@ -116,19 +116,21 @@ class CashSession extends Model
         $totalOther = 0;
         
         foreach ($sales as $sale) {
+            $saleAmount = floatval($sale->amount_paid ?? $sale->total);
+
             if ($sale->payment_method === 'mixed' && $sale->payment_details) {
                 $details = is_array($sale->payment_details) ? $sale->payment_details : json_decode($sale->payment_details, true);
                 $totalCash += floatval($details['cash'] ?? 0);
                 $totalCard += floatval($details['card'] ?? 0);
                 $totalMobile += floatval($details['mobile'] ?? 0);
             } elseif ($sale->payment_method === 'cash') {
-                $totalCash += floatval($sale->total);
+                $totalCash += $saleAmount;
             } elseif ($sale->payment_method === 'card') {
-                $totalCard += floatval($sale->total);
+                $totalCard += $saleAmount;
             } elseif ($sale->payment_method === 'mobile') {
-                $totalMobile += floatval($sale->total);
+                $totalMobile += $saleAmount;
             } else {
-                $totalOther += floatval($sale->total);
+                $totalOther += $saleAmount;
             }
         }
         
