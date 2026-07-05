@@ -246,43 +246,6 @@ class SaleResource extends Resource
                     })
                     ->collapsed(fn (?Sale $record) => $record?->emcef_status === 'certified'),
 
-                Forms\Components\Section::make('Paramètres financiers')
-                    ->schema([
-                        Forms\Components\TextInput::make('discount_percent')
-                            ->label('Remise globale %')
-                            ->numeric()->minValue(0)->maxValue(100)->default(0)
-                            ->live()
-                            ->helperText('Appliquée sur le total TTC'),
-                        Forms\Components\Placeholder::make('discount_amount_display')
-                            ->label('Montant remise')
-                            ->content(function (Forms\Get $get) {
-                                $discount = floatval($get('discount_percent') ?? 0);
-                                if ($discount <= 0) return '-';
-                                $items = $get('items') ?? [];
-                                $total = 0;
-                                foreach ($items as $item) {
-                                    $total += floatval($item['total_price'] ?? 0);
-                                }
-                                if ($total <= 0) return '-';
-                                $amount = round($total * $discount / 100);
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
-                                return new \Illuminate\Support\HtmlString(
-                                    '<span style="color: #ef4444; font-weight: 600;">- ' . number_format($amount, 0, ',', ' ') . ' ' . $currency . '</span>'
-                                );
-                            })
-                            ->visible(fn (Forms\Get $get) => floatval($get('discount_percent') ?? 0) > 0),
-                        Forms\Components\Placeholder::make('total_ht_display')
-                            ->label('Total HT')
-                            ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
-                        Forms\Components\Placeholder::make('total_vat_display')
-                            ->label('Total TVA')
-                            ->content(fn (?Sale $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
-                        Forms\Components\TextInput::make('total')
-                            ->label('Total TTC')
-                            ->disabled()
-                            ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF'),
-                    ])->columns(5),
-
                 Forms\Components\Section::make('Articles')
                     ->schema([
                         Forms\Components\Repeater::make('items')
@@ -496,6 +459,43 @@ class SaleResource extends Resource
                             ->columnSpanFull()
                             ->hidden(fn (Forms\Get $get) => !$get('warehouse_id')),
                     ]),
+
+                Forms\Components\Section::make('Paramètres financiers')
+                    ->schema([
+                        Forms\Components\TextInput::make('discount_percent')
+                            ->label('Remise globale %')
+                            ->numeric()->minValue(0)->maxValue(100)->default(0)
+                            ->live()
+                            ->helperText('Appliquée sur le total TTC'),
+                        Forms\Components\Placeholder::make('discount_amount_display')
+                            ->label('Montant remise')
+                            ->content(function (Forms\Get $get) {
+                                $discount = floatval($get('discount_percent') ?? 0);
+                                if ($discount <= 0) return '-';
+                                $items = $get('items') ?? [];
+                                $total = 0;
+                                foreach ($items as $item) {
+                                    $total += floatval($item['total_price'] ?? 0);
+                                }
+                                if ($total <= 0) return '-';
+                                $amount = round($total * $discount / 100);
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                return new \Illuminate\Support\HtmlString(
+                                    '<span style="color: #ef4444; font-weight: 600;">- ' . number_format($amount, 0, ',', ' ') . ' ' . $currency . '</span>'
+                                );
+                            })
+                            ->visible(fn (Forms\Get $get) => floatval($get('discount_percent') ?? 0) > 0),
+                        Forms\Components\Placeholder::make('total_ht_display')
+                            ->label('Total HT')
+                            ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
+                        Forms\Components\Placeholder::make('total_vat_display')
+                            ->label('Total TVA')
+                            ->content(fn (?Sale $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
+                        Forms\Components\TextInput::make('total')
+                            ->label('Total TTC')
+                            ->disabled()
+                            ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF'),
+                    ])->columns(5),
 
                 // Section AIB (Bénin uniquement) — après les articles pour afficher le net à payer
                 Forms\Components\Section::make('AIB (Acompte sur Impôt Bénéfices)')
