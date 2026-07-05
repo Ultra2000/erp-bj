@@ -465,7 +465,7 @@ class SaleResource extends Resource
                         Forms\Components\TextInput::make('discount_amount_input')
                             ->label('Remise (FCFA)')
                             ->numeric()->minValue(0)->default(0)
-                            ->live()
+                            ->live(debounce: '750ms')
                             ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                             ->dehydrated(false)
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
