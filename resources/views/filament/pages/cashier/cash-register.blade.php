@@ -348,16 +348,22 @@
 
                                     {{-- Toggle paiement partiel --}}
                                     <template x-if="cart.length > 0">
-                                        <div class="mt-2 flex items-center justify-between py-2 px-3 rounded-lg cursor-pointer select-none"
-                                             :class="isPartialPayment ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-gray-100 dark:bg-gray-700/50'"
-                                             @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''">
-                                            <span class="text-xs font-semibold" :class="isPartialPayment ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'">Paiement partiel</span>
-                                            <div class="w-10 h-[22px] rounded-full transition-all relative flex-shrink-0"
-                                                 :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'">
-                                                <div class="w-[18px] h-[18px] rounded-full bg-white absolute top-[2px] transition-all shadow"
-                                                     :class="isPartialPayment ? 'left-[20px]' : 'left-[2px]'"></div>
+                                        <label class="mt-2 flex items-center justify-between py-2.5 px-3 rounded-xl border-2 cursor-pointer select-none transition-all"
+                                               :class="isPartialPayment ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-400 dark:border-amber-600' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-gray-300'">
+                                            <div class="flex items-center gap-2.5">
+                                                <svg class="w-5 h-5 flex-shrink-0" :class="isPartialPayment ? 'text-amber-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span class="text-sm font-semibold" :class="isPartialPayment ? 'text-amber-700 dark:text-amber-300' : 'text-gray-600 dark:text-gray-300'">Paiement partiel</span>
                                             </div>
-                                        </div>
+                                            <button type="button"
+                                                    @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''"
+                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 flex-shrink-0"
+                                                    :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-500'"
+                                                    role="switch"
+                                                    :aria-checked="isPartialPayment">
+                                                <span class="absolute top-[3px] left-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform duration-200"
+                                                      :class="isPartialPayment ? 'translate-x-5' : 'translate-x-0'"></span>
+                                            </button>
+                                        </label>
                                     </template>
 
                                     {{-- Montant payé (paiement partiel) --}}
