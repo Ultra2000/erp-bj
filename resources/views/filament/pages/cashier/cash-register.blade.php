@@ -229,7 +229,7 @@
                     {{-- Colonne droite - Panier --}}
                     <div class="space-y-0">
                         {{-- Panier --}}
-                        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col h-[calc(100vh-280px)] min-h-[500px] overflow-hidden">
+                        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col max-h-[calc(100vh-200px)] overflow-hidden">
                             {{-- Header panier avec dégradé --}}
                             <div class="relative p-4" style="background: linear-gradient(to right, #1e293b, #334155, #1e293b);">
                                 <div class="flex items-center justify-between">
@@ -251,7 +251,7 @@
                             </div>
                             
                             {{-- Liste des articles avec scroll custom --}}
-                            <div class="flex-1 overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 custom-scrollbar">
+                            <div class="flex-1 overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 custom-scrollbar min-h-[200px]">
                                 <template x-for="(item, index) in cart" :key="index">
                                     <div class="group bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-violet-200 dark:hover:border-violet-800">
                                         <div class="flex items-center gap-4">
@@ -307,89 +307,85 @@
                                 </template>
                             </div>
                             
-                            {{-- Section Paiement - Design moderne --}}
-                            <div class="border-t-2 border-gray-200 dark:border-gray-700">
+                            {{-- Section Paiement --}}
+                            <div class="border-t-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
                                 {{-- Modes de paiement --}}
-                                <div class="px-4 pt-4 pb-3 bg-gray-50 dark:bg-gray-800/50">
-                                    <div class="flex items-center gap-3 mb-3">
-                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                        <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Mode de paiement</span>
-                                    </div>
-                                    <div class="grid grid-cols-4 gap-2">
+                                <div class="px-4 pt-3 pb-2 bg-gray-50 dark:bg-gray-800/50">
+                                    <div class="grid grid-cols-4 gap-2 mb-2">
                                         {{-- Cash --}}
                                         <button type="button" @click="paymentMethod = 'cash'; receivedAmount = ''; playAddToCart()"
-                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                class="py-2.5 px-2 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2"
                                                 :style="paymentMethod === 'cash' ? 'background: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);' : ''"
                                                 :class="paymentMethod !== 'cash' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-gray-200 dark:border-gray-600 hover:border-emerald-300' : ''">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                             <span class="text-xs font-bold">Espèces</span>
                                         </button>
                                         {{-- Carte --}}
                                         <button type="button" @click="paymentMethod = 'card'; receivedAmount = ''; playAddToCart()"
-                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                class="py-2.5 px-2 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2"
                                                 :style="paymentMethod === 'card' ? 'background: #3b82f6; color: white; border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);' : ''"
                                                 :class="paymentMethod !== 'card' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-200 dark:border-gray-600 hover:border-blue-300' : ''">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                                             <span class="text-xs font-bold">Carte</span>
                                         </button>
                                         {{-- Mobile --}}
                                         <button type="button" @click="paymentMethod = 'mobile'; receivedAmount = ''; playAddToCart()"
-                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                class="py-2.5 px-2 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2"
                                                 :style="paymentMethod === 'mobile' ? 'background: #f97316; color: white; border-color: #f97316; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);' : ''"
                                                 :class="paymentMethod !== 'mobile' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-gray-200 dark:border-gray-600 hover:border-orange-300' : ''">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                                             <span class="text-xs font-bold">Mobile</span>
                                         </button>
                                         {{-- Mixte --}}
                                         <button type="button" @click="paymentMethod = 'mixed'; receivedAmount = ''; playAddToCart()"
-                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                class="py-2.5 px-2 rounded-xl border-2 transition-all duration-200 flex items-center justify-center gap-2"
                                                 :style="paymentMethod === 'mixed' ? 'background: #8b5cf6; color: white; border-color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);' : ''"
                                                 :class="paymentMethod !== 'mixed' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 border-gray-200 dark:border-gray-600 hover:border-violet-300' : ''">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
                                             <span class="text-xs font-bold">Mixte</span>
                                         </button>
                                     </div>
 
                                     {{-- Toggle paiement partiel --}}
                                     <template x-if="cart.length > 0">
-                                        <div class="mt-3 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer"
+                                        <div class="flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer"
                                              :class="isPartialPayment ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'"
                                              @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''">
-                                            <div class="flex items-center gap-2.5">
-                                                <svg class="w-5 h-5" :class="isPartialPayment ? 'text-amber-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <div class="flex items-center gap-2">
+                                                <svg class="w-4 h-4" :class="isPartialPayment ? 'text-amber-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                                 <span class="text-xs font-bold uppercase tracking-wider" :class="isPartialPayment ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'">Paiement partiel</span>
                                             </div>
-                                            <div class="w-10 h-5 rounded-full transition-all relative"
+                                            <div class="w-9 h-5 rounded-full transition-all relative"
                                                  :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'">
                                                 <div class="w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all shadow-sm"
-                                                     :class="isPartialPayment ? 'left-[22px]' : 'left-0.5'"></div>
+                                                     :class="isPartialPayment ? 'left-[18px]' : 'left-0.5'"></div>
                                             </div>
                                         </div>
                                     </template>
 
                                     {{-- Montant payé (paiement partiel) --}}
                                     <template x-if="isPartialPayment && cart.length > 0">
-                                        <div class="mt-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+                                        <div class="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
                                              x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 transform -translate-y-2"
                                              x-transition:enter-end="opacity-100 transform translate-y-0">
-                                            <div class="space-y-3">
+                                            <div class="space-y-2">
                                                 <div>
-                                                    <label class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1.5 block">Montant payé</label>
+                                                    <label class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1 block">Montant payé</label>
                                                     <div class="relative">
                                                         <input type="number"
                                                                x-model="amountPaid"
-                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-amber-300 dark:border-amber-700 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-amber-300 dark:border-amber-700 rounded-lg py-2.5 pl-3 pr-14 text-right text-lg font-bold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
                                                                placeholder="0"
                                                                :max="cartTotal"
                                                                min="0"
                                                                step="1">
-                                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-sm">FCFA</span>
+                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-sm">FCFA</span>
                                                     </div>
                                                 </div>
-                                                <div class="flex items-center justify-between bg-amber-100/50 dark:bg-amber-900/30 rounded-lg px-3 py-2">
+                                                <div class="flex items-center justify-between bg-amber-100/50 dark:bg-amber-900/30 rounded-lg px-3 py-1.5">
                                                     <span class="text-sm text-amber-700 dark:text-amber-400 font-semibold">Reste à payer</span>
-                                                    <span class="font-black text-lg text-red-500" x-text="formatPrice(Math.max(0, cartTotal - (parseFloat(amountPaid) || 0)))"></span>
+                                                    <span class="font-black text-base text-red-500" x-text="formatPrice(Math.max(0, cartTotal - (parseFloat(amountPaid) || 0)))"></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -397,68 +393,64 @@
 
                                     {{-- Montant reçu et Monnaie (Cash uniquement) --}}
                                     <template x-if="paymentMethod === 'cash' && cart.length > 0 && !isPartialPayment">
-                                        <div class="mt-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800"
+                                        <div class="mt-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800"
                                              x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 transform -translate-y-2"
                                              x-transition:enter-end="opacity-100 transform translate-y-0">
-                                            {{-- Montant reçu --}}
-                                            <div class="mb-3">
-                                                <label class="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1.5 block">Montant reçu du client</label>
-                                                <div class="relative">
-                                                    <input type="number"
-                                                           x-model="receivedAmount"
-                                                           class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-emerald-300 dark:border-emerald-700 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                                                           placeholder="0"
-                                                           step="1">
-                                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-sm">FCFA</span>
+                                            {{-- Montant reçu + Monnaie côte à côte --}}
+                                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                                <div>
+                                                    <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1 block">Reçu du client</label>
+                                                    <div class="relative">
+                                                        <input type="number"
+                                                               x-model="receivedAmount"
+                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-300 dark:border-emerald-700 rounded-lg py-2 pl-2 pr-2 text-right text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                               placeholder="0"
+                                                               step="1">
+                                                    </div>
                                                 </div>
-                                            </div>
-
-                                            {{-- Monnaie à rendre --}}
-                                            <div class="rounded-xl p-3 border-2 transition-all mb-3"
-                                                 :class="!receivedAmount ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700' : changeAmount >= 0 ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-xs font-bold uppercase tracking-wider"
-                                                          :class="!receivedAmount ? 'text-gray-400' : changeAmount >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'">Monnaie à rendre</span>
-                                                    <span class="font-black text-2xl"
-                                                          :class="!receivedAmount ? 'text-gray-300 dark:text-gray-600' : changeAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
-                                                          x-text="receivedAmount ? formatPrice(Math.abs(changeAmount)) : '0 FCFA'">
-                                                    </span>
+                                                <div>
+                                                    <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1 block">Monnaie à rendre</label>
+                                                    <div class="h-[38px] rounded-lg flex items-center justify-end px-3 border transition-all"
+                                                         :class="!receivedAmount ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700' : changeAmount >= 0 ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'">
+                                                        <span class="font-black text-lg"
+                                                              :class="!receivedAmount ? 'text-gray-300 dark:text-gray-600' : changeAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
+                                                              x-text="receivedAmount ? formatPrice(Math.abs(changeAmount)) : '0 FCFA'">
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             {{-- Boutons raccourcis montants --}}
-                                            <div class="space-y-2">
+                                            <div class="flex gap-1.5 items-center">
                                                 <button type="button"
                                                         @click="receivedAmount = cartTotal"
-                                                        class="w-full py-2 text-sm font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm">
-                                                    Montant exact
+                                                        class="py-1.5 px-3 text-[10px] font-bold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-all whitespace-nowrap">
+                                                    Exact
                                                 </button>
-                                                <div class="grid grid-cols-5 gap-1.5">
-                                                    <template x-for="amount in [500, 1000, 2000, 5000, 10000]" :key="amount">
-                                                        <button type="button"
-                                                                @click="receivedAmount = amount"
-                                                                class="py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 transition-all"
-                                                                x-text="(amount >= 1000 ? (amount/1000) + 'K' : amount)">
-                                                        </button>
-                                                    </template>
-                                                </div>
-                                                <div class="grid grid-cols-3 gap-1.5">
-                                                    <template x-for="amount in [15000, 20000, 25000]" :key="amount">
-                                                        <button type="button"
-                                                                @click="receivedAmount = amount"
-                                                                class="py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 transition-all"
-                                                                x-text="(amount/1000) + 'K'">
-                                                        </button>
-                                                    </template>
-                                                </div>
+                                                <template x-for="amount in [500, 1000, 2000, 5000, 10000]" :key="amount">
+                                                    <button type="button"
+                                                            @click="receivedAmount = amount"
+                                                            class="flex-1 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
+                                                            x-text="(amount >= 1000 ? (amount/1000) + 'K' : amount)">
+                                                    </button>
+                                                </template>
+                                            </div>
+                                            <div class="flex gap-1.5 mt-1.5">
+                                                <template x-for="amount in [15000, 20000, 25000, 50000]" :key="amount">
+                                                    <button type="button"
+                                                            @click="receivedAmount = amount"
+                                                            class="flex-1 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
+                                                            x-text="(amount/1000) + 'K'">
+                                                    </button>
+                                                </template>
                                             </div>
                                         </div>
                                     </template>
                                 </div>
 
                                 {{-- Section Total --}}
-                                <div class="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+                                <div class="p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
                                     <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
                                     <div class="relative flex items-center justify-between">
                                         <div>
