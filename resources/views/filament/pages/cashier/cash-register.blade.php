@@ -27,12 +27,12 @@
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <span class="text-xl font-semibold" style="color: #9ca3af;">FCFA</span>
                                 </div>
-                                <input type="number" 
-                                       x-model="openingAmount" 
-                                       step="0.01"
+                                <input type="number"
+                                       x-model="openingAmount"
+                                       step="1"
                                        class="w-full pl-10 pr-4 py-4 text-2xl font-bold text-center rounded-2xl transition-all"
                                        style="background-color: #f9fafb; border: 2px solid #e5e7eb; color: #111827;"
-                                       placeholder="0.00">
+                                       placeholder="0">
                             </div>
                             
                             <button @click="openSession()" 
@@ -308,153 +308,172 @@
                             </div>
                             
                             {{-- Section Paiement - Design moderne --}}
-                            <div class="border-t border-gray-200 dark:border-gray-700">
+                            <div class="border-t-2 border-gray-200 dark:border-gray-700">
                                 {{-- Modes de paiement --}}
-                                <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Paiement</span>
-                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+                                <div class="px-4 pt-4 pb-3 bg-gray-50 dark:bg-gray-800/50">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                        <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Mode de paiement</span>
                                     </div>
-                                    <div class="flex gap-2">
+                                    <div class="grid grid-cols-4 gap-2">
                                         {{-- Cash --}}
-                                        <button type="button" @click="paymentMethod = 'cash'; receivedAmount = ''; playAddToCart()" 
-                                                class="flex-1 py-2 px-1 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center gap-1"
-                                                :style="paymentMethod === 'cash' ? 'background: #10b981; color: white; border-color: #10b981;' : ''"
-                                                :class="paymentMethod !== 'cash' ? 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-gray-200 dark:border-gray-600' : ''">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                            <span class="text-[9px] font-bold uppercase">Cash</span>
+                                        <button type="button" @click="paymentMethod = 'cash'; receivedAmount = ''; playAddToCart()"
+                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                :style="paymentMethod === 'cash' ? 'background: #10b981; color: white; border-color: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);' : ''"
+                                                :class="paymentMethod !== 'cash' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-gray-200 dark:border-gray-600 hover:border-emerald-300' : ''">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                            <span class="text-xs font-bold">Espèces</span>
                                         </button>
                                         {{-- Carte --}}
-                                        <button type="button" @click="paymentMethod = 'card'; receivedAmount = ''; playAddToCart()" 
-                                                class="flex-1 py-2 px-1 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center gap-1"
-                                                :style="paymentMethod === 'card' ? 'background: #3b82f6; color: white; border-color: #3b82f6;' : ''"
-                                                :class="paymentMethod !== 'card' ? 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-200 dark:border-gray-600' : ''">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                                            <span class="text-[9px] font-bold uppercase">Carte</span>
+                                        <button type="button" @click="paymentMethod = 'card'; receivedAmount = ''; playAddToCart()"
+                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                :style="paymentMethod === 'card' ? 'background: #3b82f6; color: white; border-color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);' : ''"
+                                                :class="paymentMethod !== 'card' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-gray-200 dark:border-gray-600 hover:border-blue-300' : ''">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                            <span class="text-xs font-bold">Carte</span>
                                         </button>
                                         {{-- Mobile --}}
-                                        <button type="button" @click="paymentMethod = 'mobile'; receivedAmount = ''; playAddToCart()" 
-                                                class="flex-1 py-2 px-1 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center gap-1"
-                                                :style="paymentMethod === 'mobile' ? 'background: #f97316; color: white; border-color: #f97316;' : ''"
-                                                :class="paymentMethod !== 'mobile' ? 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-gray-200 dark:border-gray-600' : ''">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                            <span class="text-[9px] font-bold uppercase">Mobile</span>
+                                        <button type="button" @click="paymentMethod = 'mobile'; receivedAmount = ''; playAddToCart()"
+                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                :style="paymentMethod === 'mobile' ? 'background: #f97316; color: white; border-color: #f97316; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);' : ''"
+                                                :class="paymentMethod !== 'mobile' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 border-gray-200 dark:border-gray-600 hover:border-orange-300' : ''">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                            <span class="text-xs font-bold">Mobile</span>
                                         </button>
                                         {{-- Mixte --}}
-                                        <button type="button" @click="paymentMethod = 'mixed'; receivedAmount = ''; playAddToCart()" 
-                                                class="flex-1 py-2 px-1 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center gap-1"
-                                                :style="paymentMethod === 'mixed' ? 'background: #8b5cf6; color: white; border-color: #8b5cf6;' : ''"
-                                                :class="paymentMethod !== 'mixed' ? 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 border-gray-200 dark:border-gray-600' : ''">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                                            <span class="text-[9px] font-bold uppercase">Mixte</span>
+                                        <button type="button" @click="paymentMethod = 'mixed'; receivedAmount = ''; playAddToCart()"
+                                                class="py-3 px-2 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5"
+                                                :style="paymentMethod === 'mixed' ? 'background: #8b5cf6; color: white; border-color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);' : ''"
+                                                :class="paymentMethod !== 'mixed' ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 border-gray-200 dark:border-gray-600 hover:border-violet-300' : ''">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                            <span class="text-xs font-bold">Mixte</span>
                                         </button>
                                     </div>
-                                    
+
                                     {{-- Toggle paiement partiel --}}
                                     <template x-if="cart.length > 0">
-                                        <div class="mt-3 flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer"
-                                             :class="isPartialPayment ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700' : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'"
+                                        <div class="mt-3 flex items-center justify-between p-3 rounded-xl border-2 transition-all cursor-pointer"
+                                             :class="isPartialPayment ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700' : 'bg-white dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'"
                                              @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''">
-                                            <div class="flex items-center gap-2">
-                                                <svg class="w-4 h-4" :class="isPartialPayment ? 'text-amber-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                                <span class="text-[10px] font-bold uppercase tracking-wider" :class="isPartialPayment ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'">Paiement partiel</span>
+                                            <div class="flex items-center gap-2.5">
+                                                <svg class="w-5 h-5" :class="isPartialPayment ? 'text-amber-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span class="text-xs font-bold uppercase tracking-wider" :class="isPartialPayment ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'">Paiement partiel</span>
                                             </div>
-                                            <div class="w-8 h-4 rounded-full transition-all relative"
+                                            <div class="w-10 h-5 rounded-full transition-all relative"
                                                  :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'">
-                                                <div class="w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-all shadow-sm"
-                                                     :class="isPartialPayment ? 'left-[18px]' : 'left-0.5'"></div>
+                                                <div class="w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all shadow-sm"
+                                                     :class="isPartialPayment ? 'left-[22px]' : 'left-0.5'"></div>
                                             </div>
                                         </div>
                                     </template>
 
                                     {{-- Montant payé (paiement partiel) --}}
                                     <template x-if="isPartialPayment && cart.length > 0">
-                                        <div class="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
+                                        <div class="mt-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
                                              x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 transform -translate-y-2"
                                              x-transition:enter-end="opacity-100 transform translate-y-0">
-                                            <div class="space-y-2">
+                                            <div class="space-y-3">
                                                 <div>
-                                                    <label class="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1 block">Montant payé</label>
+                                                    <label class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1.5 block">Montant payé</label>
                                                     <div class="relative">
                                                         <input type="number"
                                                                x-model="amountPaid"
-                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-amber-300 dark:border-amber-700 rounded-lg py-2 pl-3 pr-14 text-right text-lg font-bold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
+                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-amber-300 dark:border-amber-700 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all"
                                                                placeholder="0"
                                                                :max="cartTotal"
                                                                min="0"
                                                                step="1">
-                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-sm">FCFA</span>
+                                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-amber-500 font-bold text-sm">FCFA</span>
                                                     </div>
                                                 </div>
-                                                <div class="flex items-center justify-between text-sm">
-                                                    <span class="text-amber-600 dark:text-amber-400 font-medium">Reste à payer :</span>
-                                                    <span class="font-black text-red-500" x-text="formatPrice(Math.max(0, cartTotal - (parseFloat(amountPaid) || 0)))"></span>
+                                                <div class="flex items-center justify-between bg-amber-100/50 dark:bg-amber-900/30 rounded-lg px-3 py-2">
+                                                    <span class="text-sm text-amber-700 dark:text-amber-400 font-semibold">Reste à payer</span>
+                                                    <span class="font-black text-lg text-red-500" x-text="formatPrice(Math.max(0, cartTotal - (parseFloat(amountPaid) || 0)))"></span>
                                                 </div>
                                             </div>
                                         </div>
                                     </template>
 
-                                    {{-- Montant reçu et Relicat (Cash uniquement) --}}
+                                    {{-- Montant reçu et Monnaie (Cash uniquement) --}}
                                     <template x-if="paymentMethod === 'cash' && cart.length > 0 && !isPartialPayment">
-                                        <div class="mt-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800" 
-                                             x-transition:enter="transition ease-out duration-200" 
-                                             x-transition:enter-start="opacity-0 transform -translate-y-2" 
+                                        <div class="mt-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800"
+                                             x-transition:enter="transition ease-out duration-200"
+                                             x-transition:enter-start="opacity-0 transform -translate-y-2"
                                              x-transition:enter-end="opacity-100 transform translate-y-0">
-                                            <div class="flex items-center gap-3">
-                                                <div class="flex-1">
-                                                    <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1 block">Reçu</label>
-                                                    <div class="relative">
-                                                        <input type="number" 
-                                                               x-model="receivedAmount" 
-                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-300 dark:border-emerald-700 rounded-lg py-2 pl-3 pr-8 text-right text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all" 
-                                                               placeholder="0.00"
-                                                               step="0.01">
-                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">FCFA</span>
-                                                    </div>
-                                                </div>
-                                                <div class="flex-1">
-                                                    <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1 block">À rendre</label>
-                                                    <div class="h-[42px] rounded-lg flex items-center justify-end px-3 border transition-all"
-                                                         :class="changeAmount >= 0 ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'">
-                                                        <span class="font-black text-xl" 
-                                                              :class="changeAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
-                                                              x-text="receivedAmount ? formatPrice(Math.abs(changeAmount)) : '0,00 FCFA'">
-                                                        </span>
-                                                    </div>
+                                            {{-- Montant reçu --}}
+                                            <div class="mb-3">
+                                                <label class="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1.5 block">Montant reçu du client</label>
+                                                <div class="relative">
+                                                    <input type="number"
+                                                           x-model="receivedAmount"
+                                                           class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-emerald-300 dark:border-emerald-700 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                           placeholder="0"
+                                                           step="1">
+                                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-sm">FCFA</span>
                                                 </div>
                                             </div>
-                                            {{-- Boutons raccourcis --}}
-                                            <div class="flex gap-1.5 mt-2">
-                                                <template x-for="amount in [5, 10, 20, 50, 100]" :key="amount">
-                                                    <button type="button" 
-                                                            @click="receivedAmount = amount"
-                                                            class="flex-1 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
-                                                            x-text="amount + ' FCFA'">
-                                                    </button>
-                                                </template>
+
+                                            {{-- Monnaie à rendre --}}
+                                            <div class="rounded-xl p-3 border-2 transition-all mb-3"
+                                                 :class="!receivedAmount ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700' : changeAmount >= 0 ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-xs font-bold uppercase tracking-wider"
+                                                          :class="!receivedAmount ? 'text-gray-400' : changeAmount >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'">Monnaie à rendre</span>
+                                                    <span class="font-black text-2xl"
+                                                          :class="!receivedAmount ? 'text-gray-300 dark:text-gray-600' : changeAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
+                                                          x-text="receivedAmount ? formatPrice(Math.abs(changeAmount)) : '0 FCFA'">
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {{-- Boutons raccourcis montants --}}
+                                            <div class="space-y-2">
+                                                <button type="button"
+                                                        @click="receivedAmount = cartTotal"
+                                                        class="w-full py-2 text-sm font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm">
+                                                    Montant exact
+                                                </button>
+                                                <div class="grid grid-cols-5 gap-1.5">
+                                                    <template x-for="amount in [500, 1000, 2000, 5000, 10000]" :key="amount">
+                                                        <button type="button"
+                                                                @click="receivedAmount = amount"
+                                                                class="py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 transition-all"
+                                                                x-text="(amount >= 1000 ? (amount/1000) + 'K' : amount)">
+                                                        </button>
+                                                    </template>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-1.5">
+                                                    <template x-for="amount in [15000, 20000, 25000]" :key="amount">
+                                                        <button type="button"
+                                                                @click="receivedAmount = amount"
+                                                                class="py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 transition-all"
+                                                                x-text="(amount/1000) + 'K'">
+                                                        </button>
+                                                    </template>
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
                                 </div>
 
                                 {{-- Section Total --}}
-                                <div class="p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+                                <div class="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
                                     <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
                                     <div class="relative flex items-center justify-between">
                                         <div>
-                                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Total</span>
-                                            <p class="text-sm text-slate-500" x-text="cart.length + ' produit(s)'"></p>
+                                            <span class="text-xs font-bold uppercase tracking-widest text-slate-400">Total à payer</span>
+                                            <p class="text-sm text-slate-500 mt-0.5" x-text="cart.length + ' article(s)'"></p>
                                         </div>
                                         <div class="text-right">
-                                            <span class="text-4xl font-black text-white tracking-tight" x-text="formatPrice(cartTotal)">0,00 FCFA</span>
+                                            <span class="text-4xl font-black text-white tracking-tight" x-text="formatPrice(cartTotal)">0 FCFA</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {{-- Actions finales --}}
                                 <div class="p-4 bg-white dark:bg-gray-800 grid grid-cols-5 gap-3 rounded-b-3xl">
-                                    <button @click="clearCart()" 
+                                    <button @click="clearCart()"
                                             :disabled="cart.length === 0"
                                             class="col-span-1 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-red-500 hover:text-white disabled:opacity-30 disabled:hover:bg-gray-100 dark:disabled:hover:bg-gray-700 disabled:hover:text-gray-600 border border-gray-200 dark:border-gray-600 flex items-center justify-center">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -1588,8 +1607,10 @@
                 formatPrice(amount) {
                     return new Intl.NumberFormat('fr-FR', {
                         style: 'currency',
-                        currency: 'XOF'
-                    }).format(amount || 0);
+                        currency: 'XOF',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                    }).format(Math.round(amount || 0));
                 },
                 
                 // Calculer la différence
@@ -1600,7 +1621,7 @@
                 // Classe CSS pour la différence
                 getDifferenceClass() {
                     const diff = this.getDifference();
-                    if (Math.abs(diff) < 0.01) return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+                    if (Math.abs(diff) < 1) return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
                     return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
                 },
                 
@@ -1608,7 +1629,7 @@
                 formatDifference() {
                     const diff = this.getDifference();
                     const formatted = this.formatPrice(Math.abs(diff));
-                    if (Math.abs(diff) < 0.01) return '✓ Correct';
+                    if (Math.abs(diff) < 1) return '✓ Correct';
                     return diff > 0 ? `+${formatted} (excédent)` : `-${formatted} (manquant)`;
                 },
 
