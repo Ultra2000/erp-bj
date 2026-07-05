@@ -395,20 +395,21 @@
                                              x-transition:enter-start="opacity-0 transform -translate-y-2"
                                              x-transition:enter-end="opacity-100 transform translate-y-0">
                                             {{-- Montant reçu + Monnaie côte à côte --}}
-                                            <div class="grid grid-cols-2 gap-2 mb-2">
+                                            <div class="grid grid-cols-2 gap-3 mb-3">
                                                 <div>
                                                     <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1 block">Reçu du client</label>
                                                     <div class="relative">
                                                         <input type="number"
                                                                x-model="receivedAmount"
-                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-300 dark:border-emerald-700 rounded-lg py-2 pl-2 pr-2 text-right text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                                                               class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-300 dark:border-emerald-700 rounded-lg py-2.5 pl-3 pr-14 text-right text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
                                                                placeholder="0"
                                                                step="1">
+                                                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-xs">FCFA</span>
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <label class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1 block">Monnaie à rendre</label>
-                                                    <div class="h-[38px] rounded-lg flex items-center justify-end px-3 border transition-all"
+                                                    <div class="h-[42px] rounded-lg flex items-center justify-end px-3 border transition-all"
                                                          :class="!receivedAmount ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700' : changeAmount >= 0 ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700' : 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700'">
                                                         <span class="font-black text-lg"
                                                               :class="!receivedAmount ? 'text-gray-300 dark:text-gray-600' : changeAmount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
@@ -419,25 +420,25 @@
                                             </div>
 
                                             {{-- Boutons raccourcis montants --}}
-                                            <div class="flex gap-1.5 items-center">
+                                            <div class="grid grid-cols-6 gap-1.5">
                                                 <button type="button"
                                                         @click="receivedAmount = cartTotal"
-                                                        class="py-1.5 px-3 text-[10px] font-bold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-all whitespace-nowrap">
+                                                        class="py-1.5 text-[10px] font-bold rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-all">
                                                     Exact
                                                 </button>
                                                 <template x-for="amount in [500, 1000, 2000, 5000, 10000]" :key="amount">
                                                     <button type="button"
                                                             @click="receivedAmount = amount"
-                                                            class="flex-1 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
+                                                            class="py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
                                                             x-text="(amount >= 1000 ? (amount/1000) + 'K' : amount)">
                                                     </button>
                                                 </template>
                                             </div>
-                                            <div class="flex gap-1.5 mt-1.5">
+                                            <div class="grid grid-cols-4 gap-1.5 mt-1.5">
                                                 <template x-for="amount in [15000, 20000, 25000, 50000]" :key="amount">
                                                     <button type="button"
                                                             @click="receivedAmount = amount"
-                                                            class="flex-1 py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
+                                                            class="py-1.5 text-[10px] font-bold rounded-md bg-white dark:bg-gray-700 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all"
                                                             x-text="(amount/1000) + 'K'">
                                                     </button>
                                                 </template>
