@@ -491,17 +491,61 @@ class SaleResource extends Resource
                                     '<span style="color: #ef4444; font-weight: 600;">' . number_format($percent, 2, ',', ' ') . ' %</span>'
                                 );
                             }),
-                        Forms\Components\Hidden::make('discount_percent')->default(0),
+                        Forms\Components\Hidden::make('discount_percent')->default(0)->live(),
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
-                            ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
+                            ->content(function (Forms\Get $get) {
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $items = $get('items') ?? [];
+                                $totalHt = 0;
+                                foreach ($items as $item) {
+                                    $totalHt += floatval($item['unit_price'] ?? 0) * floatval($item['quantity'] ?? 0);
+                                }
+                                if ($totalHt <= 0) return '-';
+                                $discountPercent = floatval($get('discount_percent') ?? 0);
+                                $totalHt = round($totalHt * (1 - $discountPercent / 100));
+                                return number_format($totalHt, 0, ',', ' ') . ' ' . $currency;
+                            }),
                         Forms\Components\Placeholder::make('total_vat_display')
                             ->label('Total TVA')
-                            ->content(fn (?Sale $record) => $record ? number_format($record->total_vat ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),
-                        Forms\Components\TextInput::make('total')
+                            ->content(function (Forms\Get $get) {
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $items = $get('items') ?? [];
+                                $totalVat = 0;
+                                foreach ($items as $item) {
+                                    $ht = floatval($item['unit_price'] ?? 0) * floatval($item['quantity'] ?? 0);
+                                    $totalVat += round($ht * floatval($item['vat_rate'] ?? 0) / 100);
+                                }
+                                if ($totalVat <= 0) return '-';
+                                $discountPercent = floatval($get('discount_percent') ?? 0);
+                                $totalVat = round($totalVat * (1 - $discountPercent / 100));
+                                return number_format($totalVat, 0, ',', ' ') . ' ' . $currency;
+                            }),
+                        Forms\Components\Placeholder::make('total_ttc_display')
                             ->label('Total TTC')
-                            ->disabled()
-                            ->prefix(fn () => Filament::getTenant()->currency ?? 'XOF'),
+                            ->content(function (Forms\Get $get) {
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $items = $get('items') ?? [];
+                                $totalHt = 0;
+                                $totalVat = 0;
+                                $totalTaxSpecific = 0;
+                                foreach ($items as $item) {
+                                    $qty = floatval($item['quantity'] ?? 0);
+                                    $ht = floatval($item['unit_price'] ?? 0) * $qty;
+                                    $totalHt += $ht;
+                                    $totalVat += round($ht * floatval($item['vat_rate'] ?? 0) / 100);
+                                    $taxSpec = floatval($item['tax_specific_amount'] ?? 0);
+                                    if ($taxSpec > 0) $totalTaxSpecific += round($taxSpec * $qty);
+                                }
+                                $subtotal = $totalHt + $totalVat;
+                                if ($subtotal <= 0) return '-';
+                                $discountPercent = floatval($get('discount_percent') ?? 0);
+                                $ttc = round($subtotal * (1 - $discountPercent / 100) + $totalTaxSpecific);
+                                return new \Illuminate\Support\HtmlString(
+                                    '<span style="font-weight: 700; font-size: 1.1em;">' . number_format($ttc, 0, ',', ' ') . ' ' . $currency . '</span>'
+                                );
+                            }),
+                        Forms\Components\Hidden::make('total')->default(0),
                     ])->columns(5),
 
                 // Section AIB (Bénin uniquement) — après les articles pour afficher le net à payer
