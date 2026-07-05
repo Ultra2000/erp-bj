@@ -252,7 +252,18 @@ class SaleResource extends Resource
                             ->label('Remise globale %')
                             ->numeric()->minValue(0)->maxValue(100)->default(0)
                             ->live(onBlur: true)
-                            ->helperText('Appliquée sur le total TTC'),
+                            ->helperText(function (Forms\Get $get) {
+                                $discount = floatval($get('discount_percent') ?? 0);
+                                if ($discount <= 0) return 'Appliquée sur le total TTC';
+                                $items = $get('items') ?? [];
+                                $total = 0;
+                                foreach ($items as $item) {
+                                    $total += floatval($item['total_price'] ?? 0);
+                                }
+                                $amount = round($total * $discount / 100);
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                return '- ' . number_format($amount, 0, ',', ' ') . ' ' . $currency;
+                            }),
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
                             ->content(fn (?Sale $record) => $record ? number_format($record->total_ht ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'XOF') : '-'),

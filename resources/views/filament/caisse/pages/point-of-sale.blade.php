@@ -197,6 +197,10 @@
                             <span class="text-gray-600">Remise (%)</span>
                             <input type="number" x-model.number="discount" min="0" max="100" step="0.5" class="w-20 text-right border rounded px-2 py-1 text-sm">
                         </div>
+                        <div class="flex justify-between items-center text-xs" x-show="discount > 0" x-transition>
+                            <span class="text-red-500">Remise appliquée</span>
+                            <span class="text-red-500 font-semibold" x-text="'- ' + formatPrice(Math.round(subtotal * discount / 100))"></span>
+                        </div>
                         <div class="flex justify-between items-center text-xs text-gray-400">
                             <span>TVA calculée par produit</span>
                         </div>
