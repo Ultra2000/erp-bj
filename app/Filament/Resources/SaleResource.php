@@ -476,8 +476,8 @@ class SaleResource extends Resource
                                     $total += floatval($item['total_price'] ?? 0);
                                 }
                                 if ($total > 0 && $discountAmount > 0) {
-                                    $percent = round(($discountAmount / $total) * 100, 2);
-                                    $set('discount_percent', min($percent, 100));
+                                    $percent = ($discountAmount / $total) * 100;
+                                    $set('discount_percent', min(round($percent, 6), 100));
                                 } else {
                                     $set('discount_percent', 0);
                                 }
@@ -498,12 +498,19 @@ class SaleResource extends Resource
                                 $currency = Filament::getTenant()->currency ?? 'XOF';
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
+                                $totalVat = 0;
                                 foreach ($items as $item) {
-                                    $totalHt += floatval($item['unit_price'] ?? 0) * floatval($item['quantity'] ?? 0);
+                                    $qty = floatval($item['quantity'] ?? 0);
+                                    $ht = floatval($item['unit_price'] ?? 0) * $qty;
+                                    $totalHt += $ht;
+                                    $totalVat += round($ht * floatval($item['vat_rate'] ?? 0) / 100);
                                 }
                                 if ($totalHt <= 0) return '-';
-                                $discountPercent = floatval($get('discount_percent') ?? 0);
-                                $totalHt = round($totalHt * (1 - $discountPercent / 100));
+                                $discountAmount = floatval($get('discount_amount_input') ?? 0);
+                                $subtotal = $totalHt + $totalVat;
+                                if ($subtotal > 0 && $discountAmount > 0) {
+                                    $totalHt = round($totalHt - $discountAmount * $totalHt / $subtotal);
+                                }
                                 return number_format($totalHt, 0, ',', ' ') . ' ' . $currency;
                             }),
                         Forms\Components\Placeholder::make('total_vat_display')
@@ -511,14 +518,20 @@ class SaleResource extends Resource
                             ->content(function (Forms\Get $get) {
                                 $currency = Filament::getTenant()->currency ?? 'XOF';
                                 $items = $get('items') ?? [];
+                                $totalHt = 0;
                                 $totalVat = 0;
                                 foreach ($items as $item) {
-                                    $ht = floatval($item['unit_price'] ?? 0) * floatval($item['quantity'] ?? 0);
+                                    $qty = floatval($item['quantity'] ?? 0);
+                                    $ht = floatval($item['unit_price'] ?? 0) * $qty;
+                                    $totalHt += $ht;
                                     $totalVat += round($ht * floatval($item['vat_rate'] ?? 0) / 100);
                                 }
                                 if ($totalVat <= 0) return '-';
-                                $discountPercent = floatval($get('discount_percent') ?? 0);
-                                $totalVat = round($totalVat * (1 - $discountPercent / 100));
+                                $discountAmount = floatval($get('discount_amount_input') ?? 0);
+                                $subtotal = $totalHt + $totalVat;
+                                if ($subtotal > 0 && $discountAmount > 0) {
+                                    $totalVat = round($totalVat - $discountAmount * $totalVat / $subtotal);
+                                }
                                 return number_format($totalVat, 0, ',', ' ') . ' ' . $currency;
                             }),
                         Forms\Components\Placeholder::make('total_ttc_display')
@@ -539,8 +552,8 @@ class SaleResource extends Resource
                                 }
                                 $subtotal = $totalHt + $totalVat;
                                 if ($subtotal <= 0) return '-';
-                                $discountPercent = floatval($get('discount_percent') ?? 0);
-                                $ttc = round($subtotal * (1 - $discountPercent / 100) + $totalTaxSpecific);
+                                $discountAmount = floatval($get('discount_amount_input') ?? 0);
+                                $ttc = round($subtotal - $discountAmount + $totalTaxSpecific);
                                 return new \Illuminate\Support\HtmlString(
                                     '<span style="font-weight: 700; font-size: 1.1em;">' . number_format($ttc, 0, ',', ' ') . ' ' . $currency . '</span>'
                                 );
