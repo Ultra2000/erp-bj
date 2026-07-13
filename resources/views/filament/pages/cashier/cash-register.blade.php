@@ -366,7 +366,7 @@
                                 <div class="p-4 border-b border-gray-100 dark:border-gray-700">
                                     <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                         <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Factures impayées
+                                        Factures
                                     </h3>
                                 </div>
 
@@ -389,19 +389,28 @@
                                                             <div class="flex items-center gap-2 mb-1">
                                                                 <span class="font-bold text-gray-900 dark:text-white text-sm" x-text="inv.invoice_number"></span>
                                                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                                                                      :class="inv.payment_status === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
-                                                                      x-text="inv.payment_status === 'partial' ? 'Partiel' : 'Non payé'"></span>
+                                                                      :class="inv.payment_status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : inv.payment_status === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
+                                                                      x-text="inv.payment_status === 'paid' ? 'Payé' : inv.payment_status === 'partial' ? 'Partiel' : 'Non payé'"></span>
                                                             </div>
                                                             <p class="text-xs text-gray-500 dark:text-gray-400" x-text="inv.customer_name + ' — ' + inv.date"></p>
                                                             <div class="flex items-center gap-3 mt-1">
                                                                 <span class="text-xs text-gray-500">Total: <strong class="text-gray-700 dark:text-gray-300" x-text="formatPrice(inv.total)"></strong></span>
-                                                                <span class="text-xs text-red-500 font-bold" x-text="'Reste: ' + formatPrice(inv.remaining)"></span>
+                                                                <template x-if="inv.payment_status !== 'paid'">
+                                                                    <span class="text-xs text-red-500 font-bold" x-text="'Reste: ' + formatPrice(inv.remaining)"></span>
+                                                                </template>
                                                             </div>
                                                         </div>
-                                                        <button @click="selectInvoice(inv)"
-                                                                class="ml-3 px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex-shrink-0">
-                                                            Régler
-                                                        </button>
+                                                        <template x-if="inv.payment_status !== 'paid'">
+                                                            <button @click="selectInvoice(inv)"
+                                                                    class="ml-3 px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex-shrink-0">
+                                                                Régler
+                                                            </button>
+                                                        </template>
+                                                        <template x-if="inv.payment_status === 'paid'">
+                                                            <span class="ml-3 px-4 py-2 rounded-xl text-sm font-bold bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 flex-shrink-0">
+                                                                Soldée
+                                                            </span>
+                                                        </template>
                                                     </div>
                                                 </div>
                                             </template>
@@ -412,7 +421,7 @@
                                     <template x-if="!invoiceSearching && invoiceResults.length === 0 && invoiceSearch.length > 0">
                                         <div class="py-12 text-center">
                                             <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                            <p class="text-gray-500 dark:text-gray-400">Aucune facture impayée trouvée</p>
+                                            <p class="text-gray-500 dark:text-gray-400">Aucune facture trouvée</p>
                                         </div>
                                     </template>
 

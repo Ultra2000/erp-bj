@@ -542,7 +542,6 @@ class PosService
             ->where(function ($q) {
                 $q->whereNull('type')->orWhere('type', '!=', 'credit_note');
             })
-            ->whereIn('payment_status', ['unpaid', 'partial', 'pending'])
             ->where(function ($q) use ($query) {
                 $q->where('invoice_number', 'like', "%{$query}%")
                   ->orWhereHas('customer', function ($cq) use ($query) {
@@ -550,6 +549,7 @@ class PosService
                   });
             })
             ->with('customer:id,name')
+            ->orderByRaw("CASE payment_status WHEN 'unpaid' THEN 1 WHEN 'pending' THEN 2 WHEN 'partial' THEN 3 WHEN 'paid' THEN 4 ELSE 5 END")
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
