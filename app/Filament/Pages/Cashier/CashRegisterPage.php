@@ -34,7 +34,10 @@ class CashRegisterPage extends Page
         if (!$user) return false;
         
         if (method_exists($user, 'hasPermission')) {
-            return $user->hasPermission('pos.access');
+            return $user->hasPermission('pos.access')
+                || $user->hasPermission('pos.view')
+                || $user->hasPermission('pos.sell')
+                || $user->hasPermission('pos.collect');
         }
 
         return false;
