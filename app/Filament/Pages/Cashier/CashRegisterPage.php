@@ -34,10 +34,10 @@ class CashRegisterPage extends Page
         if (!$user) return false;
         
         if (method_exists($user, 'hasPermission')) {
-            return $user->hasPermission('sales.create') || $user->hasPermission('sales.*');
+            return $user->hasPermission('pos.access');
         }
-        
-        return in_array($user->role ?? '', ['cashier', 'admin', 'manager']);
+
+        return false;
     }
 
     protected function getPosService(): PosService
