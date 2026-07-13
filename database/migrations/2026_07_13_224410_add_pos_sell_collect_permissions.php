@@ -24,9 +24,14 @@ return new class extends Migration
         $collect = \App\Models\Permission::where('slug', 'pos.collect')->first();
 
         if ($sell && $collect) {
-            $roles = \App\Models\Role::whereIn('slug', ['admin', 'administrateur', 'manager', 'cashier', 'caissier'])->get();
+            $roles = \App\Models\Role::whereIn('slug', ['admin', 'administrateur', 'manager'])->get();
             foreach ($roles as $role) {
                 $role->permissions()->syncWithoutDetaching([$sell->id, $collect->id]);
+            }
+
+            $cashierRoles = \App\Models\Role::whereIn('slug', ['cashier', 'caissier'])->get();
+            foreach ($cashierRoles as $role) {
+                $role->permissions()->syncWithoutDetaching([$collect->id]);
             }
 
             $vendeurRoles = \App\Models\Role::whereIn('slug', ['vendeur'])->get();

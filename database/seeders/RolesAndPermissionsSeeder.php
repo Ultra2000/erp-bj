@@ -134,7 +134,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'products.view',
                 'sales.view', 'sales.create',
                 'customers.view', 'customers.create',
-                'pos.access', 'pos.sell', 'pos.collect', 'pos.session',
+                'pos.access', 'pos.collect', 'pos.session',
             ],
         ],
         'vendeur' => [
