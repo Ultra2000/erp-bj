@@ -135,6 +135,44 @@ class CaisseController extends Controller
         return response()->json($product);
     }
 
+    // ── Invoices (encaissement) ────────────────
+
+    public function searchInvoices(Request $request)
+    {
+        $companyId = $this->getCompanyId($request);
+        $query = $request->query('q', '');
+
+        if (!$companyId || strlen($query) < 1) return response()->json([]);
+
+        return response()->json(
+            $this->posService->searchUnpaidInvoices($companyId, $query)
+        );
+    }
+
+    public function payInvoice(Request $request, int $id)
+    {
+        $companyId = $this->getCompanyId($request);
+        if (!$companyId) {
+            return response()->json(['success' => false, 'message' => 'Aucune entreprise sélectionnée'], 400);
+        }
+
+        $session = $this->posService->getOpenSession($companyId, auth()->id());
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Veuillez ouvrir une session de caisse'], 400);
+        }
+
+        $result = $this->posService->payInvoice(
+            companyId: $companyId,
+            session: $session,
+            saleId: $id,
+            amount: floatval($request->input('amount', 0)),
+            paymentMethod: $request->input('payment_method', 'cash'),
+            paymentDetails: $request->input('payment_details')
+        );
+
+        return response()->json($result, $result['success'] ? 200 : 400);
+    }
+
     // ── Sale ────────────────────────────────────
 
     public function recordSale(Request $request)

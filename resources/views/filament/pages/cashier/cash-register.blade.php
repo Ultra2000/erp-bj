@@ -136,8 +136,27 @@
 
                 {{-- Grille principale --}}
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    {{-- Colonne gauche - Recherche et produits --}}
+                    {{-- Colonne gauche - Tabs + contenu --}}
                     <div class="xl:col-span-2 space-y-6">
+                        {{-- Onglets --}}
+                        <div class="flex gap-2">
+                            <button @click="activeTab = 'vente'"
+                                    class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                                    :class="activeTab === 'vente' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-violet-300'">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                Nouvelle vente
+                            </button>
+                            <button @click="activeTab = 'encaisser'"
+                                    class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                                    :class="activeTab === 'encaisser' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-emerald-300'">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                Encaisser une facture
+                            </button>
+                        </div>
+
+                        {{-- ═══ TAB: Nouvelle vente ═══ --}}
+                        <template x-if="activeTab === 'vente'">
+                        <div class="space-y-6">
                         {{-- Barre de recherche --}}
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
                             <div class="flex gap-3">
@@ -224,6 +243,186 @@
                                 </template>
                             </div>
                         </div>
+                        </div>
+                        </template>
+
+                        {{-- ═══ TAB: Encaisser une facture ═══ --}}
+                        <template x-if="activeTab === 'encaisser'">
+                        <div class="space-y-6">
+                            {{-- Recherche facture --}}
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                        </svg>
+                                    </div>
+                                    <input type="text"
+                                           x-model="invoiceSearch"
+                                           @input.debounce.400ms="searchInvoices()"
+                                           class="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-0 rounded-xl focus:ring-2 focus:ring-emerald-500 text-lg text-gray-900 dark:text-white placeholder-gray-400"
+                                           placeholder="N° facture ou nom du client...">
+                                </div>
+                            </div>
+
+                            {{-- Formulaire de paiement pour une facture sélectionnée --}}
+                            <template x-if="selectedInvoice">
+                                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-emerald-200 dark:border-emerald-800 overflow-hidden"
+                                     x-transition>
+                                    <div class="p-4 bg-emerald-600 text-white">
+                                        <div class="flex items-center justify-between">
+                                            <div>
+                                                <h3 class="font-bold text-lg" x-text="'Facture ' + selectedInvoice.invoice_number"></h3>
+                                                <p class="text-emerald-100 text-sm" x-text="selectedInvoice.customer_name + ' — ' + selectedInvoice.date"></p>
+                                            </div>
+                                            <button @click="cancelInvoiceSelection()" class="p-2 rounded-lg hover:bg-emerald-700 transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="p-5 space-y-4">
+                                        {{-- Résumé montants --}}
+                                        <div class="grid grid-cols-3 gap-3">
+                                            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Total facture</p>
+                                                <p class="text-lg font-black text-gray-900 dark:text-white" x-text="formatPrice(selectedInvoice.total)"></p>
+                                            </div>
+                                            <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center">
+                                                <p class="text-xs text-green-600 dark:text-green-400 uppercase font-bold">Déjà payé</p>
+                                                <p class="text-lg font-black text-green-600 dark:text-green-400" x-text="formatPrice(selectedInvoice.amount_paid)"></p>
+                                            </div>
+                                            <div class="bg-red-50 dark:bg-red-900/20 rounded-xl p-3 text-center">
+                                                <p class="text-xs text-red-600 dark:text-red-400 uppercase font-bold">Reste à payer</p>
+                                                <p class="text-lg font-black text-red-600 dark:text-red-400" x-text="formatPrice(selectedInvoice.remaining)"></p>
+                                            </div>
+                                        </div>
+
+                                        {{-- Mode de paiement --}}
+                                        <div>
+                                            <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 block">Mode de paiement</label>
+                                            <div class="grid grid-cols-4 gap-2">
+                                                <template x-for="method in [{id:'cash', label:'Espèces', color:'#10b981'}, {id:'card', label:'Carte', color:'#3b82f6'}, {id:'mobile', label:'Mobile', color:'#f97316'}, {id:'transfer', label:'Virement', color:'#8b5cf6'}]" :key="method.id">
+                                                    <button @click="invoicePaymentMethod = method.id"
+                                                            class="py-2.5 px-2 rounded-xl border-2 transition-all text-xs font-bold text-center"
+                                                            :style="invoicePaymentMethod === method.id ? `background: ${method.color}; color: white; border-color: ${method.color};` : ''"
+                                                            :class="invoicePaymentMethod !== method.id ? 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600' : ''"
+                                                            x-text="method.label">
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        {{-- Montant à encaisser --}}
+                                        <div>
+                                            <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 block">Montant à encaisser</label>
+                                            <div class="relative">
+                                                <input type="number"
+                                                       x-model="invoiceAmount"
+                                                       class="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                       :max="selectedInvoice.remaining"
+                                                       min="1" step="1">
+                                                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">FCFA</span>
+                                            </div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button @click="invoiceAmount = selectedInvoice.remaining"
+                                                        class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
+                                                    Totalité
+                                                </button>
+                                                <button @click="invoiceAmount = Math.round(selectedInvoice.remaining / 2)"
+                                                        class="flex-1 py-2 text-xs font-bold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition-colors">
+                                                    50%
+                                                </button>
+                                                <button @click="invoiceAmount = Math.round(selectedInvoice.remaining / 4)"
+                                                        class="flex-1 py-2 text-xs font-bold rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition-colors">
+                                                    25%
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {{-- Bouton valider --}}
+                                        <button @click="submitInvoicePayment()"
+                                                :disabled="invoiceProcessing || !invoiceAmount || parseFloat(invoiceAmount) <= 0 || parseFloat(invoiceAmount) > selectedInvoice.remaining"
+                                                class="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                                                style="background: linear-gradient(to right, #10b981, #14b8a6); color: white; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);">
+                                            <template x-if="!invoiceProcessing">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            </template>
+                                            <template x-if="invoiceProcessing">
+                                                <svg class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            </template>
+                                            <span x-text="invoiceProcessing ? 'Traitement...' : 'Encaisser ' + formatPrice(parseFloat(invoiceAmount) || 0)"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            {{-- Liste des factures trouvées --}}
+                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                                <div class="p-4 border-b border-gray-100 dark:border-gray-700">
+                                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                        Factures impayées
+                                    </h3>
+                                </div>
+
+                                <div class="max-h-[50vh] overflow-y-auto">
+                                    {{-- Spinner --}}
+                                    <template x-if="invoiceSearching">
+                                        <div class="flex items-center justify-center py-8">
+                                            <svg class="w-8 h-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        </div>
+                                    </template>
+
+                                    {{-- Résultats --}}
+                                    <template x-if="!invoiceSearching && invoiceResults.length > 0">
+                                        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                                            <template x-for="inv in invoiceResults" :key="inv.id">
+                                                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                                                     :class="selectedInvoice && selectedInvoice.id === inv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''">
+                                                    <div class="flex items-center justify-between">
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex items-center gap-2 mb-1">
+                                                                <span class="font-bold text-gray-900 dark:text-white text-sm" x-text="inv.invoice_number"></span>
+                                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                                                                      :class="inv.payment_status === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
+                                                                      x-text="inv.payment_status === 'partial' ? 'Partiel' : 'Non payé'"></span>
+                                                            </div>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400" x-text="inv.customer_name + ' — ' + inv.date"></p>
+                                                            <div class="flex items-center gap-3 mt-1">
+                                                                <span class="text-xs text-gray-500">Total: <strong class="text-gray-700 dark:text-gray-300" x-text="formatPrice(inv.total)"></strong></span>
+                                                                <span class="text-xs text-red-500 font-bold" x-text="'Reste: ' + formatPrice(inv.remaining)"></span>
+                                                            </div>
+                                                        </div>
+                                                        <button @click="selectInvoice(inv)"
+                                                                class="ml-3 px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex-shrink-0">
+                                                            Régler
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    {{-- Aucun résultat --}}
+                                    <template x-if="!invoiceSearching && invoiceResults.length === 0 && invoiceSearch.length > 0">
+                                        <div class="py-12 text-center">
+                                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                            <p class="text-gray-500 dark:text-gray-400">Aucune facture impayée trouvée</p>
+                                        </div>
+                                    </template>
+
+                                    {{-- État initial --}}
+                                    <template x-if="!invoiceSearching && invoiceSearch.length === 0">
+                                        <div class="py-12 text-center">
+                                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                            <p class="text-gray-500 dark:text-gray-400">Tapez un n° de facture ou un nom de client</p>
+                                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">pour trouver les factures à encaisser</p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        </template>
                     </div>
 
                     {{-- Colonne droite - Panier --}}
@@ -1110,6 +1309,18 @@
                 reportLoading: false,
                 sessionHistory: [],
 
+                // Onglet actif: 'vente' ou 'encaisser'
+                activeTab: 'vente',
+
+                // Encaissement facture
+                invoiceSearch: '',
+                invoiceResults: [],
+                invoiceSearching: false,
+                selectedInvoice: null,
+                invoicePaymentMethod: 'cash',
+                invoiceAmount: '',
+                invoiceProcessing: false,
+
                 // Mode plein écran & sons
                 isFullscreen: false,
                 soundEnabled: true,
@@ -1599,6 +1810,79 @@
                     this.products = updated.filter(p => p.quantity > 0);
                 },
                 
+                // ── Encaissement facture ──────────────────
+                async searchInvoices() {
+                    const q = this.invoiceSearch.trim();
+                    if (q.length < 1) { this.invoiceResults = []; return; }
+                    this.invoiceSearching = true;
+                    try {
+                        const res = await fetch(`/api/pos/invoices/search?q=${encodeURIComponent(q)}`, {
+                            headers: this.getHeaders()
+                        });
+                        this.invoiceResults = await res.json();
+                    } catch (e) {
+                        console.error('Erreur recherche factures:', e);
+                    } finally {
+                        this.invoiceSearching = false;
+                    }
+                },
+
+                selectInvoice(invoice) {
+                    this.selectedInvoice = invoice;
+                    this.invoiceAmount = invoice.remaining;
+                    this.invoicePaymentMethod = 'cash';
+                },
+
+                cancelInvoiceSelection() {
+                    this.selectedInvoice = null;
+                    this.invoiceAmount = '';
+                },
+
+                async submitInvoicePayment() {
+                    if (!this.selectedInvoice || this.invoiceProcessing) return;
+                    const amount = parseFloat(this.invoiceAmount) || 0;
+                    if (amount <= 0) return;
+
+                    this.invoiceProcessing = true;
+                    try {
+                        const res = await fetch(`/api/pos/invoices/${this.selectedInvoice.id}/pay`, {
+                            method: 'POST',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify({
+                                amount: amount,
+                                payment_method: this.invoicePaymentMethod
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            this.playSuccess();
+                            this.lastSaleAmount = amount;
+                            this.lastInvoiceNumber = data.invoice_number;
+                            this.lastPaymentStatus = data.payment_status;
+                            this.lastAmountPaid = data.amount_paid;
+                            this.lastRemaining = data.remaining;
+                            this.lastSaleDbId = this.selectedInvoice.id;
+                            this.lastEmcefResult = null;
+                            this.showSuccessModal = true;
+                            this.sessionStats = data.session;
+                            this.selectedInvoice = null;
+                            this.invoiceAmount = '';
+                            // Re-chercher pour rafraîchir la liste
+                            if (this.invoiceSearch.trim().length > 0) {
+                                this.searchInvoices();
+                            }
+                        } else {
+                            this.playError();
+                            alert(data.message || 'Erreur lors de l\'encaissement');
+                        }
+                    } catch (e) {
+                        this.playError();
+                        console.error('Erreur encaissement:', e);
+                    } finally {
+                        this.invoiceProcessing = false;
+                    }
+                },
+
                 // Formater le prix
                 formatPrice(amount) {
                     return new Intl.NumberFormat('fr-FR', {

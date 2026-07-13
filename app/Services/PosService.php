@@ -526,6 +526,122 @@ class PosService
     }
 
     // ──────────────────────────────────────────────
+    //  INVOICE PAYMENT (encaissement facture existante)
+    // ──────────────────────────────────────────────
+
+    /**
+     * Recherche les factures impayées/partielles par n° facture ou nom client.
+     */
+    public function searchUnpaidInvoices(int $companyId, string $query, int $limit = 20): array
+    {
+        if (strlen($query) < 1) return [];
+
+        return Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('status', 'completed')
+            ->whereIn('payment_status', ['unpaid', 'partial', 'pending'])
+            ->where(function ($q) use ($query) {
+                $q->where('invoice_number', 'like', "%{$query}%")
+                  ->orWhereHas('customer', function ($cq) use ($query) {
+                      $cq->where('name', 'like', "%{$query}%");
+                  });
+            })
+            ->with('customer:id,name')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(fn (Sale $sale) => [
+                'id' => $sale->id,
+                'invoice_number' => $sale->invoice_number,
+                'customer_name' => $sale->customer?->name ?? 'Client comptoir',
+                'total' => (float) $sale->total,
+                'amount_paid' => (float) $sale->amount_paid,
+                'remaining' => $sale->remaining_amount,
+                'payment_status' => $sale->payment_status,
+                'date' => $sale->created_at->format('d/m/Y H:i'),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * Encaisse un paiement sur une facture existante.
+     */
+    public function payInvoice(
+        int $companyId,
+        CashSession $session,
+        int $saleId,
+        float $amount,
+        string $paymentMethod = 'cash',
+        ?array $paymentDetails = null
+    ): array {
+        $sale = Sale::withoutGlobalScopes()
+            ->where('id', $saleId)
+            ->where('company_id', $companyId)
+            ->where('status', 'completed')
+            ->first();
+
+        if (!$sale) {
+            return ['success' => false, 'message' => 'Facture introuvable'];
+        }
+
+        if ($sale->payment_status === 'paid') {
+            return ['success' => false, 'message' => 'Cette facture est déjà réglée'];
+        }
+
+        $remaining = $sale->remaining_amount;
+        if ($amount <= 0) {
+            return ['success' => false, 'message' => 'Le montant doit être supérieur à 0'];
+        }
+
+        $effectiveAmount = min($amount, $remaining);
+
+        try {
+            DB::transaction(function () use ($sale, $session, $effectiveAmount, $paymentMethod, $paymentDetails, $companyId) {
+                Payment::create([
+                    'company_id' => $companyId,
+                    'payable_type' => Sale::class,
+                    'payable_id' => $sale->id,
+                    'amount' => $effectiveAmount,
+                    'payment_method' => $paymentMethod,
+                    'payment_date' => now(),
+                    'account_number' => Payment::ACCOUNTS[$paymentMethod] ?? '530000',
+                    'cash_session_id' => $session->id,
+                    'created_by' => auth()->id(),
+                    'notes' => 'Encaissement facture ' . $sale->invoice_number,
+                ]);
+
+                if ($paymentMethod !== 'mixed') {
+                    $sale->payment_method = $paymentMethod;
+                    $sale->payment_details = $paymentDetails;
+                }
+
+                $sale->updatePaymentStatus();
+                $session->recalculate();
+            });
+
+            $sale->refresh();
+            $session->refresh();
+
+            return [
+                'success' => true,
+                'invoice_number' => $sale->invoice_number,
+                'total' => (float) $sale->total,
+                'amount_paid' => (float) $sale->amount_paid,
+                'payment_status' => $sale->payment_status,
+                'remaining' => $sale->remaining_amount,
+                'session' => $this->formatSessionStats($session),
+            ];
+
+        } catch (\Throwable $e) {
+            \Log::error('PosService payInvoice Error: ' . $e->getMessage(), [
+                'sale_id' => $saleId,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    // ──────────────────────────────────────────────
     //  SALE CANCELLATION
     // ──────────────────────────────────────────────
 

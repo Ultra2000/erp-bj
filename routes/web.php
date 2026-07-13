@@ -43,6 +43,8 @@ Route::middleware('auth')->prefix('api/pos')->group(function () {
     Route::get('/products/search', [CaisseController::class, 'searchProducts']);
     Route::get('/products/barcode/{code}', [CaisseController::class, 'productByBarcode']);
     Route::post('/sale', [CaisseController::class, 'recordSale']);
+    Route::get('/invoices/search', [CaisseController::class, 'searchInvoices']);
+    Route::post('/invoices/{id}/pay', [CaisseController::class, 'payInvoice']);
     
     // Rapports de caisse
     Route::get('/report', [CashReportController::class, 'getSessionReport']);
