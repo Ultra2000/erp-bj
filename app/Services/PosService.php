@@ -557,9 +557,9 @@ class PosService
                 'id' => $sale->id,
                 'invoice_number' => $sale->invoice_number,
                 'customer_name' => $sale->customer?->name ?? 'Client comptoir',
-                'total' => (float) $sale->total,
-                'amount_paid' => (float) $sale->amount_paid,
-                'remaining' => $sale->remaining_amount,
+                'total' => round((float) $sale->total_with_aib),
+                'amount_paid' => round((float) $sale->amount_paid),
+                'remaining' => round($sale->remaining_amount),
                 'payment_status' => $sale->payment_status,
                 'date' => $sale->created_at->format('d/m/Y H:i'),
             ])
