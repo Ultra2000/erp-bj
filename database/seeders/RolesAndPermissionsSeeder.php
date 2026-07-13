@@ -129,11 +129,8 @@ class RolesAndPermissionsSeeder extends Seeder
         ],
         'cashier' => [
             'name' => 'Caissier',
-            'description' => 'Opérations de vente et caisse',
+            'description' => 'Encaissement et caisse',
             'permissions' => [
-                'products.view',
-                'sales.view', 'sales.create',
-                'customers.view', 'customers.create',
                 'pos.access', 'pos.collect', 'pos.session',
             ],
         ],

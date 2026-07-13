@@ -164,11 +164,8 @@ $roles = [
     [
         'slug' => 'cashier',
         'name' => 'Caissier',
-        'description' => 'Accès à la caisse uniquement',
+        'description' => 'Encaissement et caisse uniquement',
         'permissions' => [
-            'products.view',
-            'sales.view', 'sales.create',
-            'customers.view', 'customers.create',
             'pos.access', 'pos.collect', 'pos.session',
         ],
         'is_default' => true,
