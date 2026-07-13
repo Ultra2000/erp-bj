@@ -29,7 +29,7 @@ class CompanyObserver
                 'suppliers.view', 'suppliers.create', 'suppliers.edit',
                 'quotes.view', 'quotes.create', 'quotes.edit',
                 'deliveries.view', 'deliveries.create', 'deliveries.edit',
-                'pos.access', 'pos.session', 'pos.reports',
+                'pos.access', 'pos.sell', 'pos.collect', 'pos.session', 'pos.reports',
                 'warehouses.view', 'transfers.create', 'transfers.approve', 'inventory.manage',
                 'employees.view', 'schedule.manage', 'leaves.manage', 'attendance.view',
                 'reports.view',
@@ -42,7 +42,7 @@ class CompanyObserver
                 'products.view',
                 'sales.view', 'sales.create',
                 'customers.view', 'customers.create',
-                'pos.access', 'pos.session',
+                'pos.access', 'pos.sell', 'pos.collect', 'pos.session',
             ],
         ],
         'vendeur' => [
@@ -54,7 +54,7 @@ class CompanyObserver
                 'customers.view', 'customers.create', 'customers.edit',
                 'quotes.view', 'quotes.create',
                 'deliveries.view',
-                'pos.access',
+                'pos.access', 'pos.sell',
             ],
         ],
         'magasinier' => [

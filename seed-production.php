@@ -75,6 +75,8 @@ $permissions = [
     
     // Caisse (POS)
     ['name' => 'Accéder à la caisse', 'slug' => 'pos.access', 'module' => 'pos', 'action' => 'view'],
+    ['name' => 'Vendre (nouvelle vente)', 'slug' => 'pos.sell', 'module' => 'pos', 'action' => 'create'],
+    ['name' => 'Encaisser une facture', 'slug' => 'pos.collect', 'module' => 'pos', 'action' => 'create'],
     ['name' => 'Ouvrir/fermer la caisse', 'slug' => 'pos.session', 'module' => 'pos', 'action' => 'manage'],
     ['name' => 'Voir les rapports caisse', 'slug' => 'pos.reports', 'module' => 'pos', 'action' => 'view'],
     
@@ -150,7 +152,7 @@ $roles = [
             'suppliers.view', 'suppliers.create', 'suppliers.edit',
             'quotes.view', 'quotes.create', 'quotes.edit',
             'deliveries.view', 'deliveries.create', 'deliveries.edit',
-            'pos.access', 'pos.session', 'pos.reports',
+            'pos.access', 'pos.sell', 'pos.collect', 'pos.session', 'pos.reports',
             'warehouses.view',
             'transfers.view', 'transfers.create',
             'inventory.view', 'inventory.manage',
@@ -167,7 +169,7 @@ $roles = [
             'products.view',
             'sales.view', 'sales.create',
             'customers.view', 'customers.create',
-            'pos.access', 'pos.session',
+            'pos.access', 'pos.sell', 'pos.collect', 'pos.session',
         ],
         'is_default' => true,
     ],

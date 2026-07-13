@@ -139,6 +139,10 @@ class CaisseController extends Controller
 
     public function searchInvoices(Request $request)
     {
+        if (!auth()->user()->hasPermission('pos.collect')) {
+            return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
+        }
+
         $companyId = $this->getCompanyId($request);
         $query = $request->query('q', '');
 
@@ -151,6 +155,10 @@ class CaisseController extends Controller
 
     public function payInvoice(Request $request, int $id)
     {
+        if (!auth()->user()->hasPermission('pos.collect')) {
+            return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
+        }
+
         $companyId = $this->getCompanyId($request);
         if (!$companyId) {
             return response()->json(['success' => false, 'message' => 'Aucune entreprise sélectionnée'], 400);
@@ -177,6 +185,10 @@ class CaisseController extends Controller
 
     public function recordSale(Request $request)
     {
+        if (!auth()->user()->hasPermission('pos.sell')) {
+            return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
+        }
+
         $companyId = $this->getCompanyId($request);
         if (!$companyId) {
             return response()->json(['success' => false, 'message' => 'Aucune entreprise sélectionnée'], 400);

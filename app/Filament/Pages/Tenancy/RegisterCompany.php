@@ -154,6 +154,8 @@ class RegisterCompany extends RegisterTenant
             
             // Caisse (POS)
             ['name' => 'Accéder à la caisse', 'slug' => 'pos.access', 'module' => 'pos', 'action' => 'view'],
+            ['name' => 'Vendre (nouvelle vente)', 'slug' => 'pos.sell', 'module' => 'pos', 'action' => 'create'],
+            ['name' => 'Encaisser une facture', 'slug' => 'pos.collect', 'module' => 'pos', 'action' => 'create'],
             ['name' => 'Ouvrir/fermer la caisse', 'slug' => 'pos.session', 'module' => 'pos', 'action' => 'manage'],
             ['name' => 'Voir les rapports caisse', 'slug' => 'pos.reports', 'module' => 'pos', 'action' => 'view'],
             

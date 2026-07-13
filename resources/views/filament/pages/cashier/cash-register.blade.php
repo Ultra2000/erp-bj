@@ -1,8 +1,11 @@
 <x-filament-panels::page>
     @php
         $companyId = \Filament\Facades\Filament::getTenant()?->id;
+        $user = auth()->user();
+        $canSell = $user?->hasPermission('pos.sell') ?? false;
+        $canCollect = $user?->hasPermission('pos.collect') ?? false;
     @endphp
-    <div x-data="cashRegister({{ $companyId ?? 'null' }})" x-init="init()" class="min-h-screen">
+    <div x-data="cashRegister({{ $companyId ?? 'null' }}, {{ json_encode($canSell) }}, {{ json_encode($canCollect) }})" x-init="init()" class="min-h-screen">
         {{-- Session fermée - Ouverture de caisse --}}
         <template x-if="!sessionOpen">
             <div class="flex items-center justify-center min-h-[70vh]">
@@ -138,24 +141,26 @@
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                     {{-- Colonne gauche - Tabs + contenu --}}
                     <div class="xl:col-span-2 space-y-6">
-                        {{-- Onglets --}}
-                        <div class="flex gap-2">
-                            <button @click="activeTab = 'vente'"
-                                    class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                                    :class="activeTab === 'vente' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-violet-300'">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                Nouvelle vente
-                            </button>
-                            <button @click="activeTab = 'encaisser'"
-                                    class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
-                                    :class="activeTab === 'encaisser' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-emerald-300'">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                                Encaisser une facture
-                            </button>
-                        </div>
+                        {{-- Onglets (affichés seulement si l'utilisateur a au moins une permission) --}}
+                        <template x-if="canSell && canCollect">
+                            <div class="flex gap-2">
+                                <button @click="activeTab = 'vente'"
+                                        class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                                        :class="activeTab === 'vente' ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-violet-300'">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Nouvelle vente
+                                </button>
+                                <button @click="activeTab = 'encaisser'"
+                                        class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                                        :class="activeTab === 'encaisser' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-emerald-300'">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                    Encaisser une facture
+                                </button>
+                            </div>
+                        </template>
 
                         {{-- ═══ TAB: Nouvelle vente ═══ --}}
-                        <template x-if="activeTab === 'vente'">
+                        <template x-if="activeTab === 'vente' && canSell">
                         <div class="space-y-6">
                         {{-- Barre de recherche --}}
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
@@ -247,7 +252,7 @@
                         </template>
 
                         {{-- ═══ TAB: Encaisser une facture ═══ --}}
-                        <template x-if="activeTab === 'encaisser'">
+                        <template x-if="activeTab === 'encaisser' && canCollect">
                         <div class="space-y-6">
                             {{-- Recherche facture --}}
                             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700">
@@ -1243,10 +1248,14 @@
     </style>
 
     <script>
-        function cashRegister(companyId) {
+        function cashRegister(companyId, canSell, canCollect) {
             return {
                 // Company ID pour les requêtes API
                 companyId: companyId,
+
+                // Permissions
+                canSell: canSell,
+                canCollect: canCollect,
                 
                 // État de la session
                 sessionOpen: false,
@@ -1309,8 +1318,8 @@
                 reportLoading: false,
                 sessionHistory: [],
 
-                // Onglet actif: 'vente' ou 'encaisser'
-                activeTab: 'vente',
+                // Onglet actif: 'vente' ou 'encaisser' (défaut = premier onglet disponible)
+                activeTab: canSell ? 'vente' : (canCollect ? 'encaisser' : 'vente'),
 
                 // Encaissement facture
                 invoiceSearch: '',

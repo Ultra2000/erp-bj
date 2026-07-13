@@ -57,6 +57,8 @@ class RolesAndPermissionsSeeder extends Seeder
         
         // Caisse (POS)
         ['name' => 'Accéder à la caisse', 'slug' => 'pos.access', 'description' => 'Peut utiliser le point de vente', 'module' => 'pos', 'action' => 'view'],
+        ['name' => 'Vendre (nouvelle vente)', 'slug' => 'pos.sell', 'description' => 'Peut créer des ventes depuis la caisse', 'module' => 'pos', 'action' => 'create'],
+        ['name' => 'Encaisser une facture', 'slug' => 'pos.collect', 'description' => 'Peut encaisser les factures impayées', 'module' => 'pos', 'action' => 'create'],
         ['name' => 'Ouvrir/fermer la caisse', 'slug' => 'pos.session', 'description' => 'Peut ouvrir et fermer des sessions de caisse', 'module' => 'pos', 'action' => 'manage'],
         ['name' => 'Voir les rapports caisse', 'slug' => 'pos.reports', 'description' => 'Peut consulter les rapports de caisse', 'module' => 'pos', 'action' => 'view'],
         
@@ -119,7 +121,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'suppliers.view', 'suppliers.create', 'suppliers.edit',
                 'quotes.view', 'quotes.create', 'quotes.edit',
                 'deliveries.view', 'deliveries.create', 'deliveries.edit',
-                'pos.access', 'pos.session', 'pos.reports',
+                'pos.access', 'pos.sell', 'pos.collect', 'pos.session', 'pos.reports',
                 'warehouses.view', 'transfers.create', 'transfers.approve', 'inventory.manage',
                 'employees.view', 'schedule.manage', 'leaves.manage', 'attendance.view',
                 'reports.view',
@@ -132,7 +134,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'products.view',
                 'sales.view', 'sales.create',
                 'customers.view', 'customers.create',
-                'pos.access', 'pos.session',
+                'pos.access', 'pos.sell', 'pos.collect', 'pos.session',
             ],
         ],
         'vendeur' => [
@@ -144,7 +146,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'customers.view', 'customers.create', 'customers.edit',
                 'quotes.view', 'quotes.create',
                 'deliveries.view',
-                'pos.access',
+                'pos.access', 'pos.sell',
             ],
         ],
         'magasinier' => [
