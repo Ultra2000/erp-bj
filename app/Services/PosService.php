@@ -539,6 +539,9 @@ class PosService
         return Sale::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('status', 'completed')
+            ->where(function ($q) {
+                $q->whereNull('type')->orWhere('type', '!=', 'credit_note');
+            })
             ->whereIn('payment_status', ['unpaid', 'partial', 'pending'])
             ->where(function ($q) use ($query) {
                 $q->where('invoice_number', 'like', "%{$query}%")
