@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Services\PosService;
 use Illuminate\Http\Request;
 use Filament\Facades\Filament;
@@ -43,6 +44,23 @@ class CaisseController extends Controller
         }
 
         return null;
+    }
+
+    protected function resolveCompany(Request $request): ?Company
+    {
+        $tenant = Filament::getTenant();
+        if ($tenant) return $tenant;
+
+        $companyId = $this->getCompanyId($request);
+        return $companyId ? Company::find($companyId) : null;
+    }
+
+    protected function userCan(Request $request, string $permission): bool
+    {
+        $user = auth()->user();
+        if (!$user || !method_exists($user, 'hasPermission')) return false;
+
+        return $user->hasPermission($permission, $this->resolveCompany($request));
     }
 
     // ── Session ─────────────────────────────────
@@ -139,7 +157,7 @@ class CaisseController extends Controller
 
     public function searchInvoices(Request $request)
     {
-        if (!auth()->user()->hasPermission('pos.collect')) {
+        if (!$this->userCan($request, 'pos.collect')) {
             return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
         }
 
@@ -155,7 +173,7 @@ class CaisseController extends Controller
 
     public function payInvoice(Request $request, int $id)
     {
-        if (!auth()->user()->hasPermission('pos.collect')) {
+        if (!$this->userCan($request, 'pos.collect')) {
             return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
         }
 
@@ -185,7 +203,7 @@ class CaisseController extends Controller
 
     public function recordSale(Request $request)
     {
-        if (!auth()->user()->hasPermission('pos.sell')) {
+        if (!$this->userCan($request, 'pos.sell')) {
             return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
         }
 
