@@ -30,9 +30,19 @@ class StockTransferResource extends Resource
     protected static ?string $modelLabel = 'Transfert';
     protected static ?string $pluralModelLabel = 'Transferts';
 
+    public static function canAccess(): bool
+    {
+        $tenant = \Filament\Facades\Filament::getTenant();
+        if ($tenant && !$tenant->isModuleEnabled('stock')) return false;
+
+        $user = auth()->user();
+        if (!$user) return false;
+        return $user->isAdmin() || $user->hasPermission('transfers.view');
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        return \Filament\Facades\Filament::getTenant()?->isModuleEnabled('stock') ?? true;
+        return static::canAccess();
     }
 
     /**

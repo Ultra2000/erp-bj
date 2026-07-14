@@ -33,17 +33,19 @@ class EmployeeResource extends Resource
 
     protected static ?int $navigationSort = 4;
     
-    public static function shouldRegisterNavigation(): bool
+    public static function canAccess(): bool
     {
         $tenant = Filament::getTenant();
-        if (!$tenant?->isModuleEnabled('hr')) {
-            return false;
-        }
-        
+        if ($tenant && !$tenant->isModuleEnabled('hr')) return false;
+
         $user = auth()->user();
         if (!$user) return false;
-        
-        return $user->isAdmin() || $user->hasPermission('employees.view') || $user->hasPermission('employees.*');
+        return $user->isAdmin() || $user->hasPermission('employees.view');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public static function form(Form $form): Form

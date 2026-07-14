@@ -30,13 +30,19 @@ class InvitationResource extends Resource
     protected static ?string $modelLabel = 'Invitation';
     protected static ?string $pluralModelLabel = 'Invitations';
 
+    public static function canAccess(): bool
+    {
+        $tenant = Filament::getTenant();
+        if (!$tenant?->isModuleEnabled('invitations')) return false;
+
+        $user = auth()->user();
+        if (!$user) return false;
+        return $user->isAdmin() || $user->hasPermission('users.manage');
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        if (!static::userHasModuleAccess()) {
-            return false;
-        }
-        $company = \Filament\Facades\Filament::getTenant();
-        return $company?->isModuleEnabled('invitations') ?? false;
+        return static::canAccess();
     }
 
     public static function form(Form $form): Form

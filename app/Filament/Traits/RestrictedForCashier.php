@@ -2,29 +2,8 @@
 
 namespace App\Filament\Traits;
 
-/**
- * Trait pour restreindre l'accès aux ressources pour les caissiers.
- * Utilise le rôle réel (isCashier) et les permissions du rôle,
- * pas hasWarehouseRestriction() qui bloque tous les non-admins.
- */
 trait RestrictedForCashier
 {
-    protected static function isCashierUser(): bool
-    {
-        $user = auth()->user();
-        if (!$user) return false;
-
-        if ($user->is_super_admin || $user->isAdmin()) {
-            return false;
-        }
-
-        return $user->isCashier();
-    }
-
-    /**
-     * Détermine le slug du module de permissions pour cette ressource.
-     * Peut être surchargé dans la ressource si le slug ne correspond pas.
-     */
     protected static function getPermissionModule(): ?string
     {
         $map = [
@@ -58,34 +37,17 @@ trait RestrictedForCashier
         return $map[static::class] ?? null;
     }
 
-    protected static function userHasModuleAccess(): bool
+    public static function canAccess(): bool
     {
         $user = auth()->user();
         if (!$user) return false;
-
-        if ($user->is_super_admin || $user->isAdmin()) {
-            return true;
-        }
-
-        if ($user->isCashier()) {
-            return false;
-        }
-
-        if ($user->isManager()) {
-            return true;
-        }
+        if ($user->is_super_admin || $user->isAdmin()) return true;
 
         $module = static::getPermissionModule();
-        if (!$module) {
-            return true;
-        }
+        if (!$module) return true;
 
-        $role = $user->currentRole();
-        if ($role && $role->permissions()->count() === 0) {
-            return true;
-        }
-
-        return $user->hasPermission("{$module}.view");
+        return $user->hasPermission("{$module}.view")
+            || $user->hasPermission("{$module}.manage");
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -93,19 +55,18 @@ trait RestrictedForCashier
         if (property_exists(static::class, 'shouldRegisterNavigation')) {
             $reflection = new \ReflectionProperty(static::class, 'shouldRegisterNavigation');
             if ($reflection->getDeclaringClass()->getName() === static::class) {
-                $value = $reflection->getValue();
-                if ($value === false) {
+                if ($reflection->getValue() === false) {
                     return false;
                 }
             }
         }
 
-        return static::userHasModuleAccess();
+        return static::canAccess();
     }
 
     public static function canViewAny(): bool
     {
-        return static::userHasModuleAccess();
+        return static::canAccess();
     }
 
     public static function canCreate(): bool
@@ -115,7 +76,7 @@ trait RestrictedForCashier
 
     public static function canEdit($record): bool
     {
-        return static::userHasPermission('update');
+        return static::userHasPermission('edit');
     }
 
     public static function canDelete($record): bool
@@ -128,17 +89,11 @@ trait RestrictedForCashier
         $user = auth()->user();
         if (!$user) return false;
         if ($user->is_super_admin || $user->isAdmin()) return true;
-        if ($user->isCashier()) return false;
-        if ($user->isManager()) return true;
 
         $module = static::getPermissionModule();
         if (!$module) return true;
 
-        $role = $user->currentRole();
-        if ($role && $role->permissions()->count() === 0) {
-            return true;
-        }
-
-        return $user->hasPermission("{$module}.{$action}");
+        return $user->hasPermission("{$module}.{$action}")
+            || $user->hasPermission("{$module}.manage");
     }
 }

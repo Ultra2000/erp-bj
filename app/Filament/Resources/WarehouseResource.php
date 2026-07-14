@@ -26,13 +26,19 @@ class WarehouseResource extends Resource
     protected static ?string $navigationGroup = 'Stocks & Achats';
     protected static ?int $navigationSort = 4;
 
+    public static function canAccess(): bool
+    {
+        $tenant = Filament::getTenant();
+        if ($tenant && !$tenant->isModuleEnabled('stock')) return false;
+
+        $user = auth()->user();
+        if (!$user) return false;
+        return $user->isAdmin() || $user->hasPermission('warehouses.view') || $user->hasPermission('warehouses.manage');
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
-        if (!(Filament::getTenant()?->isModuleEnabled('stock') ?? true)) {
-            return false;
-        }
-
-        return static::userHasModuleAccess();
+        return static::canAccess();
     }
 
     protected static ?string $navigationLabel = 'Entrepôts';

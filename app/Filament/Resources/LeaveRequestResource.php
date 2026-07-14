@@ -30,17 +30,19 @@ class LeaveRequestResource extends Resource
 
     protected static ?int $navigationSort = 5;
     
-    public static function shouldRegisterNavigation(): bool
+    public static function canAccess(): bool
     {
         $tenant = Filament::getTenant();
-        if (!$tenant?->isModuleEnabled('hr')) {
-            return false;
-        }
-        
+        if ($tenant && !$tenant->isModuleEnabled('hr')) return false;
+
         $user = auth()->user();
         if (!$user) return false;
-        
-        return $user->isAdmin() || $user->hasPermission('leave_requests.view') || $user->hasPermission('leave_requests.*');
+        return $user->isAdmin() || $user->hasPermission('leaves.manage');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
     }
 
     public static function form(Form $form): Form
