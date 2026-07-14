@@ -7,7 +7,7 @@
     <style>
         @page {
             size: A4;
-            margin: 0; /* On gère les marges via le body pour plus de contrôle */
+            margin: 0;
         }
 
         * {
@@ -19,17 +19,26 @@
         body {
             font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
             font-size: 9px;
-            color: #333;
-            line-height: 1.4;
-            padding: 15mm 20mm; /* 1.5cm haut/bas, 2cm gauche/droite */
+            color: #2d3748;
+            line-height: 1.5;
+            padding: 0;
             margin: 0;
+        }
+
+        .page-wrap {
+            padding: 0 20mm 15mm 20mm;
+        }
+
+        /* ===== ACCENT BAR ===== */
+        .accent-bar {
+            height: 6px;
+            background: #1a365d;
         }
 
         /* ===== HEADER ===== */
         .header {
-            border-bottom: 2px solid #333;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
+            padding: 16px 0 14px 0;
+            margin-bottom: 0;
         }
 
         .header-table {
@@ -42,79 +51,87 @@
         }
 
         .logo {
-            max-height: 45px;
-            max-width: 120px;
-            margin-bottom: 6px;
+            max-height: 50px;
+            max-width: 140px;
+            margin-bottom: 8px;
         }
 
         .company-name {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 2px;
-        }
-
-        .company-subtitle {
-            font-size: 9px;
-            color: #666;
-            margin-bottom: 6px;
+            color: #1a365d;
+            margin-bottom: 3px;
         }
 
         .company-details {
             font-size: 8px;
-            color: #555;
-            line-height: 1.5;
+            color: #718096;
+            line-height: 1.6;
         }
 
-        .invoice-title {
+        .invoice-title-block {
             text-align: right;
+            padding-top: 2px;
         }
 
-        .invoice-label {
-            font-size: 9px;
-            color: #666;
-            margin-bottom: 2px;
+        .invoice-type-label {
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1a365d;
+            margin-bottom: 4px;
         }
 
         .invoice-number {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
+            color: #1a365d;
+            letter-spacing: 0.5px;
         }
 
         .invoice-date {
             font-size: 9px;
-            color: #666;
+            color: #718096;
             margin-top: 6px;
         }
 
         .status-badge {
             display: inline-block;
-            padding: 2px 8px;
-            border: 1px solid #333;
+            padding: 3px 10px;
             border-radius: 3px;
             font-size: 8px;
             font-weight: bold;
             text-transform: uppercase;
-            margin-top: 6px;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
         }
 
         .status-completed {
-            border-color: #333;
+            background: #c6f6d5;
+            color: #276749;
         }
 
         .status-pending {
-            border-color: #999;
-            color: #999;
+            background: #fefcbf;
+            color: #975a16;
         }
 
         .status-cancelled {
-            border-color: #999;
-            color: #999;
+            background: #fed7d7;
+            color: #9b2c2c;
             text-decoration: line-through;
         }
 
-        /* ===== INFO SECTION ===== */
+        .header-divider {
+            border: none;
+            border-top: 2px solid #1a365d;
+            margin: 0 0 14px 0;
+        }
+
+        /* ===== INFO CARDS ===== */
         .info-section {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
         .info-table {
@@ -125,95 +142,103 @@
         .info-table td {
             width: 50%;
             vertical-align: top;
-            padding: 0 8px 0 0;
+        }
+
+        .info-table td:first-child {
+            padding-right: 8px;
         }
 
         .info-table td:last-child {
-            padding: 0 0 0 8px;
+            padding-left: 8px;
         }
 
         .info-card {
-            border: 1px solid #ccc;
-            padding: 8px 10px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 10px 12px;
+            height: 100%;
         }
 
         .info-card-title {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
             text-transform: uppercase;
-            color: #666;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #eee;
+            letter-spacing: 1px;
+            color: #1a365d;
+            margin-bottom: 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .info-card-name {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
-            margin-bottom: 3px;
+            color: #2d3748;
+            margin-bottom: 4px;
         }
 
         .info-card-text {
             font-size: 8px;
-            color: #555;
-            line-height: 1.5;
+            color: #718096;
+            line-height: 1.6;
         }
 
         /* ===== ITEMS TABLE ===== */
         .items-section {
-            margin-bottom: 15px;
-        }
-
-        .section-title {
-            font-size: 9px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #333;
-            margin-bottom: 6px;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #ccc;
+            margin-bottom: 16px;
         }
 
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Force le respect des largeurs de colonnes */
+            table-layout: fixed;
         }
 
         .items-table thead th {
-            padding: 6px 8px;
+            padding: 8px 10px;
             text-align: left;
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-bottom: 2px solid #333;
-            color: #333;
+            letter-spacing: 0.5px;
+            background: #1a365d;
+            color: #ffffff;
+        }
+
+        .items-table thead th:first-child {
+            border-radius: 3px 0 0 0;
+        }
+
+        .items-table thead th:last-child {
+            border-radius: 0 3px 0 0;
         }
 
         .items-table tbody td {
-            padding: 5px 8px;
+            padding: 7px 10px;
             font-size: 9px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .items-table tbody tr:nth-child(even) td {
+            background: #f7fafc;
         }
 
         .items-table tbody tr:last-child td {
-            border-bottom: 1px solid #ccc;
+            border-bottom: 2px solid #e2e8f0;
         }
 
         .product-name {
-            font-weight: 500;
+            font-weight: 600;
+            color: #2d3748;
         }
 
         .text-center { text-align: center; }
         .text-right { text-align: right; }
-        .text-muted { color: #777; }
 
         /* ===== TOTALS ===== */
         .totals-section {
-            margin-bottom: 15px;
+            margin-bottom: 14px;
         }
 
         .totals-wrapper {
@@ -221,20 +246,22 @@
             border-collapse: collapse;
         }
 
-        .spacer { width: 55%; }
+        .spacer-cell { width: 55%; }
 
-        .totals {
+        .totals-cell {
             width: 45%;
             vertical-align: top;
         }
 
         .totals-card {
-            border: 1px solid #ccc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
         }
 
         .totals-row {
-            padding: 4px 10px;
-            border-bottom: 1px solid #eee;
+            padding: 5px 12px;
+            border-bottom: 1px solid #edf2f7;
         }
 
         .totals-row-table {
@@ -244,61 +271,124 @@
 
         .totals-label {
             font-size: 8px;
-            color: #555;
+            color: #718096;
         }
 
         .totals-value {
             text-align: right;
             font-size: 9px;
             font-weight: 500;
+            color: #2d3748;
         }
 
         .totals-value.discount {
-            color: #555;
+            color: #e53e3e;
         }
 
         .grand-total {
-            border-top: 2px solid #333;
-            padding: 6px 10px;
+            background: #1a365d;
+            padding: 8px 12px;
+            border-bottom: none;
         }
 
         .grand-total .totals-label {
             font-weight: bold;
             text-transform: uppercase;
             font-size: 9px;
-            color: #333;
+            color: #ffffff;
         }
 
         .grand-total .totals-value {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
+            color: #ffffff;
         }
 
         .amount-words {
-            padding: 4px 10px;
+            padding: 5px 12px;
             font-size: 7px;
             font-style: italic;
-            color: #777;
-            border-top: 1px dashed #ccc;
+            color: #a0aec0;
+            border-top: 1px solid #edf2f7;
+            background: #f7fafc;
         }
+
+        /* ===== PAYMENT STATUS ===== */
+        .payment-status-section {
+            margin-bottom: 14px;
+        }
+
+        .payment-status-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .payment-info-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 8px 12px;
+            background: #f7fafc;
+        }
+
+        .payment-info-row {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .payment-info-row td {
+            padding: 2px 0;
+            font-size: 8px;
+        }
+
+        .payment-info-label {
+            color: #718096;
+            width: 40%;
+        }
+
+        .payment-info-value {
+            text-align: right;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .payment-paid { color: #276749; }
+        .payment-partial { color: #975a16; }
+        .payment-unpaid { color: #9b2c2c; }
 
         /* ===== NOTES ===== */
         .notes-box {
-            border: 1px solid #ccc;
-            padding: 6px 10px;
-            margin-bottom: 12px;
+            border-left: 3px solid #1a365d;
+            background: #f7fafc;
+            padding: 8px 12px;
+            margin-bottom: 14px;
             font-size: 8px;
+            color: #4a5568;
         }
 
         .notes-title {
             font-weight: bold;
+            color: #1a365d;
+            font-size: 8px;
+        }
+
+        /* ===== CREDIT NOTE ===== */
+        .credit-note-banner {
+            background: #fffbeb;
+            border: 1px solid #f6ad55;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+            font-size: 9px;
+            color: #744210;
         }
 
         /* ===== QR VERIFICATION ===== */
         .verification-section {
-            border: 1px solid #ccc;
-            padding: 8px;
-            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            background: #f7fafc;
         }
 
         .verification-table {
@@ -310,49 +400,92 @@
             vertical-align: top;
         }
 
-        .qr-box {
-            display: inline-block;
-        }
-
         .qr-box img {
             width: 60px;
             height: 60px;
         }
 
         .verification-info {
-            padding-left: 10px;
+            padding-left: 12px;
             vertical-align: middle;
         }
 
         .verification-title {
             font-size: 9px;
             font-weight: bold;
+            color: #1a365d;
             margin-bottom: 3px;
         }
 
         .verification-text {
             font-size: 7px;
-            color: #555;
-            line-height: 1.4;
+            color: #718096;
+            line-height: 1.5;
         }
 
         .verification-code {
             display: inline-block;
-            font-family: monospace;
-            border: 1px solid #333;
-            padding: 2px 6px;
+            font-family: 'DejaVu Sans Mono', monospace;
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            padding: 2px 8px;
             font-size: 8px;
-            margin-top: 3px;
+            margin-top: 4px;
+            border-radius: 2px;
+            letter-spacing: 1px;
+        }
+
+        .emcef-badge {
+            display: inline-block;
+            background: #276749;
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 7px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .emcef-pending-badge {
+            display: inline-block;
+            background: #975a16;
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 2px;
+            font-size: 7px;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         /* ===== FOOTER ===== */
         .footer {
             text-align: center;
             padding-top: 10px;
-            border-top: 1px solid #ccc;
-            color: #777;
+            border-top: 2px solid #1a365d;
+            color: #a0aec0;
             font-size: 7px;
-            line-height: 1.5;
+            line-height: 1.6;
+        }
+
+        .footer strong {
+            color: #718096;
+        }
+
+        .tax-group-badge {
+            display: inline-block;
+            border: 1px solid #1a365d;
+            font-size: 7px;
+            padding: 0 3px;
+            font-weight: bold;
+            color: #1a365d;
+            border-radius: 2px;
+        }
+
+        .tax-group-badge-e {
+            border-color: #dd6b20;
+            color: #dd6b20;
         }
     </style>
 </head>
@@ -363,16 +496,11 @@
     $statusClass = 'status-' . ($status ?: 'pending');
     $discountPercent = $sale->discount_percent ?? 0;
 
-    // Vérifier si l'entreprise est en franchise de TVA
     $isVatFranchise = \App\Models\AccountingSetting::isVatFranchise($company->id);
 
-    // Calculs TVA — toujours depuis les lignes pour fiabilité
     $rawTotalHt = $sale->items->sum('total_price_ht');
     $rawTotalVat = $isVatFranchise ? 0 : $sale->items->sum('vat_amount');
-    // grandTotal sera recalculé après le calcul de $totalTaxSpecific ci-dessous
 
-    // Déterminer le groupe de taxe à partir du taux TVA (convention DGI Bénin)
-    // Groupes e-MCeF valides : A, B, C, D, E, F
     $validEmcefGroups = ['A', 'B', 'C', 'D', 'E', 'F'];
     $getTaxGroupLabel = function(float $vatRate, ?string $vatCategory = null) use ($validEmcefGroups): string {
         if ($vatCategory && in_array(strtoupper($vatCategory), $validEmcefGroups)) {
@@ -385,7 +513,6 @@
         };
     };
 
-    // Ventilation TVA par taux (pour factures avec taux mixtes)
     $vatBreakdown = [];
     $totalTaxSpecific = 0;
     $taxSpecificLabel = null;
@@ -399,7 +526,6 @@
             }
             $vatBreakdown[$key]['base_ht'] += $item->total_price_ht ?? 0;
             $vatBreakdown[$key]['vat_amount'] += $item->vat_amount ?? 0;
-            // Taxe spécifique (Groupe E) — cumulée séparément
             if ($item->tax_specific_amount > 0) {
                 $totalTaxSpecific += ($item->tax_specific_total ?? ($item->tax_specific_amount * $item->quantity));
                 if (!$taxSpecificLabel && $item->tax_specific_label) {
@@ -411,21 +537,16 @@
     }
     $hasMixedRates = count($vatBreakdown) > 1 || $totalTaxSpecific > 0;
 
-    // Appliquer la remise sur HT + TVA (la taxe spécifique n'est pas remisée)
     $discountMultiplier = 1 - (($sale->discount_percent ?? 0) / 100);
     $totalHt = round($rawTotalHt * $discountMultiplier, 2);
     $totalVat = round($rawTotalVat * $discountMultiplier, 2);
-    // Total TTC = HT + TVA (après remise) + taxe spécifique
     $grandTotal = $isVatFranchise ? $totalHt : ($totalHt + $totalVat + $totalTaxSpecific);
 
-    // Vérifier si e-MCeF est activé (pour afficher les groupes de taxe DGI)
     $isEmcefEnabled = $company->emcef_enabled ?? false;
 
-    // Remise appliquée sur HT + TVA (pas sur taxe spécifique)
     $totalAvantRemise = $rawTotalHt + $rawTotalVat;
     $discountAmount = $totalAvantRemise * ($discountPercent / 100);
 
-    // Fonction montant en lettres
     function amountToWordsFrSalePdf($number, $currency = 'EUR') {
         $fmt = new \NumberFormatter('fr_FR', \NumberFormatter::SPELLOUT);
         $euros = floor($number);
@@ -451,39 +572,54 @@
     }
 
     $statusLabels = [
-        'completed' => 'Payée',
+        'completed' => 'Validée',
         'pending' => 'En attente',
         'cancelled' => 'Annulée'
     ];
 
-    $invoiceTypeLabel = $sale->type === 'credit_note' ? 'Avoir N°' : ($sale->is_export ? 'Facture Export N°' : 'Facture N°');
+    $paymentStatusLabels = [
+        'paid' => 'Payée',
+        'partial' => 'Partiellement payée',
+        'unpaid' => 'Impayée',
+        'pending' => 'En attente',
+    ];
 
-    // Déterminer si la facture est certifiée EMCEF
+    $invoiceTypeLabel = $sale->type === 'credit_note' ? 'AVOIR' : ($sale->is_export ? 'FACTURE EXPORT' : 'FACTURE');
+
     $isEmcefCertified = ($sale->emcef_status === 'certified' && $sale->emcef_qr_code);
+
+    $netToPay = $sale->aib_amount > 0 ? ($grandTotal + $sale->aib_amount) : $grandTotal;
+    $remainingAmount = max(0, $netToPay - floatval($sale->amount_paid));
 @endphp
+
+<!-- ACCENT BAR -->
+<div class="accent-bar"></div>
+
+<div class="page-wrap">
 
 <!-- HEADER -->
 <div class="header">
     <table class="header-table">
         <tr>
-            <td style="width: 60%;">
+            <td style="width: 55%;">
                 @if($company->logo_path)
                     <img src="{{ public_path('storage/' . $company->logo_path) }}" alt="{{ $company->name }}" class="logo">
                 @endif
                 <div class="company-name">{{ $company->name ?: 'Votre Entreprise' }}</div>
-                <div class="company-subtitle">{{ $sale->type === 'credit_note' ? 'Avoir' : ($sale->is_export ? 'Facture de vente à l\'exportation' : 'Facture de vente') }}</div>
                 <div class="company-details">
                     @if($company->address){{ $company->address }}<br>@endif
                     @if($company->phone)Tel: {{ $company->phone }}@endif
-                    @if($company->email) | {{ $company->email }}@endif
-                    @if($company->tax_number)<br>N° Fiscal: {{ $company->tax_number }}@endif
-                    @if($company->siret)<br>SIRET: {{ $company->siret }}@endif
+                    @if($company->email) &bull; {{ $company->email }}@endif
+                    @if($company->tax_number)<br>IFU: {{ $company->tax_number }}@endif
+                    @if($company->siret) &bull; SIRET: {{ $company->siret }}@endif
                 </div>
             </td>
-            <td class="invoice-title">
-                <div class="invoice-label">{{ $invoiceTypeLabel }}</div>
+            <td class="invoice-title-block">
+                <div class="invoice-type-label">{{ $invoiceTypeLabel }}</div>
                 <div class="invoice-number">{{ $sale->invoice_number }}</div>
-                <div class="invoice-date">{{ $sale->created_at->format('d/m/Y') }}</div>
+                <div class="invoice-date">
+                    Date : {{ $sale->created_at->format('d/m/Y') }}
+                </div>
                 <span class="status-badge {{ $statusClass }}">
                     {{ $statusLabels[$status] ?? ucfirst($status) }}
                 </span>
@@ -492,13 +628,14 @@
     </table>
 </div>
 
-{{-- Référence facture d'origine pour les avoirs (exigence DGI) --}}
+<hr class="header-divider">
+
+{{-- Avoir : référence facture d'origine --}}
 @if($sale->type === 'credit_note' && $sale->parent)
-<div style="background:#fff3cd;border:1px solid #d4a913;padding:8px 12px;margin-bottom:10px;font-size:10px;">
-    <strong>Avoir relatif à la facture N° {{ $sale->parent->invoice_number }} du {{ $sale->parent->created_at->format('d/m/Y') }}</strong><br>
-    Facture d'origine : {{ $sale->parent->invoice_number }}
+<div class="credit-note-banner">
+    <strong>Avoir relatif à la facture N° {{ $sale->parent->invoice_number }}</strong> du {{ $sale->parent->created_at->format('d/m/Y') }}
     @if($sale->parent->emcef_code_mecef)
-        &nbsp;&mdash;&nbsp;Code MECeF/DGI : {{ $sale->parent->emcef_code_mecef }}
+        &mdash; Code MECeF : {{ $sale->parent->emcef_code_mecef }}
     @endif
 </div>
 @endif
@@ -509,26 +646,54 @@
         <tr>
             <td>
                 <div class="info-card">
-                    <div class="info-card-title">Client</div>
+                    <div class="info-card-title">Facturé à</div>
                     <div class="info-card-name">{{ $sale->customer->name ?? 'Client non défini' }}</div>
                     <div class="info-card-text">
-                        @if(optional($sale->customer)->registration_number)IFU: {{ $sale->customer->registration_number }}<br>@endif
-                        @if(optional($sale->customer)->siret && optional($sale->customer)->siret !== optional($sale->customer)->registration_number)SIRET: {{ $sale->customer->siret }}<br>@endif
+                        @if(optional($sale->customer)->registration_number)IFU : {{ $sale->customer->registration_number }}<br>@endif
+                        @if(optional($sale->customer)->siret && optional($sale->customer)->siret !== optional($sale->customer)->registration_number)SIRET : {{ $sale->customer->siret }}<br>@endif
                         @if(optional($sale->customer)->address){{ $sale->customer->address }}<br>@endif
                         @if(optional($sale->customer)->zip_code || optional($sale->customer)->city){{ optional($sale->customer)->zip_code }} {{ optional($sale->customer)->city }}<br>@endif
-                        @if(optional($sale->customer)->phone)Tel: {{ $sale->customer->phone }}<br>@endif
+                        @if(optional($sale->customer)->phone)Tel : {{ $sale->customer->phone }}<br>@endif
                         @if(optional($sale->customer)->email){{ $sale->customer->email }}@endif
                     </div>
                 </div>
             </td>
             <td>
                 <div class="info-card">
-                    <div class="info-card-title">Détails</div>
-                    <div class="info-card-name">Informations de paiement</div>
-                    <div class="info-card-text">
-                        Mode: {{ ucfirst($sale->payment_method ?? 'Non spécifié') }}<br>
-                        Référence: {{ $sale->reference ?? $sale->invoice_number }}<br>
-                        @if($sale->warehouse)Entrepôt: {{ $sale->warehouse->name }}@endif
+                    <div class="info-card-title">Informations</div>
+                    <div class="info-card-text" style="padding-top: 2px;">
+                        <table class="payment-info-row">
+                            <tr>
+                                <td class="payment-info-label">Référence</td>
+                                <td class="payment-info-value">{{ $sale->reference ?? $sale->invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="payment-info-label">Mode de paiement</td>
+                                <td class="payment-info-value">
+                                    @switch($sale->payment_method)
+                                        @case('cash') Espèces @break
+                                        @case('card') Carte bancaire @break
+                                        @case('mobile') Mobile Money @break
+                                        @case('transfer') Virement @break
+                                        @case('check') Chèque @break
+                                        @case('mixed') Mixte @break
+                                        @default {{ ucfirst($sale->payment_method ?? 'Non spécifié') }}
+                                    @endswitch
+                                </td>
+                            </tr>
+                            @if($sale->warehouse)
+                            <tr>
+                                <td class="payment-info-label">Point de vente</td>
+                                <td class="payment-info-value">{{ $sale->warehouse->name }}</td>
+                            </tr>
+                            @endif
+                            <tr>
+                                <td class="payment-info-label">Statut paiement</td>
+                                <td class="payment-info-value {{ $sale->payment_status === 'paid' ? 'payment-paid' : ($sale->payment_status === 'partial' ? 'payment-partial' : 'payment-unpaid') }}">
+                                    {{ $paymentStatusLabels[$sale->payment_status] ?? ucfirst($sale->payment_status ?? 'En attente') }}
+                                </td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
             </td>
@@ -538,7 +703,6 @@
 
 <!-- ITEMS TABLE -->
 <div class="items-section">
-    <div class="section-title">Articles facturés</div>
     <table class="items-table">
         <thead>
             <tr>
@@ -551,17 +715,24 @@
         </thead>
         <tbody>
             @forelse($sale->items as $item)
+                @php $pdfItemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); @endphp
                 <tr>
                     <td><span class="product-name">{{ $item->product->name ?? 'Produit supprimé' }}</span></td>
                     <td class="text-center">{{ floatval($item->quantity) == intval($item->quantity) ? intval($item->quantity) : rtrim(rtrim(number_format(floatval($item->quantity), 3, ',', ' '), '0'), ',') }}</td>
-                    <td class="text-right text-muted">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }} {{ $currency }}</td>
-                    @php $pdfItemGroup = $getTaxGroupLabel($item->vat_rate ?? 0, $item->vat_category); @endphp
-                    <td class="text-center">@if($pdfItemGroup === 'E' && !$item->tax_specific_amount)TPS @endif{{ number_format($item->vat_rate ?? 0, 0) }}%@if($item->tax_specific_amount > 0)<br><span style="font-size:7px;">+ {{ number_format($item->tax_specific_amount, 0, ',', ' ') }} {{ $currency }}/u</span>@endif @if($isEmcefEnabled) <span style="border:1px solid #555;font-size:7px;padding:0 2px;font-weight:bold;">{{ $pdfItemGroup }}</span>@if($item->tax_specific_amount > 0) <span style="border:1px solid #e67e22;color:#e67e22;font-size:7px;padding:0 2px;font-weight:bold;">E</span>@endif @endif</td>
-                    <td class="text-right">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }} {{ $currency }}</td>
+                    <td class="text-right" style="color: #718096;">{{ number_format($item->unit_price_ht ?? $item->unit_price, 2, ',', ' ') }}</td>
+                    <td class="text-center">
+                        @if($pdfItemGroup === 'E' && !$item->tax_specific_amount)TPS @endif{{ number_format($item->vat_rate ?? 0, 0) }}%
+                        @if($item->tax_specific_amount > 0)<br><span style="font-size:7px;color:#718096;">+ {{ number_format($item->tax_specific_amount, 0, ',', ' ') }}/u</span>@endif
+                        @if($isEmcefEnabled)
+                            <span class="tax-group-badge">{{ $pdfItemGroup }}</span>
+                            @if($item->tax_specific_amount > 0) <span class="tax-group-badge tax-group-badge-e">E</span>@endif
+                        @endif
+                    </td>
+                    <td class="text-right" style="font-weight:600;">{{ number_format($item->total_price_ht ?? ($item->quantity * $item->unit_price), 2, ',', ' ') }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align: center; padding: 15px; color: #999;">
+                    <td colspan="5" style="text-align: center; padding: 20px; color: #a0aec0;">
                         Aucun article dans cette facture
                     </td>
                 </tr>
@@ -574,14 +745,21 @@
 <div class="totals-section">
     <table class="totals-wrapper">
         <tr>
-            <td class="spacer"></td>
-            <td class="totals">
+            <td class="spacer-cell">
+                {{-- Espace pour notes ou mentions légales à gauche --}}
+                @if($sale->notes)
+                <div class="notes-box">
+                    <span class="notes-title">Note :</span> {{ $sale->notes }}
+                </div>
+                @endif
+            </td>
+            <td class="totals-cell">
                 <div class="totals-card">
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
                                 <td class="totals-label">Total HT</td>
-                                <td class="totals-value">{{ number_format($totalHt, 2, ',', ' ') }} {{ $currency }}</td>
+                                <td class="totals-value">{{ number_format($rawTotalHt, 2, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
                     </div>
@@ -594,6 +772,16 @@
                             </tr>
                         </table>
                     </div>
+                    @if($discountAmount > 0)
+                    <div class="totals-row">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label">Total HT après remise</td>
+                                <td class="totals-value">{{ number_format($totalHt, 2, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @endif
                     @endif
                     @if($hasMixedRates)
                         @foreach($vatBreakdown as $key => $amounts)
@@ -601,7 +789,7 @@
                         <div class="totals-row">
                             <table class="totals-row-table">
                                 <tr>
-                                    <td class="totals-label">{{ $taxLabel }} {{ $amounts['rate'] }}%@if($isEmcefEnabled && !empty($amounts['group'])) — Groupe {{ $amounts['group'] }}@endif (base {{ number_format($amounts['base_ht'], 2, ',', ' ') }})</td>
+                                    <td class="totals-label">{{ $taxLabel }} {{ $amounts['rate'] }}%@if($isEmcefEnabled && !empty($amounts['group'])) &mdash; Grp {{ $amounts['group'] }}@endif</td>
                                     <td class="totals-value">{{ number_format($amounts['vat_amount'], 2, ',', ' ') }} {{ $currency }}</td>
                                 </tr>
                             </table>
@@ -611,7 +799,7 @@
                         <div class="totals-row">
                             <table class="totals-row-table">
                                 <tr>
-                                    <td class="totals-label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
+                                    <td class="totals-label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Grp E' : '' }}</td>
                                     <td class="totals-value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</td>
                                 </tr>
                             </table>
@@ -624,7 +812,7 @@
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">{{ $singleTaxLabel }} ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) — Groupe {{ $singleGroup }}@endif)</td>
+                                <td class="totals-label">{{ $singleTaxLabel }} ({{ $singleRate }}%@if($isEmcefEnabled && $singleGroup) &mdash; Grp {{ $singleGroup }}@endif)</td>
                                 <td class="totals-value">{{ number_format($totalVat, 2, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
@@ -633,7 +821,7 @@
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Groupe E' : '' }}</td>
+                                <td class="totals-label">{{ $taxSpecificLabel ?? 'Taxe spécifique' }}{{ $isEmcefEnabled ? ' — Grp E' : '' }}</td>
                                 <td class="totals-value">{{ number_format($totalTaxSpecific, 2, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
@@ -652,7 +840,7 @@
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">AIB {{ $sale->aib_rate === 'A' ? '(1%)' : '(5%)' }}<br><span style="font-size:7px;color:#999;">Acompte sur Impôt Bénéfices</span></td>
+                                <td class="totals-label">AIB {{ $sale->aib_rate === 'A' ? '(1%)' : '(5%)' }} <span style="font-size:7px;color:#a0aec0;">&mdash; Acompte sur Impôt</span></td>
                                 <td class="totals-value">{{ number_format($sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
@@ -660,14 +848,33 @@
                     <div class="totals-row grand-total">
                         <table class="totals-row-table">
                             <tr>
-                                <td class="totals-label">NET À PAYER</td>
-                                <td class="totals-value">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</td>
+                                <td class="totals-label">NET A PAYER</td>
+                                <td class="totals-value">{{ number_format($netToPay, 0, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @endif
+                    @if($sale->payment_status === 'partial' && floatval($sale->amount_paid) > 0)
+                    <div class="totals-row" style="background:#f0fff4;">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label" style="color:#276749;">Montant payé</td>
+                                <td class="totals-value" style="color:#276749;">{{ number_format($sale->amount_paid, 0, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="totals-row" style="background:#fff5f5;">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label" style="color:#9b2c2c;font-weight:bold;">Reste à payer</td>
+                                <td class="totals-value" style="color:#9b2c2c;font-weight:bold;">{{ number_format($remainingAmount, 0, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
                     </div>
                     @endif
                     <div class="amount-words">
-                        {{ amountToWordsFrSalePdf($sale->aib_amount > 0 ? ($grandTotal + $sale->aib_amount) : $grandTotal, $currency) }}
+                        Arrêté la présente facture à la somme de :<br>
+                        <strong>{{ amountToWordsFrSalePdf($netToPay, $currency) }}</strong>
                     </div>
                 </div>
             </td>
@@ -675,14 +882,7 @@
     </table>
 </div>
 
-<!-- NOTES -->
-@if($sale->notes)
-<div class="notes-box">
-    <span class="notes-title">Note:</span> {{ $sale->notes }}
-</div>
-@endif
-
-<!-- QR VERIFICATION (App) - Masqué si facture certifiée EMCEF -->
+<!-- QR VERIFICATION (App) -->
 @if(!$isEmcefCertified && !empty($verificationUrl) && !empty($verificationCode))
 <div class="verification-section">
     <table class="verification-table">
@@ -707,8 +907,8 @@
             <td class="verification-info">
                 <div class="verification-title">Vérification d'authenticité</div>
                 <div class="verification-text">
-                    Scannez le QR code ou visitez le lien pour vérifier ce document.<br>
-                    <span style="font-size:7px;word-break:break-all;">{{ $verificationUrl }}</span>
+                    Scannez le QR code ou visitez le lien ci-dessous pour vérifier ce document.<br>
+                    <span style="font-size:6px;word-break:break-all;color:#a0aec0;">{{ $verificationUrl }}</span>
                 </div>
                 <span class="verification-code">{{ $verificationCode }}</span>
             </td>
@@ -717,9 +917,9 @@
 </div>
 @endif
 
-{{-- Section e-MCeF (Certification DGI Bénin) --}}
+{{-- e-MCeF (Certification DGI Bénin) --}}
 @if($isEmcefCertified)
-<div class="verification-section">
+<div class="verification-section" style="border-color:#276749;">
     <table class="verification-table">
         <tr>
             <td class="qr-cell">
@@ -740,27 +940,30 @@
                 </div>
             </td>
             <td class="verification-info">
-                <div class="verification-title">Facture certifiée DGI Bénin</div>
+                <div class="verification-title" style="color:#276749;">Facture certifiée DGI Bénin</div>
                 <div class="verification-text">
-                    NIM : {{ $sale->emcef_nim }}<br>
-                    Code MECeF : {{ $sale->emcef_code_mecef }}<br>
-                    Certifiée le : {{ $sale->emcef_certified_at?->format('d/m/Y H:i') }}
+                    <table style="width:100%;border-collapse:collapse;">
+                        <tr><td style="width:90px;color:#718096;padding:1px 0;">NIM</td><td style="font-weight:bold;padding:1px 0;">{{ $sale->emcef_nim }}</td></tr>
+                        <tr><td style="color:#718096;padding:1px 0;">Code MECeF</td><td style="font-weight:bold;padding:1px 0;">{{ $sale->emcef_code_mecef }}</td></tr>
+                        <tr><td style="color:#718096;padding:1px 0;">Date certification</td><td style="padding:1px 0;">{{ $sale->emcef_certified_at?->format('d/m/Y H:i') }}</td></tr>
+                    </table>
                 </div>
                 @if($sale->emcef_counters)
                     <span class="verification-code">{{ $sale->emcef_counters }}</span>
                 @endif
+                <span class="emcef-badge">Certifiée e-MCeF</span>
             </td>
         </tr>
     </table>
 </div>
 @elseif(isset($company) && $company->emcef_enabled && $sale->emcef_status === 'pending')
-<div class="verification-section">
+<div class="verification-section" style="border-color:#d69e2e;">
     <table class="verification-table">
         <tr>
             <td class="verification-info" style="width: 100%;">
-                <div class="verification-title">Certification e-MCeF en cours</div>
-                <div class="verification-text">
-                    Cette facture est en attente de certification par la DGI Bénin.
+                <span class="emcef-pending-badge">Certification en cours</span>
+                <div class="verification-text" style="margin-top:4px;">
+                    Cette facture est en attente de certification par la DGI Bénin via e-MCeF.
                 </div>
             </td>
         </tr>
@@ -778,10 +981,11 @@
     @if($company->footer_text)
         {{ $company->footer_text }}
     @else
-        Merci pour votre confiance<br>
-        {{ $company->name }} — {{ $company->phone ?? '' }} — {{ $company->email ?? '' }}
+        Merci pour votre confiance &bull; {{ $company->name }}<br>
+        {{ $company->phone ?? '' }} {{ $company->email ? '&bull; ' . $company->email : '' }}
     @endif
 </div>
 
+</div>{{-- /.page-wrap --}}
 </body>
 </html>
