@@ -451,7 +451,7 @@
     }
 
     $statusLabels = [
-        'completed' => 'Payée',
+        'completed' => 'Validée',
         'pending' => 'En attente',
         'cancelled' => 'Annulée'
     ];
