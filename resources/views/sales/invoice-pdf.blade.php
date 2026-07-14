@@ -483,7 +483,7 @@
             <td class="invoice-title">
                 <div class="invoice-label">{{ $invoiceTypeLabel }}</div>
                 <div class="invoice-number">{{ $sale->invoice_number }}</div>
-                <div class="invoice-date">{{ $sale->created_at->format('d/m/Y') }}</div>
+                <div class="invoice-date">{{ $sale->created_at->format('d/m/Y à H:i') }}</div>
                 <span class="status-badge {{ $statusClass }}">
                     {{ $statusLabels[$status] ?? ucfirst($status) }}
                 </span>
