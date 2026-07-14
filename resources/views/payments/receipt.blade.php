@@ -398,11 +398,6 @@
     </table>
 </div>
 
-<!-- NOTICE -->
-<div class="notice-box">
-    Document interne — Ce reçu atteste d'un règlement reçu. Il ne remplace pas la facture normalisée e-MCeF.
-</div>
-
 <!-- INFO CARDS -->
 <div class="info-section">
     <table class="info-table">
