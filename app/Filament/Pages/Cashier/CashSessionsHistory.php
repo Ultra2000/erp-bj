@@ -127,7 +127,15 @@ class CashSessionsHistory extends Page implements HasTable
                     ->label('Détails')
                     ->icon('heroicon-o-eye')
                     ->modalHeading(fn ($record) => 'Session du ' . $record->opened_at->format('d/m/Y H:i'))
-                    ->modalContent(fn ($record) => view('filament.pages.cashier.session-details', ['session' => $record->fresh()])),
+                    ->modalContent(function ($record) {
+                        $session = $record->fresh();
+                        $collections = $session->getCollectionPayments();
+                        $collections->load(['payable.customer']);
+                        return view('filament.pages.cashier.session-details', [
+                            'session' => $session,
+                            'collections' => $collections,
+                        ]);
+                    }),
                 Tables\Actions\Action::make('pdf')
                     ->label('PDF')
                     ->icon('heroicon-o-document-arrow-down')

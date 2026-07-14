@@ -6,6 +6,7 @@ use App\Models\Traits\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class CashSession extends Model
 {
@@ -54,6 +55,11 @@ class CashSession extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     /**
      * Vérifie si la session est ouverte
      */
@@ -95,26 +101,27 @@ class CashSession extends Model
     }
 
     /**
-     * Recalcule les totaux de la session
+     * Recalcule les totaux de la session (ventes + encaissements)
      */
     public function recalculate(): self
     {
-        // Bypasser les global scopes (BelongsToCompany, WarehouseScope) pour compter
-        // toutes les ventes liées à cette session sans filtrage contextuel
         $sales = Sale::withoutGlobalScopes()
             ->where('cash_session_id', $this->id)
             ->where('status', 'completed')
             ->get();
-        
-        $this->sales_count = $sales->count();
-        $this->total_sales = $sales->sum('total');
-        
-        // Ventiler les montants par mode de paiement (y compris paiements mixtes)
+
+        $sessionSaleIds = $sales->pluck('id')->toArray();
+
+        $collectionPayments = $this->getCollectionPayments($sessionSaleIds);
+
+        $this->sales_count = $sales->count() + $collectionPayments->unique('payable_id')->count();
+        $this->total_sales = $sales->sum('total') + $collectionPayments->sum('amount');
+
         $totalCash = 0;
         $totalCard = 0;
         $totalMobile = 0;
         $totalOther = 0;
-        
+
         foreach ($sales as $sale) {
             $saleAmount = floatval($sale->amount_paid ?? $sale->total);
 
@@ -133,18 +140,52 @@ class CashSession extends Model
                 $totalOther += $saleAmount;
             }
         }
-        
+
+        foreach ($collectionPayments as $payment) {
+            $amount = floatval($payment->amount);
+            match ($payment->payment_method) {
+                'cash' => $totalCash += $amount,
+                'card' => $totalCard += $amount,
+                'mobile' => $totalMobile += $amount,
+                default => $totalOther += $amount,
+            };
+        }
+
         $this->total_cash = $totalCash;
         $this->total_card = $totalCard;
         $this->total_mobile = $totalMobile;
         $this->total_other = $totalOther;
-        
-        // Montant attendu = fond de caisse + ventes espèces
+
         $this->expected_amount = $this->opening_amount + $this->total_cash;
-        
+
         $this->save();
-        
+
         return $this;
+    }
+
+    /**
+     * Paiements d'encaissement : paiements enregistrés dans cette session
+     * pour des factures créées dans une autre session.
+     */
+    public function getCollectionPayments(?array $excludeSaleIds = null): Collection
+    {
+        if ($excludeSaleIds === null) {
+            $excludeSaleIds = Sale::withoutGlobalScopes()
+                ->where('cash_session_id', $this->id)
+                ->where('status', 'completed')
+                ->pluck('id')
+                ->toArray();
+        }
+
+        $query = Payment::withoutGlobalScopes()
+            ->where('cash_session_id', $this->id)
+            ->where('payable_type', Sale::class);
+
+        if (!empty($excludeSaleIds)) {
+            $query->whereNotIn('payable_id', $excludeSaleIds);
+        }
+
+        return $query->get();
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashSession;
+use App\Models\Payment;
 use App\Models\Sale;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,22 +50,21 @@ class CashReportController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Statistiques par mode de paiement
-        $paymentStats = Sale::withoutGlobalScopes()
+        // Encaissements (paiements sur factures d'autres sessions)
+        $collectionPayments = $session->getCollectionPayments($sales->pluck('id')->toArray());
+        $collectionPaymentsWithSale = $collectionPayments->load('payable');
+
+        // Statistiques par mode de paiement (depuis la table payments pour tout inclure)
+        $allPayments = Payment::withoutGlobalScopes()
             ->where('cash_session_id', $session->id)
-            ->where('status', 'completed')
-            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as total'))
-            ->groupBy('payment_method')
-            ->get()
-            ->keyBy('payment_method');
+            ->get();
 
-        // Calculer le total des ventes et les pourcentages
         $totalSalesAmount = floatval($session->total_sales);
-        $totalSalesCount = intval($session->sales_count);
 
-        $getPaymentStat = function ($method) use ($paymentStats, $totalSalesAmount) {
-            $count = $paymentStats->get($method)->count ?? 0;
-            $total = floatval($paymentStats->get($method)->total ?? 0);
+        $getPaymentStat = function ($method) use ($allPayments, $totalSalesAmount) {
+            $methodPayments = $allPayments->where('payment_method', $method);
+            $count = $methodPayments->count();
+            $total = floatval($methodPayments->sum('amount'));
             $percentage = $totalSalesAmount > 0 ? ($total / $totalSalesAmount) * 100 : 0;
             return [
                 'count' => $count,
@@ -154,6 +154,17 @@ class CashReportController extends Controller
                     'created_at' => $sale->created_at->toISOString(),
                 ];
             }),
+            'collections' => $collectionPaymentsWithSale->map(function ($payment) {
+                $sale = $payment->payable;
+                return [
+                    'id' => $payment->id,
+                    'invoice_number' => $sale?->invoice_number ?? '-',
+                    'customer_name' => $sale?->customer?->name ?? 'Client comptoir',
+                    'amount' => floatval($payment->amount),
+                    'payment_method' => $payment->payment_method,
+                    'created_at' => $payment->created_at->toISOString(),
+                ];
+            })->values(),
         ]);
     }
 
@@ -179,14 +190,21 @@ class CashReportController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        // Stats par paiement
-        $paymentStats = Sale::withoutGlobalScopes()
+        // Encaissements
+        $collectionPayments = $session->getCollectionPayments($sales->pluck('id')->toArray());
+        $collectionPayments->load(['payable.customer']);
+
+        // Stats par paiement (depuis payments pour inclure encaissements)
+        $allPayments = Payment::withoutGlobalScopes()
             ->where('cash_session_id', $session->id)
-            ->where('status', 'completed')
-            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as total'))
-            ->groupBy('payment_method')
-            ->get()
-            ->keyBy('payment_method');
+            ->get();
+        $paymentStats = $allPayments->groupBy('payment_method')->map(function ($group, $method) {
+            return (object) [
+                'payment_method' => $method,
+                'count' => $group->count(),
+                'total' => $group->sum('amount'),
+            ];
+        });
 
         // Top produits
         $topProducts = DB::table('sale_items')
@@ -209,6 +227,7 @@ class CashReportController extends Controller
         $pdf = Pdf::loadView('reports.cash-session', [
             'session' => $session,
             'sales' => $sales,
+            'collections' => $collectionPayments,
             'paymentStats' => $paymentStats,
             'topProducts' => $topProducts,
             'company' => $company,
@@ -241,6 +260,10 @@ class CashReportController extends Controller
             ->orderBy('created_at')
             ->get();
 
+        // Encaissements
+        $collectionPayments = $session->getCollectionPayments($sales->pluck('id')->toArray());
+        $collectionPayments->load(['payable.customer']);
+
         // Créer le CSV
         $filename = 'rapport-caisse-' . $session->opened_at->format('Y-m-d') . '.csv';
 
@@ -249,7 +272,7 @@ class CashReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
 
-        $callback = function () use ($session, $sales) {
+        $callback = function () use ($session, $sales, $collectionPayments) {
             $file = fopen('php://output', 'w');
             
             // BOM UTF-8 pour Excel
@@ -309,6 +332,24 @@ class CashReportController extends Controller
                 }
                 fputcsv($file, ['', '', 'Total:', number_format($sale->total, 2, ',', ' ') . ' FCFA'], ';');
                 fputcsv($file, [''], ';');
+            }
+
+            // Encaissements
+            if ($collectionPayments->isNotEmpty()) {
+                fputcsv($file, [''], ';');
+                fputcsv($file, ['ENCAISSEMENTS FACTURES'], ';');
+                fputcsv($file, ['N° Facture', 'Client', 'Heure', 'Mode paiement', 'Montant'], ';');
+                foreach ($collectionPayments as $payment) {
+                    $sale = $payment->payable;
+                    fputcsv($file, [
+                        $sale?->invoice_number ?? '-',
+                        $sale?->customer?->name ?? 'Client comptoir',
+                        $payment->created_at->format('H:i'),
+                        ucfirst($payment->payment_method),
+                        number_format($payment->amount, 2, ',', ' ') . ' FCFA',
+                    ], ';');
+                }
+                fputcsv($file, ['', '', '', 'Total encaissements:', number_format($collectionPayments->sum('amount'), 2, ',', ' ') . ' FCFA'], ';');
             }
 
             fclose($file);

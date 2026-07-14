@@ -1172,6 +1172,51 @@
                                     </table>
                                 </div>
                             </div>
+
+                            <!-- Encaissements factures -->
+                            <template x-if="reportData.collections && reportData.collections.length > 0">
+                                <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
+                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+                                        </svg>
+                                        Encaissements Factures
+                                    </h3>
+                                    <div class="overflow-x-auto max-h-60">
+                                        <table class="w-full text-sm">
+                                            <thead class="sticky top-0 bg-gray-50 dark:bg-gray-700">
+                                                <tr class="text-left text-gray-500 dark:text-gray-400">
+                                                    <th class="pb-2 font-medium">Heure</th>
+                                                    <th class="pb-2 font-medium">N° Facture</th>
+                                                    <th class="pb-2 font-medium">Client</th>
+                                                    <th class="pb-2 font-medium">Paiement</th>
+                                                    <th class="pb-2 font-medium text-right">Montant</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                                                <template x-for="col in reportData.collections" :key="col.id">
+                                                    <tr class="text-gray-700 dark:text-gray-300">
+                                                        <td class="py-2" x-text="formatDate(col.created_at).split(' ')[1]"></td>
+                                                        <td class="py-2 font-mono text-xs" x-text="col.invoice_number"></td>
+                                                        <td class="py-2 text-xs" x-text="col.customer_name"></td>
+                                                        <td class="py-2">
+                                                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                                                  :class="{
+                                                                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': col.payment_method === 'cash',
+                                                                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': col.payment_method === 'card',
+                                                                      'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': col.payment_method === 'mobile'
+                                                                  }"
+                                                                  x-text="col.payment_method === 'cash' ? 'Espèces' : col.payment_method === 'card' ? 'Carte' : col.payment_method === 'mobile' ? 'Mobile' : 'Autre'">
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2 text-right font-semibold" x-text="formatPrice(col.amount)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>

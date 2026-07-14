@@ -94,15 +94,20 @@ Route::get('/sales/{sale}/invoice', [SaleInvoiceController::class, 'generate'])
 
 // Reçu de paiement (document interne non fiscal)
 Route::get('/payments/{payment}/receipt', function (\App\Models\Payment $payment) {
-    $sale = $payment->payable;
-    $company = $sale->company;
-    
+    $sale = \App\Models\Sale::withoutGlobalScopes()->with('customer')->find($payment->payable_id);
+
+    if (!$sale) {
+        abort(404, 'Facture introuvable');
+    }
+
+    $company = \App\Models\Company::find($sale->company_id);
+
     $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('payments.receipt', [
         'payment' => $payment,
         'sale' => $sale,
         'company' => $company,
     ]);
-    
+
     return $pdf->stream("recu-paiement-{$payment->id}.pdf");
 })->middleware('auth')->name('payments.receipt');
 

@@ -224,9 +224,12 @@
         </div>
 
         <div class="summary-box">
-            <h3>TOTAL DES VENTES</h3>
+            <h3>TOTAL DES TRANSACTIONS</h3>
             <div class="total">{{ number_format($session->total_sales, 2, ',', ' ') }} FCFA</div>
-            <div class="sub">{{ $session->sales_count }} ticket(s) - Caissier: {{ $session->user->name ?? 'N/A' }}</div>
+            <div class="sub">{{ $session->sales_count }} transaction(s) - Caissier: {{ $session->user->name ?? 'N/A' }}</div>
+            @if(isset($collections) && $collections->count() > 0)
+            <div class="sub">dont {{ $sales->count() }} vente(s) et {{ $collections->unique('payable_id')->count() }} encaissement(s)</div>
+            @endif
         </div>
 
         <table class="two-col">
@@ -387,6 +390,46 @@
                         <td class="right">{{ number_format($sale->total, 2, ',', ' ') }} FCFA</td>
                     </tr>
                     @endforeach
+                </tbody>
+            </table>
+        </div>
+        @endif
+
+        @if(isset($collections) && $collections->count() > 0)
+        <div class="section">
+            <div class="section-title">Encaissements Factures ({{ $collections->unique('payable_id')->count() }})</div>
+            <table class="sales">
+                <thead>
+                    <tr>
+                        <th>N° Facture</th>
+                        <th>Client</th>
+                        <th>Heure</th>
+                        <th class="center">Mode</th>
+                        <th class="right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($collections as $payment)
+                    @php $sale = $payment->payable; @endphp
+                    <tr>
+                        <td>{{ $sale?->invoice_number ?? '-' }}</td>
+                        <td>{{ $sale?->customer?->name ?? 'Client comptoir' }}</td>
+                        <td>{{ $payment->created_at->format('H:i') }}</td>
+                        <td class="center">
+                            @switch($payment->payment_method)
+                                @case('cash') ESP @break
+                                @case('card') CB @break
+                                @case('mobile') MOB @break
+                                @default AUT
+                            @endswitch
+                        </td>
+                        <td class="right">{{ number_format($payment->amount, 2, ',', ' ') }} FCFA</td>
+                    </tr>
+                    @endforeach
+                    <tr style="font-weight: bold; border-top: 2px solid #333;">
+                        <td colspan="4">Total encaissements</td>
+                        <td class="right">{{ number_format($collections->sum('amount'), 2, ',', ' ') }} FCFA</td>
+                    </tr>
                 </tbody>
             </table>
         </div>

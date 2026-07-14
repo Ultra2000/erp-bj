@@ -94,6 +94,30 @@
     </div>
     @endif
 
+    @if(isset($collections) && $collections->isNotEmpty())
+    <hr class="border-gray-200 dark:border-gray-700">
+
+    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Encaissements factures ({{ $collections->unique('payable_id')->count() }})</p>
+    <div class="space-y-1">
+        @foreach($collections as $payment)
+            @php $sale = $payment->payable; @endphp
+            <div class="flex justify-between text-sm">
+                <span class="text-gray-600 dark:text-gray-400">
+                    {{ $sale?->invoice_number ?? '-' }}
+                    <span class="text-xs">({{ $sale?->customer?->name ?? 'Client comptoir' }})</span>
+                </span>
+                <span class="font-medium">{{ number_format($payment->amount, 0, ',', ' ') }} FCFA
+                    <span class="text-xs text-gray-400">{{ ucfirst($payment->payment_method) }}</span>
+                </span>
+            </div>
+        @endforeach
+        <div class="flex justify-between font-medium pt-1 border-t border-gray-100 dark:border-gray-700">
+            <span class="text-gray-600 dark:text-gray-400">Total encaissements</span>
+            <span class="text-success-600">{{ number_format($collections->sum('amount'), 0, ',', ' ') }} FCFA</span>
+        </div>
+    </div>
+    @endif
+
     @if($session->notes)
     <hr class="border-gray-200 dark:border-gray-700">
     <div>

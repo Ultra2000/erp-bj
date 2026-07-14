@@ -704,6 +704,8 @@ class PosService
      */
     public function formatSessionStats(CashSession $session): array
     {
+        $collections = $session->getCollectionPayments();
+
         return [
             'id' => $session->id,
             'opening_amount' => floatval($session->opening_amount),
@@ -714,6 +716,8 @@ class PosService
             'mobile_sales' => floatval($session->total_mobile),
             'cash_in_drawer' => floatval($session->opening_amount) + floatval($session->total_cash),
             'opened_at' => $session->opened_at?->format('H:i'),
+            'collections_count' => $collections->unique('payable_id')->count(),
+            'collections_total' => round($collections->sum('amount')),
         ];
     }
 }
