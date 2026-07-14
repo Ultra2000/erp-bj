@@ -17,11 +17,11 @@
         }
 
         body {
-            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+            font-family: 'Inter', 'DejaVu Sans', Helvetica, Arial, sans-serif;
             font-size: 9px;
             color: #333;
             line-height: 1.4;
-            padding: 15mm 20mm; /* 1.5cm haut/bas, 2cm gauche/droite */
+            padding: 15mm 20mm;
             margin: 0;
         }
 

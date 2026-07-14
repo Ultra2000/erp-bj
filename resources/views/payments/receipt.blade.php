@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+            font-family: 'Inter', 'DejaVu Sans', Helvetica, Arial, sans-serif;
             font-size: 9px;
             color: #333;
             line-height: 1.4;
@@ -354,7 +354,7 @@
     $currency = $company->currency ?? 'FCFA';
     $remaining = max(0, floatval($sale->total) - floatval($sale->amount_paid));
 
-    function amountToWordsFrReceiptPdf($number, $currency = 'FCFA') {
+    if (!function_exists('amountToWordsFrReceiptPdf')) { function amountToWordsFrReceiptPdf($number, $currency = 'FCFA') {
         $fmt = new \NumberFormatter('fr_FR', \NumberFormatter::SPELLOUT);
         $euros = floor($number);
         $units = [
@@ -367,7 +367,7 @@
         $u = $units[$currency] ?? ['unité', 'unités'];
         $euroWord = $euros == 1 ? $u[0] : $u[1];
         return ucfirst($fmt->format($euros)) . ' ' . $euroWord;
-    }
+    } }
 @endphp
 
 <!-- HEADER -->
