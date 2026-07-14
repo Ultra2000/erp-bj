@@ -35,7 +35,11 @@ class UserResource extends Resource
     // Utiliser la relation 'companies' pour la multi-tenancy
     protected static ?string $tenantOwnershipRelationshipName = 'companies';
 
-    // Access control handled by RestrictedForCashier trait
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('users.manage'));
+    }
 
     public static function form(Form $form): Form
     {

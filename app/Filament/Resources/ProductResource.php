@@ -31,6 +31,12 @@ class ProductResource extends Resource
     protected static ?string $modelLabel = 'Produit';
     protected static ?string $pluralModelLabel = 'Produits';
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('products.view'));
+    }
+
     /**
      * Optimisation: Eager loading des relations pour éviter N+1
      * + Filtrage par entrepôt pour les utilisateurs restreints

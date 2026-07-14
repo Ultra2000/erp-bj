@@ -31,7 +31,11 @@ class ActivityLogResource extends Resource
     // Désactiver le tenant ownership automatique car on filtre manuellement par company_id
     protected static bool $isScopedToTenant = false;
 
-    // Access control handled by RestrictedForCashier trait
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && $user->isAdmin();
+    }
 
     public static function form(Form $form): Form
     {

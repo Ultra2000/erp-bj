@@ -32,6 +32,12 @@ class RecurringOrderResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('sales.view'));
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -33,6 +33,12 @@ class QuoteResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('quotes.view'));
+    }
+
     /**
      * Helper pour calculer le total d'une ligne
      */

@@ -31,6 +31,12 @@ class DeliveryNoteResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('deliveries.view'));
+    }
+
     public static function form(Form $form): Form
     {
         return $form

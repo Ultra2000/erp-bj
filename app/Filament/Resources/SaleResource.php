@@ -32,6 +32,24 @@ class SaleResource extends Resource
     protected static ?string $modelLabel = 'Vente';
     protected static ?string $pluralModelLabel = 'Ventes';
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        $tenant = Filament::getTenant();
+        if ($tenant && !$tenant->isModuleEnabled('sales')) {
+            return false;
+        }
+
+        return $user->isAdmin() || $user->hasPermission('sales.view');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     /**
      * Optimisation: Eager loading des relations pour éviter N+1
      * Le scope WarehouseScope est appliqué automatiquement via le modèle Sale

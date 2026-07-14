@@ -32,6 +32,17 @@ class CustomerResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Clients';
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('customers.view'));
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function form(Form $form): Form
     {
         return $form

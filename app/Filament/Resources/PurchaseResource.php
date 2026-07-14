@@ -30,6 +30,12 @@ class PurchaseResource extends Resource
     protected static ?string $modelLabel = 'Achat';
     protected static ?string $pluralModelLabel = 'Achats';
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('purchases.view'));
+    }
+
     /**
      * Optimisation: Eager loading des relations pour éviter N+1
      * Le scope WarehouseScope est appliqué automatiquement via le modèle Purchase

@@ -27,7 +27,11 @@ class RoleResource extends Resource
     protected static ?string $modelLabel = 'Rôle';
     protected static ?string $pluralModelLabel = 'Rôles';
 
-    // Access control handled by RestrictedForCashier trait
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->isAdmin() || $user->hasPermission('roles.manage'));
+    }
 
     public static function form(Form $form): Form
     {
