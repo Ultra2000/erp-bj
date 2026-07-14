@@ -24,15 +24,23 @@ class CashSessionsHistory extends Page implements HasTable
 
     public static function shouldRegisterNavigation(): bool
     {
+        return static::canAccess();
+    }
+
+    public static function canAccess(): bool
+    {
         $tenant = Filament::getTenant();
         if (!$tenant?->isModuleEnabled('pos')) {
             return false;
         }
-        
+
         $user = auth()->user();
         if (!$user) return false;
-        
-        return $user->isAdmin() || $user->hasPermission('sales.view') || $user->hasPermission('sales.*');
+
+        return $user->isAdmin()
+            || $user->hasPermission('pos.session')
+            || $user->hasPermission('pos.view')
+            || $user->hasPermission('sales.view');
     }
 
     public function table(Table $table): Table
@@ -41,6 +49,10 @@ class CashSessionsHistory extends Page implements HasTable
             ->query(
                 CashSession::query()
                     ->where('company_id', Filament::getTenant()?->id)
+                    ->when(
+                        !auth()->user()?->isAdmin() && !auth()->user()?->hasPermission('sales.view'),
+                        fn (Builder $query) => $query->where('user_id', auth()->id())
+                    )
                     ->with('user')
                     ->orderByDesc('opened_at')
             )
@@ -103,7 +115,8 @@ class CashSessionsHistory extends Page implements HasTable
             ->filters([
                 Tables\Filters\SelectFilter::make('user_id')
                     ->label('Caissier')
-                    ->relationship('user', 'name'),
+                    ->relationship('user', 'name')
+                    ->visible(fn () => auth()->user()?->isAdmin() || auth()->user()?->hasPermission('sales.view')),
                 Tables\Filters\Filter::make('open_sessions')
                     ->label('Sessions en cours')
                     ->query(fn (Builder $query) => $query->whereNull('closed_at'))
