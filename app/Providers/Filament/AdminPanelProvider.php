@@ -42,7 +42,7 @@ class AdminPanelProvider extends PanelProvider
             ->tenantProfile(\App\Filament\Pages\Tenancy\EditCompanyProfile::class)
             ->brandName('FRECORP')
             ->brandLogo(fn () => view('filament.brand-logo'))
-            ->darkMode(true) // Permet le toggle dark/light, dark par défaut
+            ->darkMode(false) // Mode sombre désactivé (bugs d'affichage) — thème clair forcé
             ->colors([
                 'primary' => [
                     50 => '#eef2ff',
