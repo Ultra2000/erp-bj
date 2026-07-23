@@ -18,11 +18,15 @@ class QuoteStatsWidget extends BaseWidget
             ->whereIn('status', ['draft', 'sent'])
             ->sum('total');
         // Un devis converti a lui aussi été accepté : on compte les deux statuts.
+        // On date l'acceptation via accepted_at, avec repli sur updated_at pour les
+        // devis (anciens/convertis) dont accepted_at n'aurait pas été renseigné.
         $acceptedThisMonth = Quote::where('company_id', $companyId)
             ->whereIn('status', ['accepted', 'converted'])
-            ->whereNotNull('accepted_at')
-            ->whereMonth('accepted_at', now()->month)
-            ->whereYear('accepted_at', now()->year)
+            ->get()
+            ->filter(function (Quote $quote) {
+                $date = $quote->accepted_at ?? $quote->updated_at;
+                return $date && $date->month === now()->month && $date->year === now()->year;
+            })
             ->sum('total');
         $conversionRate = $totalQuotes > 0
             ? round(Quote::where('company_id', $companyId)->where('status', 'converted')->count() / $totalQuotes * 100, 1)

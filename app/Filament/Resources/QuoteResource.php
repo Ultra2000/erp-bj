@@ -279,7 +279,13 @@ class QuoteResource extends Resource
                     ->color(fn ($record) => $record->valid_until->isPast() ? 'danger' : null),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total TTC')
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'FCFA'))
+                    ->formatStateUsing(function ($state) {
+                        $currency = Filament::getTenant()->currency ?? 'FCFA';
+                        if ($currency === 'XOF') {
+                            $currency = 'FCFA';
+                        }
+                        return number_format($state ?? 0, 2, ',', ' ') . ' ' . $currency;
+                    })
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Statut')
