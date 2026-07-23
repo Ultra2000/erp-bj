@@ -406,7 +406,7 @@ class QuoteResource extends Resource
                         ->color('primary')
                         ->requiresConfirmation()
                         ->modalHeading('Convertir en vente')
-                        ->modalDescription('Voulez-vous créer une vente à partir de ce devis accepté ? Cela créera une nouvelle facture et impactera le stock.')
+                        ->modalDescription('Voulez-vous créer une vente à partir de ce devis accepté ? Une nouvelle facture sera créée en attente ; le stock ne sera impacté qu\'à sa finalisation.')
                         ->action(function (Quote $record) {
                             $sale = $record->convertToSale();
                             
