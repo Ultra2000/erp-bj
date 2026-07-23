@@ -13,17 +13,12 @@ class CreateRecurringOrder extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['company_id'] = Filament::getTenant()->id;
-        $data['created_by'] = auth()->id();
-        
-        // Calculate total
+        $data['user_id'] = auth()->id();
+
+        // Total initial (recalculé ensuite depuis les lignes)
         $items = $data['items'] ?? [];
-        $subtotal = collect($items)->sum(fn ($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0));
-        $taxAmount = $subtotal * (($data['tax_rate'] ?? 20) / 100);
-        
-        $data['subtotal'] = $subtotal;
-        $data['tax_amount'] = $taxAmount;
-        $data['total_amount'] = $subtotal + $taxAmount;
-        
+        $data['total'] = collect($items)->sum(fn ($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0));
+
         return $data;
     }
 

@@ -25,7 +25,7 @@ class EditRecurringOrder extends EditRecord
                     if ($sale) {
                         \Filament\Notifications\Notification::make()
                             ->title('Vente générée')
-                            ->body("Vente #{$sale->reference} créée")
+                            ->body("Vente #{$sale->invoice_number} créée")
                             ->success()
                             ->send();
                     }
@@ -36,15 +36,10 @@ class EditRecurringOrder extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Recalculate totals
+        // Total (recalculé ensuite depuis les lignes via le modèle)
         $items = $data['items'] ?? [];
-        $subtotal = collect($items)->sum(fn ($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0));
-        $taxAmount = $subtotal * (($data['tax_rate'] ?? 20) / 100);
-        
-        $data['subtotal'] = $subtotal;
-        $data['tax_amount'] = $taxAmount;
-        $data['total_amount'] = $subtotal + $taxAmount;
-        
+        $data['total'] = collect($items)->sum(fn ($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0));
+
         return $data;
     }
 }

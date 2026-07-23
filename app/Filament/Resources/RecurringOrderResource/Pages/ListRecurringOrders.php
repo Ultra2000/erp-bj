@@ -32,8 +32,8 @@ class ListRecurringOrders extends ListRecords
                 ->badge(fn () => $this->getModel()::where('status', 'paused')->count())
                 ->badgeColor('warning'),
             'due' => Tab::make('À exécuter')
-                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active')->where('next_execution', '<=', now()))
-                ->badge(fn () => $this->getModel()::where('status', 'active')->where('next_execution', '<=', now())->count())
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'active')->where('next_order_date', '<=', now()))
+                ->badge(fn () => $this->getModel()::where('status', 'active')->where('next_order_date', '<=', now())->count())
                 ->badgeColor('danger'),
         ];
     }
