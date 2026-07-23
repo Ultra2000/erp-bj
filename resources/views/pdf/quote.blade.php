@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Devis {{ $quote->reference }}</title>
+    <title>Devis {{ $quote->quote_number }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -306,8 +304,8 @@
                 @if($quote->customer->address)
                     {{ $quote->customer->address }}<br>
                 @endif
-                @if($quote->customer->postal_code || $quote->customer->city)
-                    {{ $quote->customer->postal_code }} {{ $quote->customer->city }}<br>
+                @if($quote->customer->zip_code || $quote->customer->city)
+                    {{ $quote->customer->zip_code }} {{ $quote->customer->city }}<br>
                 @endif
                 @if($quote->customer->phone)
                     Tél: {{ $quote->customer->phone }}<br>
@@ -316,12 +314,6 @@
                     {{ $quote->customer->email }}
                 @endif
             </div>
-            @if($quote->shipping_address)
-            <div class="address-box right">
-                <div class="address-title">Adresse de livraison</div>
-                {!! nl2br(e($quote->shipping_address)) !!}
-            </div>
-            @endif
         </div>
 
         <!-- Items Table -->
@@ -349,13 +341,11 @@
                     <td class="text-center">
                         @if($item->discount_percent > 0)
                             {{ number_format($item->discount_percent, 0) }}%
-                        @elseif($item->discount_amount > 0)
-                            {{ number_format($item->discount_amount, 2, ',', ' ') }} FCFA
                         @else
                             -
                         @endif
                     </td>
-                    <td class="text-right">{{ number_format($item->total, 2, ',', ' ') }} FCFA</td>
+                    <td class="text-right">{{ number_format($item->total_price_ht, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @endforeach
             </tbody>
@@ -387,13 +377,18 @@
                     <td class="value">{{ number_format($quote->subtotal - ($quote->discount_amount ?? 0), 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @else
+                @php
+                    $effectiveVatRate = ($quote->total_ht ?? 0) > 0
+                        ? round((($quote->total_vat ?? $quote->tax_amount) / $quote->total_ht) * 100)
+                        : null;
+                @endphp
                 <tr>
-                    <td class="label">TVA ({{ $quote->tax_rate ?? 20 }}%)</td>
+                    <td class="label">TVA{{ $effectiveVatRate !== null ? ' (' . $effectiveVatRate . '%)' : '' }}</td>
                     <td class="value">{{ number_format($quote->tax_amount, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 <tr class="total-row">
                     <td>TOTAL TTC</td>
-                    <td class="value">{{ number_format($quote->total_amount, 2, ',', ' ') }} FCFA</td>
+                    <td class="value">{{ number_format($quote->total, 2, ',', ' ') }} FCFA</td>
                 </tr>
                 @endif
             </table>
@@ -413,11 +408,11 @@
         @endif
 
         <!-- Conditions -->
-        @if($quote->terms_and_conditions || ($settings && $settings->footer_text))
+        @if($quote->terms || ($settings && $settings->footer_text))
         <div class="conditions">
             <div class="conditions-title">Conditions</div>
             <div class="conditions-text">
-                {{ $quote->terms_and_conditions ?? $settings->footer_text }}
+                {{ $quote->terms ?? $settings->footer_text }}
             </div>
         </div>
         @endif
