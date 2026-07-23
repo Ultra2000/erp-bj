@@ -75,19 +75,19 @@ class BalanceGenerale extends Page implements HasTable
 
                 TextColumn::make('total_debit')
                     ->label('Total Débit')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->alignEnd()
                     ->color('success'),
 
                 TextColumn::make('total_credit')
                     ->label('Total Crédit')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->alignEnd()
                     ->color('danger'),
 
                 TextColumn::make('solde_debiteur')
                     ->label('Solde Débiteur')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->alignEnd()
                     ->getStateUsing(fn ($record) => $record->solde > 0 ? $record->solde : null)
                     ->color('success')
@@ -95,7 +95,7 @@ class BalanceGenerale extends Page implements HasTable
 
                 TextColumn::make('solde_crediteur')
                     ->label('Solde Créditeur')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->alignEnd()
                     ->getStateUsing(fn ($record) => $record->solde < 0 ? abs($record->solde) : null)
                     ->color('danger')

@@ -30,15 +30,10 @@ class ProcessRecurringOrders extends Command
         $this->info('Processing recurring orders...');
 
         $query = RecurringOrder::where('status', 'active')
-            ->where('auto_generate', true)
-            ->where('next_execution', '<=', now())
+            ->where('next_order_date', '<=', now())
             ->where(function ($q) {
                 $q->whereNull('end_date')
                   ->orWhere('end_date', '>=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('max_executions')
-                  ->orWhereRaw('executions_count < max_executions');
             });
 
         if ($companyId) {
@@ -58,11 +53,11 @@ class ProcessRecurringOrders extends Command
         $errors = 0;
 
         foreach ($recurringOrders as $order) {
-            $this->line("Processing: {$order->reference} - {$order->name}");
+            $this->line("Processing: {$order->name}");
 
             if ($dryRun) {
                 $this->info("  [DRY RUN] Would generate sale for customer: {$order->customer->name}");
-                $this->info("  [DRY RUN] Amount: " . number_format($order->total_amount, 2) . " FCFA");
+                $this->info("  [DRY RUN] Amount: " . number_format($order->total, 2) . " FCFA");
                 continue;
             }
 
@@ -71,17 +66,7 @@ class ProcessRecurringOrders extends Command
 
                 if ($sale) {
                     $processed++;
-                    $this->info("  ✓ Sale #{$sale->reference} created for {$order->customer->name}");
-                    
-                    // Send invoice by email if configured
-                    if ($order->auto_send_invoice && $order->customer->email) {
-                        try {
-                            // TODO: Implement invoice email sending
-                            $this->line("    → Invoice email would be sent to {$order->customer->email}");
-                        } catch (\Exception $e) {
-                            $this->warn("    → Failed to send invoice email: {$e->getMessage()}");
-                        }
-                    }
+                    $this->info("  ✓ Sale #{$sale->invoice_number} created for {$order->customer->name}");
                 } else {
                     $errors++;
                     $this->error("  ✗ Failed to create sale");

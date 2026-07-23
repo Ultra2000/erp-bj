@@ -154,13 +154,13 @@ class PaymentResource extends Resource
                         if ($payable instanceof Sale) {
                             return $payable->invoice_number;
                         }
-                        return $payable?->reference ?? '-';
+                        return $payable?->invoice_number ?? '-';
                     })
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Montant')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('payment_method')

@@ -69,13 +69,13 @@ class ViewAccountingEntry extends ViewRecord
                     ->schema([
                         TextEntry::make('debit')
                             ->label('Débit')
-                            ->money('EUR')
+                            ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                             ->color('danger')
                             ->weight(fn ($state) => $state > 0 ? 'bold' : 'normal'),
                         
                         TextEntry::make('credit')
                             ->label('Crédit')
-                            ->money('EUR')
+                            ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                             ->color('success')
                             ->weight(fn ($state) => $state > 0 ? 'bold' : 'normal'),
                         

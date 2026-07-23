@@ -131,7 +131,7 @@ class CommissionResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sale_amount')
                     ->label('Ventes')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('commission_rate')
                     ->label('Taux')
@@ -139,9 +139,9 @@ class CommissionResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('commission_amount')
                     ->label('Commission')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->sortable()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('EUR')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Statut')
                     ->colors([

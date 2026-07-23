@@ -100,7 +100,7 @@ class BankAccountResource extends Resource
                 Tables\Columns\TextColumn::make('currency')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('current_balance')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),

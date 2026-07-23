@@ -75,13 +75,13 @@ class CommissionsRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sale_amount')
                     ->label('Ventes')
-                    ->money('EUR'),
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA'),
                 Tables\Columns\TextColumn::make('commission_rate')
                     ->label('Taux')
                     ->suffix('%'),
                 Tables\Columns\TextColumn::make('commission_amount')
                     ->label('Commission')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->weight('bold'),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Statut')

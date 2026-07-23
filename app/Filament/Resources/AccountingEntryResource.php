@@ -171,15 +171,15 @@ class AccountingEntryResource extends Resource
 
                 Tables\Columns\TextColumn::make('debit')
                     ->label('Débit')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->alignEnd()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('EUR')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')),
 
                 Tables\Columns\TextColumn::make('credit')
                     ->label('Crédit')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->alignEnd()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('EUR')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')),
 
                 Tables\Columns\TextColumn::make('lettering')
                     ->label('Lettr.')

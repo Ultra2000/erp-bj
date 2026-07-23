@@ -111,7 +111,7 @@ class BankTransactionResource extends Resource
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('amount')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' FCFA')
                     ->sortable()
                     ->color(fn (string $state, $record) => $record->type === 'credit' ? 'success' : 'danger'),
                 Tables\Columns\TextColumn::make('type')

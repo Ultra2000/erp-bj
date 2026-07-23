@@ -26,7 +26,7 @@ class DeliveryNotePdfController extends Controller
 
         $pdf->setPaper('A4', 'portrait');
 
-        return $pdf->download("BL-{$deliveryNote->reference}.pdf");
+        return $pdf->download("BL-{$deliveryNote->delivery_number}.pdf");
     }
 
     public function stream(DeliveryNote $deliveryNote)
@@ -46,6 +46,6 @@ class DeliveryNotePdfController extends Controller
 
         $pdf->setPaper('A4', 'portrait');
 
-        return $pdf->stream("BL-{$deliveryNote->reference}.pdf");
+        return $pdf->stream("BL-{$deliveryNote->delivery_number}.pdf");
     }
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Bon de Livraison {{ $deliveryNote->reference }}</title>
+    <title>Bon de Livraison {{ $deliveryNote->delivery_number }}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -322,10 +322,10 @@
             <div class="header-right">
                 <div class="document-title">BON DE LIVRAISON</div>
                 <div class="document-info">
-                    <strong>N° BL :</strong> {{ $deliveryNote->reference }}<br>
+                    <strong>N° BL :</strong> {{ $deliveryNote->delivery_number }}<br>
                     <strong>Date :</strong> {{ $deliveryNote->delivery_date->format('d/m/Y') }}<br>
                     @if($deliveryNote->sale)
-                    <strong>Commande :</strong> {{ $deliveryNote->sale->reference }}<br>
+                    <strong>Commande :</strong> {{ $deliveryNote->sale->invoice_number }}<br>
                     @endif
                 </div>
                 <span class="status-badge status-{{ $deliveryNote->status }}">
@@ -349,8 +349,8 @@
                 @if($deliveryNote->customer->address)
                     {{ $deliveryNote->customer->address }}<br>
                 @endif
-                @if($deliveryNote->customer->postal_code || $deliveryNote->customer->city)
-                    {{ $deliveryNote->customer->postal_code }} {{ $deliveryNote->customer->city }}<br>
+                @if($deliveryNote->customer->zip_code || $deliveryNote->customer->city)
+                    {{ $deliveryNote->customer->zip_code }} {{ $deliveryNote->customer->city }}<br>
                 @endif
                 @if($deliveryNote->customer->phone)
                     Tél: {{ $deliveryNote->customer->phone }}
@@ -358,12 +358,12 @@
             </div>
             <div class="address-box shipping" style="margin-left: 4%;">
                 <div class="address-title">Adresse de livraison</div>
-                @if($deliveryNote->shipping_address)
-                    {!! nl2br(e($deliveryNote->shipping_address)) !!}
+                @if($deliveryNote->delivery_address)
+                    {!! nl2br(e($deliveryNote->delivery_address)) !!}
                 @else
                     <strong>{{ $deliveryNote->customer->name }}</strong><br>
                     {{ $deliveryNote->customer->address }}<br>
-                    {{ $deliveryNote->customer->postal_code }} {{ $deliveryNote->customer->city }}
+                    {{ $deliveryNote->customer->zip_code }} {{ $deliveryNote->customer->city }}
                 @endif
             </div>
         </div>
@@ -397,16 +397,16 @@
                     <td>{{ $deliveryNote->delivered_at->format('d/m/Y H:i') }}</td>
                 </tr>
                 @endif
-                @if($deliveryNote->weight)
+                @if($deliveryNote->total_weight)
                 <tr>
                     <td>Poids total :</td>
-                    <td>{{ number_format($deliveryNote->weight, 2, ',', ' ') }} kg</td>
+                    <td>{{ number_format($deliveryNote->total_weight, 2, ',', ' ') }} kg</td>
                 </tr>
                 @endif
-                @if($deliveryNote->packages_count)
+                @if($deliveryNote->total_packages)
                 <tr>
                     <td>Nombre de colis :</td>
-                    <td>{{ $deliveryNote->packages_count }}</td>
+                    <td>{{ $deliveryNote->total_packages }}</td>
                 </tr>
                 @endif
             </table>
@@ -460,7 +460,7 @@
                 <div class="summary-label">Articles livrés</div>
             </div>
             <div class="summary-box">
-                <div class="summary-value">{{ $deliveryNote->packages_count ?? '-' }}</div>
+                <div class="summary-value">{{ $deliveryNote->total_packages ?? '-' }}</div>
                 <div class="summary-label">Colis</div>
             </div>
         </div>
