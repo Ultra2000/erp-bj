@@ -164,37 +164,52 @@ class Quote extends Model
             return null;
         }
 
-        $sale = Sale::create([
-            'company_id' => $this->company_id,
-            'customer_id' => $this->customer_id,
-            'user_id' => auth()->id() ?? $this->user_id,
-            'total' => $this->total,
-            'tax_percent' => $this->tax_rate,
-            'discount_percent' => ($this->subtotal > 0) ? ($this->discount_amount / $this->subtotal * 100) : 0,
-            'status' => 'pending',
-            'payment_method' => 'cash',
-            'notes' => "Converti depuis le devis {$this->quote_number}",
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            // Brut recalculé depuis les lignes (les remises par ligne sont déjà
+            // intégrées dans total_price_ht / vat_amount).
+            $grossHt = $this->items->sum('total_price_ht');
+            $grossVat = $this->items->sum('vat_amount');
+            $grossTtc = $grossHt + $grossVat;
 
-        foreach ($this->items as $item) {
-            // Calculer le prix unitaire effectif pour conserver le montant total (incluant la remise ligne)
-            // car SaleItem ne gère pas explicitement les remises par ligne pour l'instant
-            $effectiveUnitPrice = $item->quantity > 0 ? $item->total_price / $item->quantity : 0;
+            // La remise globale du devis est un montant fixe ; la vente applique
+            // une remise en pourcentage sur le HT+TVA, on convertit donc.
+            $discountPercent = $grossTtc > 0
+                ? round(($this->discount_amount / $grossTtc) * 100, 4)
+                : 0;
 
-            $sale->items()->create([
-                'product_id' => $item->product_id,
-                'quantity' => $item->quantity,
-                'unit_price' => $effectiveUnitPrice,
-                'total_price' => $item->total_price,
+            $sale = Sale::create([
+                'company_id' => $this->company_id,
+                'customer_id' => $this->customer_id,
+                'status' => 'pending',
+                'payment_status' => 'unpaid',
+                'payment_method' => 'cash',
+                'discount_percent' => $discountPercent,
+                'notes' => "Converti depuis le devis {$this->quote_number}",
             ]);
-        }
 
-        $this->update([
-            'status' => 'converted',
-            'converted_sale_id' => $sale->id,
-        ]);
+            foreach ($this->items as $item) {
+                // Prix unitaire HT effectif : la remise de ligne est déjà comprise
+                // dans total_price_ht, et SaleItem ne gère pas de remise par ligne.
+                $effectiveUnitPriceHt = $item->quantity > 0
+                    ? round($item->total_price_ht / $item->quantity, 2)
+                    : 0;
 
-        return $sale;
+                $sale->items()->create([
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $effectiveUnitPriceHt,
+                    'vat_rate' => $item->vat_rate,
+                    'vat_category' => $item->vat_category,
+                ]);
+            }
+
+            $this->update([
+                'status' => 'converted',
+                'converted_sale_id' => $sale->id,
+            ]);
+
+            return $sale;
+        });
     }
 
     public function isExpired(): bool
