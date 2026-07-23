@@ -2,8 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Pages\Cashier\CashRegisterPage;
 use App\Models\Customer;
 use App\Models\Sale;
+use Filament\Actions\Action as HeaderAction;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
 use Filament\Tables\Actions\Action;
@@ -48,6 +50,26 @@ class CreancesClients extends Page implements HasTable
         return 'danger';
     }
 
+    protected function getHeaderActions(): array
+    {
+        $companyId = Filament::getTenant()?->id;
+
+        return [
+            HeaderAction::make('exportPdf')
+                ->label('Export PDF')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('danger')
+                ->url(fn () => route('reports.receivables.pdf', ['company' => $companyId]))
+                ->openUrlInNewTab(),
+
+            HeaderAction::make('exportExcel')
+                ->label('Export Excel')
+                ->icon('heroicon-o-table-cells')
+                ->color('success')
+                ->url(fn () => route('reports.receivables.excel', ['company' => $companyId])),
+        ];
+    }
+
     /**
      * Condition SQL (portable MySQL/SQLite) identifiant une vente qui constitue une dette :
      * vente finalisée, hors avoir, dont le net à payer (TTC + AIB − déjà payé) reste positif.
@@ -63,16 +85,47 @@ class CreancesClients extends Page implements HasTable
      * Requête de base : clients ayant au moins une dette, avec montant dû,
      * nombre de factures impayées et date de la plus ancienne dette.
      */
-    protected static function baseDebtorQuery(): Builder
+    protected static function debtorsBuilderFor(int $companyId): Builder
     {
         $cond = static::debtConditionSql();
 
-        return Customer::query()
+        return Customer::withoutGlobalScopes()
+            ->where('customers.company_id', $companyId)
             ->select('customers.*')
             ->selectRaw("(SELECT COALESCE(SUM((sales.total + COALESCE(sales.aib_amount, 0)) - COALESCE(sales.amount_paid, 0)), 0) FROM sales WHERE sales.customer_id = customers.id AND {$cond}) as debt_total")
             ->selectRaw("(SELECT COUNT(*) FROM sales WHERE sales.customer_id = customers.id AND {$cond}) as debt_count")
             ->selectRaw("(SELECT MIN(sales.created_at) FROM sales WHERE sales.customer_id = customers.id AND {$cond}) as oldest_debt_date")
             ->whereRaw("EXISTS (SELECT 1 FROM sales WHERE sales.customer_id = customers.id AND {$cond})");
+    }
+
+    protected static function baseDebtorQuery(): Builder
+    {
+        return static::debtorsBuilderFor((int) (Filament::getTenant()?->id));
+    }
+
+    /**
+     * Données normalisées des créances d'une entreprise (pour les exports PDF/CSV).
+     */
+    public static function debtorsForCompany(int $companyId): array
+    {
+        return static::debtorsBuilderFor($companyId)
+            ->orderByDesc('debt_total')
+            ->get()
+            ->map(function (Customer $c) {
+                $days = $c->oldest_debt_date
+                    ? (int) Carbon::parse($c->oldest_debt_date)->startOfDay()->diffInDays(now()->startOfDay())
+                    : 0;
+                return [
+                    'name' => $c->name,
+                    'phone' => $c->phone,
+                    'registration_number' => $c->registration_number,
+                    'debt_count' => (int) $c->debt_count,
+                    'debt_total' => (float) $c->debt_total,
+                    'oldest_date' => $c->oldest_debt_date ? Carbon::parse($c->oldest_debt_date)->format('d/m/Y') : '-',
+                    'days' => $days,
+                ];
+            })
+            ->toArray();
     }
 
     public function table(Table $table): Table
@@ -150,6 +203,16 @@ class CreancesClients extends Page implements HasTable
                     }),
             ])
             ->actions([
+                Action::make('encaisser')
+                    ->label('Encaisser')
+                    ->icon('heroicon-m-banknotes')
+                    ->color('success')
+                    ->url(fn (Customer $record) => CashRegisterPage::getUrl([
+                        'tab' => 'encaisser',
+                        'client' => $record->name,
+                    ]))
+                    ->visible(fn () => auth()->user()?->isAdmin() || auth()->user()?->hasPermission('pos.collect')),
+
                 Action::make('detail')
                     ->label('Détail')
                     ->icon('heroicon-m-eye')

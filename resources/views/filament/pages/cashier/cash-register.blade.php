@@ -1390,7 +1390,14 @@
                 async init() {
                     await this.checkSession();
                     await this.loadProducts();
-                    // Précharger les factures impayées si on démarre sur l'onglet encaissement
+                    // Onglet + client pré-remplis via l'URL (ex: depuis la page Créances clients)
+                    const params = new URLSearchParams(window.location.search);
+                    if (params.get('tab') === 'encaisser' && this.canCollect) {
+                        this.activeTab = 'encaisser';
+                        const client = params.get('client');
+                        if (client) this.invoiceSearch = client;
+                    }
+                    // Précharger les factures impayées si on est sur l'onglet encaissement
                     if (this.activeTab === 'encaisser') this.searchInvoices();
                     this.initAudio();
                     this.checkFullscreen();

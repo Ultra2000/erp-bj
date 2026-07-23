@@ -260,8 +260,13 @@ Route::middleware('auth')->group(function () {
 // Routes pour les rapports PDF
 use App\Http\Controllers\StockReportController;
 use App\Http\Controllers\AccountingReportController;
+use App\Http\Controllers\ReceivablesReportController;
 
 Route::middleware('auth')->prefix('reports')->group(function () {
+    // Créances clients
+    Route::get('/receivables/pdf', [ReceivablesReportController::class, 'pdf'])->name('reports.receivables.pdf');
+    Route::get('/receivables/excel', [ReceivablesReportController::class, 'excel'])->name('reports.receivables.excel');
+
     // Rapports de stock
     Route::get('/stock-status/{companyId?}', [StockReportController::class, 'stockStatus'])->name('reports.stock-status');
     Route::get('/stock-status-preview/{companyId?}', [StockReportController::class, 'stockStatusPreview'])->name('reports.stock-status.preview');
