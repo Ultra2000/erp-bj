@@ -279,7 +279,7 @@ class QuoteResource extends Resource
                     ->color(fn ($record) => $record->valid_until->isPast() ? 'danger' : null),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total TTC')
-                    ->money('EUR')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 2, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'FCFA'))
                     ->sortable(),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Statut')
