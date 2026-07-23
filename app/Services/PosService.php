@@ -532,25 +532,38 @@ class PosService
     /**
      * Recherche les factures impayées/partielles par n° facture ou nom client.
      */
-    public function searchUnpaidInvoices(int $companyId, string $query, int $limit = 20): array
+    public function searchUnpaidInvoices(int $companyId, string $query, int $limit = 50): array
     {
-        if (strlen($query) < 1) return [];
-
-        return Sale::withoutGlobalScopes()
+        $builder = Sale::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('status', 'completed')
             ->where(function ($q) {
                 $q->whereNull('type')->orWhere('type', '!=', 'credit_note');
-            })
-            ->where(function ($q) use ($query) {
-                $q->where('invoice_number', 'like', "%{$query}%")
-                  ->orWhereHas('customer', function ($cq) use ($query) {
-                      $cq->where('name', 'like', "%{$query}%");
-                  });
-            })
+            });
+
+        if (strlen($query) >= 1) {
+            // Recherche : par n° de facture ou nom du client, impayées en priorité
+            $builder
+                ->where(function ($q) use ($query) {
+                    $q->where('invoice_number', 'like', "%{$query}%")
+                      ->orWhereHas('customer', function ($cq) use ($query) {
+                          $cq->where('name', 'like', "%{$query}%");
+                      });
+                })
+                ->orderByRaw("CASE payment_status WHEN 'unpaid' THEN 1 WHEN 'pending' THEN 2 WHEN 'partial' THEN 3 WHEN 'paid' THEN 4 ELSE 5 END")
+                ->orderBy('created_at', 'desc');
+        } else {
+            // Liste par défaut : factures non soldées, par ordre de création
+            $builder
+                ->where(function ($q) {
+                    $q->whereNull('payment_status')
+                      ->orWhere('payment_status', '!=', 'paid');
+                })
+                ->orderBy('created_at', 'asc');
+        }
+
+        return $builder
             ->with('customer:id,name')
-            ->orderByRaw("CASE payment_status WHEN 'unpaid' THEN 1 WHEN 'pending' THEN 2 WHEN 'partial' THEN 3 WHEN 'paid' THEN 4 ELSE 5 END")
-            ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
             ->map(fn (Sale $sale) => [

@@ -154,7 +154,7 @@
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                     Nouvelle vente
                                 </button>
-                                <button @click="activeTab = 'encaisser'"
+                                <button @click="activeTab = 'encaisser'; searchInvoices()"
                                         class="flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                                         :class="activeTab === 'encaisser' ? 'pos-tab-active-encaisser shadow-lg' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-emerald-300'">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
@@ -365,88 +365,22 @@
                                 </div>
                             </template>
 
-                            {{-- Liste des factures trouvées --}}
-                            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
-                                <div class="p-4 border-b border-gray-100 dark:border-gray-700">
-                                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Factures
-                                    </h3>
+                            {{-- La liste des factures est affichée dans la colonne de droite (panneau Factures impayées) --}}
+                            <template x-if="!selectedInvoice">
+                                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-8 text-center">
+                                    <svg class="w-14 h-14 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                    <p class="text-gray-500 dark:text-gray-400 font-medium">Sélectionnez une facture à droite</p>
+                                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">ou recherchez-la ci-dessus pour l'encaisser</p>
                                 </div>
-
-                                <div class="max-h-[50vh] overflow-y-auto">
-                                    {{-- Spinner --}}
-                                    <template x-if="invoiceSearching">
-                                        <div class="flex items-center justify-center py-8">
-                                            <svg class="w-8 h-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        </div>
-                                    </template>
-
-                                    {{-- Résultats --}}
-                                    <template x-if="!invoiceSearching && invoiceResults.length > 0">
-                                        <div class="divide-y divide-gray-100 dark:divide-gray-700">
-                                            <template x-for="inv in invoiceResults" :key="inv.id">
-                                                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                                                     :class="selectedInvoice && selectedInvoice.id === inv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''">
-                                                    <div class="flex items-center justify-between">
-                                                        <div class="flex-1 min-w-0">
-                                                            <div class="flex items-center gap-2 mb-1">
-                                                                <span class="font-bold text-gray-900 dark:text-white text-sm" x-text="inv.invoice_number"></span>
-                                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                                                                      :class="inv.payment_status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : inv.payment_status === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
-                                                                      x-text="inv.payment_status === 'paid' ? 'Payé' : inv.payment_status === 'partial' ? 'Partiel' : 'Non payé'"></span>
-                                                            </div>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400" x-text="inv.customer_name + ' — ' + inv.date"></p>
-                                                            <div class="flex items-center gap-3 mt-1">
-                                                                <span class="text-xs text-gray-500">Total: <strong class="text-gray-700 dark:text-gray-300" x-text="formatPrice(inv.total)"></strong></span>
-                                                                <template x-if="inv.payment_status !== 'paid'">
-                                                                    <span class="text-xs text-red-500 font-bold" x-text="'Reste: ' + formatPrice(inv.remaining)"></span>
-                                                                </template>
-                                                            </div>
-                                                        </div>
-                                                        <template x-if="inv.payment_status !== 'paid'">
-                                                            <button @click="selectInvoice(inv)"
-                                                                    class="ml-3 px-4 py-2 rounded-xl text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg flex-shrink-0">
-                                                                Régler
-                                                            </button>
-                                                        </template>
-                                                        <template x-if="inv.payment_status === 'paid'">
-                                                            <span class="ml-3 px-4 py-2 rounded-xl text-sm font-bold bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 flex-shrink-0">
-                                                                Soldée
-                                                            </span>
-                                                        </template>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-
-                                    {{-- Aucun résultat --}}
-                                    <template x-if="!invoiceSearching && invoiceResults.length === 0 && invoiceSearch.length > 0">
-                                        <div class="py-12 text-center">
-                                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                            <p class="text-gray-500 dark:text-gray-400">Aucune facture trouvée</p>
-                                        </div>
-                                    </template>
-
-                                    {{-- État initial --}}
-                                    <template x-if="!invoiceSearching && invoiceSearch.length === 0">
-                                        <div class="py-12 text-center">
-                                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                            <p class="text-gray-500 dark:text-gray-400">Tapez un n° de facture ou un nom de client</p>
-                                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">pour trouver les factures à encaisser</p>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
+                            </template>
                         </div>
                         </template>
                     </div>
 
-                    {{-- Colonne droite - Panier --}}
+                    {{-- Colonne droite - Panier (vente) / Factures impayées (encaisser) --}}
                     <div class="space-y-0">
-                        {{-- Panier --}}
-                        <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col max-h-[calc(100vh-200px)] overflow-hidden">
+                        {{-- Panier (mode vente uniquement) --}}
+                        <div x-show="activeTab === 'vente'" class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col max-h-[calc(100vh-200px)] overflow-hidden">
                             {{-- Header panier avec dégradé --}}
                             <div class="relative p-4" style="background: linear-gradient(to right, #1e293b, #334155, #1e293b);">
                                 <div class="flex items-center justify-between">
@@ -707,6 +641,65 @@
                                         <span x-text="processing ? 'Traitement...' : 'Valider le paiement'"></span>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        {{-- Factures impayées (mode encaisser uniquement) --}}
+                        <div x-show="activeTab === 'encaisser'" class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col max-h-[calc(100vh-200px)] overflow-hidden">
+                            {{-- Header --}}
+                            <div class="relative p-4" style="background: linear-gradient(to right, #064e3b, #065f46, #064e3b);">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(to bottom right, #34d399, #14b8a6); box-shadow: 0 4px 14px rgba(52, 211, 153, 0.4);">
+                                            <svg class="w-5 h-5" style="color: white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-bold text-base" style="color: white;">Factures impayées</h3>
+                                            <p class="text-xs" style="color: #a7f3d0;">Par ordre de création</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-3 py-1.5 rounded-lg text-sm font-bold" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2);" x-text="invoiceResults.length + ' facture(s)'"></span>
+                                </div>
+                            </div>
+
+                            {{-- Liste --}}
+                            <div class="flex-1 overflow-y-auto custom-scrollbar min-h-[200px] divide-y divide-gray-100 dark:divide-gray-700">
+                                {{-- Spinner --}}
+                                <template x-if="invoiceSearching">
+                                    <div class="flex items-center justify-center py-10">
+                                        <svg class="w-8 h-8 animate-spin text-emerald-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    </div>
+                                </template>
+
+                                {{-- Résultats --}}
+                                <template x-for="inv in invoiceResults" :key="inv.id">
+                                    <div class="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                                         :class="selectedInvoice && selectedInvoice.id === inv.id ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''"
+                                         @click="selectInvoice(inv)">
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <span class="font-bold text-gray-900 dark:text-white text-sm" x-text="inv.invoice_number"></span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase flex-shrink-0"
+                                                  :class="inv.payment_status === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
+                                                  x-text="inv.payment_status === 'partial' ? 'Partiel' : 'Non payé'"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate" x-text="inv.customer_name + ' — ' + inv.date"></p>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <span class="text-xs text-gray-500">Total: <strong class="text-gray-700 dark:text-gray-300" x-text="formatPrice(inv.total)"></strong></span>
+                                            <span class="text-sm text-red-500 font-bold" x-text="'Reste: ' + formatPrice(inv.remaining)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                {{-- Vide --}}
+                                <template x-if="!invoiceSearching && invoiceResults.length === 0">
+                                    <div class="flex flex-col items-center justify-center h-full py-12 text-center">
+                                        <div class="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                                            <svg class="w-12 h-12 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                        </div>
+                                        <p class="font-semibold text-gray-500 dark:text-gray-400 text-lg" x-text="invoiceSearch.length > 0 ? 'Aucune facture trouvée' : 'Aucune facture impayée'"></p>
+                                        <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Sélectionnez une facture pour l'encaisser</p>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </div>
@@ -1397,6 +1390,8 @@
                 async init() {
                     await this.checkSession();
                     await this.loadProducts();
+                    // Précharger les factures impayées si on démarre sur l'onglet encaissement
+                    if (this.activeTab === 'encaisser') this.searchInvoices();
                     this.initAudio();
                     this.checkFullscreen();
                     
@@ -1880,7 +1875,7 @@
                 // ── Encaissement facture ──────────────────
                 async searchInvoices() {
                     const q = this.invoiceSearch.trim();
-                    if (q.length < 1) { this.invoiceResults = []; return; }
+                    // q vide => liste des factures impayées par ordre de création
                     this.invoiceSearching = true;
                     try {
                         const res = await fetch(`/api/pos/invoices/search?q=${encodeURIComponent(q)}`, {
@@ -1934,10 +1929,8 @@
                             this.sessionStats = data.session;
                             this.selectedInvoice = null;
                             this.invoiceAmount = '';
-                            // Re-chercher pour rafraîchir la liste
-                            if (this.invoiceSearch.trim().length > 0) {
-                                this.searchInvoices();
-                            }
+                            // Rafraîchir la liste des factures impayées
+                            this.searchInvoices();
                         } else {
                             this.playError();
                             alert(data.message || 'Erreur lors de l\'encaissement');

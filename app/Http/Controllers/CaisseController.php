@@ -164,7 +164,7 @@ class CaisseController extends Controller
         $companyId = $this->getCompanyId($request);
         $query = $request->query('q', '');
 
-        if (!$companyId || strlen($query) < 1) return response()->json([]);
+        if (!$companyId) return response()->json([]);
 
         return response()->json(
             $this->posService->searchUnpaidInvoices($companyId, $query)
