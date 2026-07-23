@@ -81,8 +81,14 @@ trait HasRoles
      */
     public function isAdminOf(?Company $company = null): bool
     {
+        // Un super admin dispose des pleins droits admin sur toute entreprise
+        // qu'il gère (depuis l'espace /system).
+        if ($this->is_super_admin) {
+            return true;
+        }
+
         // Vérifier les différentes variantes du rôle admin
-        return $this->hasRole('admin', $company) 
+        return $this->hasRole('admin', $company)
             || $this->hasRole('administrateur', $company)
             || $this->hasRole('Administrateur', $company);
     }
