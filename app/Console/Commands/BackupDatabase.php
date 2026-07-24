@@ -4,13 +4,17 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Symfony\Component\Process\Process;
 
 class BackupDatabase extends Command
 {
     protected $signature = 'backup:database
                             {--keep=14 : Nombre de jours de rétention des sauvegardes}
-                            {--path= : Dossier de destination (défaut: storage/app/backups)}';
+                            {--path= : Dossier de destination (défaut: storage/app/backups)}
+                            {--email= : Envoyer la sauvegarde par email (vide = destinataire par défaut)}
+                            {--max-attach=20 : Taille max en Mo pour joindre le fichier à l\'email}';
 
     protected $description = 'Sauvegarde la base de données MySQL (mysqldump + gzip) avec rétention.';
 
@@ -75,9 +79,58 @@ class BackupDatabase extends Command
         $sizeMo = round(filesize($file) / 1048576, 2);
         $this->info("Sauvegarde créée: {$file} ({$sizeMo} Mo)");
 
+        // Envoi par email (copie hors-serveur) si demandé
+        $emailOption = $this->option('email');
+        if ($emailOption !== null) {
+            $recipient = $emailOption !== ''
+                ? $emailOption
+                : (config('mail.backup_to') ?: config('mail.from.address'));
+
+            if ($recipient) {
+                $this->emailBackup($file, $recipient, (int) $this->option('max-attach'), $database, $sizeMo);
+            } else {
+                $this->warn('Aucun destinataire email configuré (BACKUP_MAIL_TO ou MAIL_FROM_ADDRESS).');
+            }
+        }
+
         $this->pruneOldBackups($dir, (int) $this->option('keep'));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Envoie la sauvegarde par email (avec garde de taille pour les pièces jointes).
+     */
+    protected function emailBackup(string $file, string $recipient, int $maxMb, string $database, float $sizeMo): void
+    {
+        $filename = basename($file);
+        $date = Carbon::now()->format('d/m/Y H:i');
+
+        try {
+            if ($sizeMo > $maxMb) {
+                Mail::raw(
+                    "La sauvegarde de la base « {$database} » du {$date} pèse {$sizeMo} Mo, ce qui dépasse la limite d'envoi ({$maxMb} Mo).\n"
+                    . "Elle N'A PAS été jointe à cet email mais reste disponible sur le serveur : storage/app/backups/{$filename}",
+                    fn ($m) => $m->to($recipient)->subject("[Sauvegarde BD] {$database} — trop volumineuse pour l'email ({$sizeMo} Mo)")
+                );
+                $this->warn("Sauvegarde trop volumineuse pour l'email ({$sizeMo} Mo > {$maxMb} Mo) — email envoyé sans pièce jointe.");
+                return;
+            }
+
+            Mail::raw(
+                "Sauvegarde automatique de la base de données.\n\n"
+                . "Base : {$database}\nFichier : {$filename}\nTaille : {$sizeMo} Mo\nDate : {$date}\n\n"
+                . "Le fichier compressé (.sql.gz) est joint à cet email.",
+                fn ($m) => $m->to($recipient)
+                    ->subject("[Sauvegarde BD] {$database} — {$date}")
+                    ->attach($file, ['as' => $filename, 'mime' => 'application/gzip'])
+            );
+
+            $this->info("Sauvegarde envoyée par email à {$recipient}.");
+        } catch (\Throwable $e) {
+            $this->warn('Envoi email échoué : ' . $e->getMessage());
+            Log::warning("Backup email failed: {$e->getMessage()}");
+        }
     }
 
     /**

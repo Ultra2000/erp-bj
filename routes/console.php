@@ -14,8 +14,8 @@ Schedule::command('stock:check-low --notify-email')
     ->description('Vérification quotidienne des stocks bas')
     ->emailOutputOnFailure(config('mail.from.address'));
 
-// Sauvegarde quotidienne de la base de données (rétention 14 jours)
-Schedule::command('backup:database --keep=14')
+// Sauvegarde quotidienne de la base de données (rétention 14 jours) + envoi par email
+Schedule::command('backup:database --keep=14 --email=')
     ->dailyAt('02:00')
     ->description('Sauvegarde quotidienne de la base de données')
     ->emailOutputOnFailure(config('mail.from.address'));

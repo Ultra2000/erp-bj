@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Destinataire des sauvegardes automatiques
+    |--------------------------------------------------------------------------
+    |
+    | Adresse à laquelle la commande backup:database envoie le dump. Si vide,
+    | l'adresse d'expéditeur (mail.from.address) est utilisée par défaut.
+    |
+    */
+
+    'backup_to' => env('BACKUP_MAIL_TO'),
+
 ];
