@@ -92,6 +92,11 @@ Route::get('/sales/{sale}/invoice', [SaleInvoiceController::class, 'generate'])
     ->middleware('auth')
     ->name('sales.invoice');
 
+// Téléchargement des sauvegardes (super admin)
+Route::get('/system/backups/download/{file}', [\App\Http\Controllers\BackupController::class, 'download'])
+    ->middleware('auth')
+    ->name('superadmin.backups.download');
+
 // Reçu de paiement (document interne non fiscal)
 Route::get('/payments/{payment}/receipt', function (\App\Models\Payment $payment) {
     $sale = \App\Models\Sale::withoutGlobalScopes()->with('customer')->find($payment->payable_id);

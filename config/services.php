@@ -54,4 +54,11 @@ return [
         'client_secret' => env('URSSAF_CLIENT_SECRET'),
     ],
 
+    // Sauvegardes vers Google Drive (compte de service)
+    'google_drive' => [
+        'enabled' => env('GOOGLE_DRIVE_BACKUP_ENABLED', false),
+        'credentials' => env('GOOGLE_DRIVE_CREDENTIALS'), // chemin absolu vers le JSON du compte de service
+        'folder_id' => env('GOOGLE_DRIVE_FOLDER_ID'),     // ID du dossier Drive partagé avec le compte de service
+    ],
+
 ];

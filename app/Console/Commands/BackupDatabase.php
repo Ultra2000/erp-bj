@@ -14,7 +14,8 @@ class BackupDatabase extends Command
                             {--keep=14 : Nombre de jours de rétention des sauvegardes}
                             {--path= : Dossier de destination (défaut: storage/app/backups)}
                             {--email= : Envoyer la sauvegarde par email (vide = destinataire par défaut)}
-                            {--max-attach=20 : Taille max en Mo pour joindre le fichier à l\'email}';
+                            {--max-attach=20 : Taille max en Mo pour joindre le fichier à l\'email}
+                            {--gdrive : Téléverser la sauvegarde vers Google Drive}';
 
     protected $description = 'Sauvegarde la base de données MySQL (mysqldump + gzip) avec rétention.';
 
@@ -93,9 +94,35 @@ class BackupDatabase extends Command
             }
         }
 
+        // Téléversement vers Google Drive (copie hors-serveur) si demandé
+        if ($this->option('gdrive')) {
+            $this->uploadToGoogleDrive($file);
+        }
+
         $this->pruneOldBackups($dir, (int) $this->option('keep'));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Téléverse la sauvegarde vers Google Drive si l'intégration est configurée.
+     */
+    protected function uploadToGoogleDrive(string $file): void
+    {
+        $service = new \App\Services\GoogleDriveBackupService();
+
+        if (! \App\Services\GoogleDriveBackupService::isConfigured()) {
+            $this->warn('Google Drive non disponible : ' . \App\Services\GoogleDriveBackupService::unavailableReason());
+            return;
+        }
+
+        $id = $service->upload($file);
+
+        if ($id) {
+            $this->info("Sauvegarde téléversée sur Google Drive (id: {$id}).");
+        } else {
+            $this->warn('Échec du téléversement Google Drive (voir les logs).');
+        }
     }
 
     /**
