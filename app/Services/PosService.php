@@ -160,12 +160,12 @@ class PosService
     public function getProducts(int $companyId, ?Warehouse $warehouse = null, int $limit = 50): array
     {
         if ($warehouse) {
-            return Product::select('products.id', 'products.name', 'products.code', 'products.price')
+            return Product::select('products.id', 'products.name', 'products.code', 'products.price', 'products.sale_price_ht', 'products.vat_rate_sale', 'products.prices_include_vat')
                 ->selectRaw('COALESCE(SUM(product_warehouse.quantity), 0) as total_quantity')
                 ->join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
                 ->where('product_warehouse.warehouse_id', $warehouse->id)
                 ->where('products.company_id', $companyId)
-                ->groupBy('products.id', 'products.name', 'products.code', 'products.price')
+                ->groupBy('products.id', 'products.name', 'products.code', 'products.price', 'products.sale_price_ht', 'products.vat_rate_sale', 'products.prices_include_vat')
                 ->havingRaw('COALESCE(SUM(product_warehouse.quantity), 0) > 0')
                 ->orderBy('products.name')
                 ->limit($limit)
@@ -174,7 +174,7 @@ class PosService
                     'id' => $p->id,
                     'name' => $p->name,
                     'code' => $p->code,
-                    'selling_price' => $p->price,
+                    'selling_price' => round($p->sale_price_ttc),
                     'quantity' => $p->total_quantity,
                 ])
                 ->toArray();
@@ -184,12 +184,12 @@ class PosService
             ->where('stock', '>', 0)
             ->orderBy('name')
             ->limit($limit)
-            ->get(['id', 'name', 'code', 'price', 'stock'])
+            ->get(['id', 'name', 'code', 'price', 'sale_price_ht', 'vat_rate_sale', 'prices_include_vat', 'stock'])
             ->map(fn($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
                 'code' => $p->code,
-                'selling_price' => $p->price,
+                'selling_price' => round($p->sale_price_ttc),
                 'quantity' => $p->stock,
             ])
             ->toArray();
@@ -203,7 +203,7 @@ class PosService
         if (strlen($query) < 1) return [];
 
         if ($warehouse) {
-            return Product::select('products.id', 'products.name', 'products.code', 'products.price')
+            return Product::select('products.id', 'products.name', 'products.code', 'products.price', 'products.sale_price_ht', 'products.vat_rate_sale', 'products.prices_include_vat')
                 ->selectRaw('COALESCE(SUM(product_warehouse.quantity), 0) as total_quantity')
                 ->join('product_warehouse', 'products.id', '=', 'product_warehouse.product_id')
                 ->where('product_warehouse.warehouse_id', $warehouse->id)
@@ -212,7 +212,7 @@ class PosService
                     $q->where('products.name', 'like', "%{$query}%")
                       ->orWhere('products.code', 'like', "%{$query}%");
                 })
-                ->groupBy('products.id', 'products.name', 'products.code', 'products.price')
+                ->groupBy('products.id', 'products.name', 'products.code', 'products.price', 'products.sale_price_ht', 'products.vat_rate_sale', 'products.prices_include_vat')
                 ->havingRaw('COALESCE(SUM(product_warehouse.quantity), 0) > 0')
                 ->orderBy('products.name')
                 ->limit($limit)
@@ -221,7 +221,7 @@ class PosService
                     'id' => $p->id,
                     'name' => $p->name,
                     'code' => $p->code,
-                    'selling_price' => $p->price,
+                    'selling_price' => round($p->sale_price_ttc),
                     'quantity' => $p->total_quantity,
                 ])
                 ->toArray();
@@ -235,12 +235,12 @@ class PosService
             ->where('stock', '>', 0)
             ->orderBy('name')
             ->limit($limit)
-            ->get(['id', 'name', 'code', 'price', 'stock'])
+            ->get(['id', 'name', 'code', 'price', 'sale_price_ht', 'vat_rate_sale', 'prices_include_vat', 'stock'])
             ->map(fn($p) => [
                 'id' => $p->id,
                 'name' => $p->name,
                 'code' => $p->code,
-                'selling_price' => $p->price,
+                'selling_price' => round($p->sale_price_ttc),
                 'quantity' => $p->stock,
             ])
             ->toArray();
@@ -258,7 +258,7 @@ class PosService
                 ->where('product_warehouse.warehouse_id', $warehouse->id)
                 ->where('products.code', $code)
                 ->where('products.company_id', $companyId)
-                ->groupBy('products.id', 'products.name', 'products.code', 'products.price')
+                ->groupBy('products.id', 'products.name', 'products.code', 'products.price', 'products.sale_price_ht', 'products.vat_rate_sale', 'products.prices_include_vat')
                 ->first();
 
             if (!$product) return null;
@@ -267,14 +267,14 @@ class PosService
                 'id' => $product->id,
                 'name' => $product->name,
                 'code' => $product->code,
-                'selling_price' => $product->price,
+                'selling_price' => round($product->sale_price_ttc),
                 'quantity' => $product->total_quantity,
             ];
         }
 
         $product = Product::where('company_id', $companyId)
             ->where('code', $code)
-            ->first(['id', 'name', 'code', 'price', 'stock']);
+            ->first(['id', 'name', 'code', 'price', 'sale_price_ht', 'vat_rate_sale', 'prices_include_vat', 'stock']);
 
         if (!$product) return null;
 
@@ -282,7 +282,7 @@ class PosService
             'id' => $product->id,
             'name' => $product->name,
             'code' => $product->code,
-            'selling_price' => $product->price,
+            'selling_price' => round($product->sale_price_ttc),
             'quantity' => $product->stock,
         ];
     }
