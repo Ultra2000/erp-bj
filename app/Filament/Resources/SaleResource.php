@@ -414,7 +414,7 @@ class SaleResource extends Resource
                                     ->label('P.U. HT')
                                     ->required()
                                     ->numeric()
-                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
+                                    ->suffix(fn () => Filament::getTenant()->currency_label)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $company = Filament::getTenant();
@@ -462,7 +462,7 @@ class SaleResource extends Resource
                                     ->label('Total TTC')
                                     ->required()
                                     ->numeric()
-                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
+                                    ->suffix(fn () => Filament::getTenant()->currency_label)
                                     ->disabled(),
                                 Forms\Components\Placeholder::make('wholesale_info')
                                     ->label('')
@@ -484,7 +484,7 @@ class SaleResource extends Resource
                             ->label('Remise (FCFA)')
                             ->numeric()->minValue(0)->default(0)
                             ->live(debounce: '750ms')
-                            ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
+                            ->suffix(fn () => Filament::getTenant()->currency_label)
                             ->dehydrated(false)
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $discountAmount = floatval($state ?? 0);
@@ -513,7 +513,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
                             ->content(function (Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $currency = Filament::getTenant()->currency_label;
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
                                 $totalVat = 0;
@@ -534,7 +534,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_vat_display')
                             ->label('Total TVA')
                             ->content(function (Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $currency = Filament::getTenant()->currency_label;
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
                                 $totalVat = 0;
@@ -555,7 +555,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_ttc_display')
                             ->label('Total TTC')
                             ->content(function (Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $currency = Filament::getTenant()->currency_label;
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
                                 $totalVat = 0;
@@ -648,7 +648,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('aib_amount_display')
                             ->label('Montant AIB')
                             ->content(function (?Sale $record, Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $currency = Filament::getTenant()->currency_label;
                                 // En édition, utiliser la valeur stockée ; en création, la valeur calculée
                                 if ($record && $record->aib_amount > 0) {
                                     return number_format($record->aib_amount, 0, ',', ' ') . ' ' . $currency;
@@ -659,7 +659,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_with_aib_display')
                             ->label('Net à payer (TTC + AIB)')
                             ->content(function (?Sale $record, Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency ?? 'XOF';
+                                $currency = Filament::getTenant()->currency_label;
                                 if ($record && $record->aib_amount > 0) {
                                     return number_format($record->total_with_aib, 0, ',', ' ') . ' ' . $currency;
                                 }
@@ -784,7 +784,7 @@ class SaleResource extends Resource
                     ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled'),
                 Tables\Columns\TextColumn::make('aib_amount')
                     ->label('Montant AIB')
-                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
+                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', ' ') . ' ' . (Filament::getTenant()?->currency_label ?? 'FCFA'))
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled'),
                 Tables\Columns\TextColumn::make('created_at')

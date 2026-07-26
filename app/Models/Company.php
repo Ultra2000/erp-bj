@@ -48,6 +48,15 @@ class Company extends Model
         'aib_exempt_retail' => 'boolean',
     ];
 
+    /**
+     * Libellé d'affichage de la devise (XOF est affiché « FCFA » au Bénin).
+     */
+    public function getCurrencyLabelAttribute(): string
+    {
+        $currency = $this->currency ?: 'FCFA';
+        return $currency === 'XOF' ? 'FCFA' : $currency;
+    }
+
     protected static function boot()
     {
         parent::boot();
