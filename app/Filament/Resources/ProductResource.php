@@ -497,7 +497,7 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Achat HT')
-                    ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
+                    ->formatStateUsing(fn ($record) => number_format($record->purchase_price_ht, 0, ',', ' ') . ' ' . (\Filament\Facades\Filament::getTenant()?->currency_label ?? 'FCFA'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('vat_rate_purchase')
                     ->label('TVA Achat')
@@ -505,7 +505,7 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('price')
                     ->label('Vente HT')
-                    ->money(fn () => \Filament\Facades\Filament::getTenant()->currency)
+                    ->formatStateUsing(fn ($record) => number_format($record->sale_price_ht, 0, ',', ' ') . ' ' . (\Filament\Facades\Filament::getTenant()?->currency_label ?? 'FCFA'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('vat_rate_sale')
                     ->label('TVA Vente')
