@@ -24,12 +24,14 @@ class PurchaseItem extends Model
     ];
 
     protected $casts = [
-        'unit_price' => 'decimal:2',
-        'unit_price_ht' => 'decimal:2',
+        // Montants en FCFA : entiers
+        'unit_price' => 'integer',
+        'unit_price_ht' => 'integer',
+        'vat_amount' => 'integer',
+        'total_price_ht' => 'integer',
+        'total_price' => 'integer',
+        // Taux de TVA : décimales possibles
         'vat_rate' => 'decimal:2',
-        'vat_amount' => 'decimal:2',
-        'total_price_ht' => 'decimal:2',
-        'total_price' => 'decimal:2',
     ];
 
     protected static function booted()
@@ -99,14 +101,14 @@ class PurchaseItem extends Model
      */
     public function calculateVat(): void
     {
-        // Le prix unitaire est considéré comme HT
-        $this->unit_price_ht = $this->unit_price;
-        $this->total_price_ht = $this->quantity * $this->unit_price_ht;
-        
+        // Le prix unitaire est considéré comme HT — montants entiers (FCFA)
+        $this->unit_price_ht = round($this->unit_price);
+        $this->total_price_ht = round($this->quantity * $this->unit_price_ht);
+
         // Calculer la TVA déductible
         $vatRate = $this->vat_rate ?? 20;
-        $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
-        
+        $this->vat_amount = round($this->total_price_ht * ($vatRate / 100));
+
         // Total TTC
         $this->total_price = $this->total_price_ht + $this->vat_amount;
     }

@@ -68,8 +68,12 @@ class Sale extends Model
     protected $casts = [
         'status' => 'string',
         'payment_status' => 'string',
-        'amount_paid' => 'decimal:2',
-        'aib_amount' => 'decimal:2',
+        // Montants en FCFA : entiers
+        'total' => 'integer',
+        'total_ht' => 'integer',
+        'total_vat' => 'integer',
+        'amount_paid' => 'integer',
+        'aib_amount' => 'integer',
         'aib_exempt' => 'boolean',
         'is_export' => 'boolean',
         'paid_at' => 'datetime',
@@ -351,10 +355,10 @@ class Sale extends Model
         
         $hadNoTotal = !$this->total || $this->total <= 0;
         
-        $this->total_ht = round($totalHt * (1 - $this->discount_percent / 100), 2);
-        $this->total_vat = round($totalVat * (1 - $this->discount_percent / 100), 2);
+        $this->total_ht = round($totalHt * (1 - $this->discount_percent / 100));
+        $this->total_vat = round($totalVat * (1 - $this->discount_percent / 100));
         // Total TTC = HT + TVA (après remise) + taxe spécifique (non remisée)
-        $this->total = round($afterDiscount + $totalTaxSpecific, 2);
+        $this->total = round($afterDiscount + $totalTaxSpecific);
         
         // Utiliser saveQuietly() pour éviter de déclencher les events updating/updated
         // qui pourraient bloquer la sauvegarde (NF525, etc.)
@@ -558,7 +562,7 @@ class Sale extends Model
         }
 
         $rate = $this->getAibPercentage();
-        return round($this->total_ht * ($rate / 100), 2);
+        return round($this->total_ht * ($rate / 100));
     }
 
     /**

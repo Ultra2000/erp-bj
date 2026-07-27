@@ -33,15 +33,17 @@ class SaleItem extends Model
 
     protected $casts = [
         'quantity' => 'decimal:3',
-        'unit_price' => 'decimal:2',
-        'unit_price_ht' => 'decimal:2',
+        // Montants en FCFA : entiers (pas de sous-unité)
+        'unit_price' => 'integer',
+        'unit_price_ht' => 'integer',
+        'tax_specific_amount' => 'integer',
+        'tax_specific_total' => 'integer',
+        'vat_amount' => 'integer',
+        'total_price_ht' => 'integer',
+        'total_price' => 'integer',
+        'retail_unit_price' => 'integer',
+        // Taux de TVA : décimales possibles
         'vat_rate' => 'decimal:2',
-        'tax_specific_amount' => 'decimal:2',
-        'tax_specific_total' => 'decimal:2',
-        'vat_amount' => 'decimal:2',
-        'total_price_ht' => 'decimal:2',
-        'total_price' => 'decimal:2',
-        'retail_unit_price' => 'decimal:2',
         'is_wholesale' => 'boolean',
     ];
 
@@ -198,13 +200,14 @@ class SaleItem extends Model
     public function calculateVat(): void
     {
         // Le prix unitaire est considéré comme HT (c'est le prix de vente HT du produit)
-        $this->unit_price_ht = $this->unit_price;
-        $this->total_price_ht = $this->quantity * $this->unit_price_ht;
-        
+        // Montants arrondis à l'entier (FCFA, pas de sous-unité)
+        $this->unit_price_ht = round($this->unit_price);
+        $this->total_price_ht = round($this->quantity * $this->unit_price_ht);
+
         // Vérifier si l'entreprise est en franchise de TVA
         $companyId = $this->sale?->company_id;
         $isVatFranchise = $companyId ? AccountingSetting::isVatFranchise($companyId) : false;
-        
+
         if ($isVatFranchise) {
             // Franchise TVA : TVA = 0
             $this->vat_rate = 0;
@@ -229,15 +232,15 @@ class SaleItem extends Model
             $this->vat_rate = $vatRate;
             
             // 1. TVA classique (pourcentage sur le HT)
-            $this->vat_amount = round($this->total_price_ht * ($vatRate / 100), 2);
-            
+            $this->vat_amount = round($this->total_price_ht * ($vatRate / 100));
+
             // 2. Taxe spécifique (montant fixe × quantité) — cumulable avec la TVA
             if ($this->tax_specific_amount > 0) {
-                $this->tax_specific_total = round($this->tax_specific_amount * $this->quantity, 2);
+                $this->tax_specific_total = round($this->tax_specific_amount * $this->quantity);
             } else {
                 $this->tax_specific_total = 0;
             }
-            
+
             // Total TTC = HT + TVA + taxe spécifique
             $this->total_price = $this->total_price_ht + $this->vat_amount + $this->tax_specific_total;
         }

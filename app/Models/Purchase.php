@@ -35,10 +35,11 @@ class Purchase extends Model
     ];
 
     protected $casts = [
-        'total' => 'decimal:2',
-        'total_ht' => 'decimal:2',
-        'total_vat' => 'decimal:2',
-        'amount_paid' => 'decimal:2',
+        // Montants en FCFA : entiers
+        'total' => 'integer',
+        'total_ht' => 'integer',
+        'total_vat' => 'integer',
+        'amount_paid' => 'integer',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -286,9 +287,9 @@ class Purchase extends Model
         $discount = $subtotal * ($this->discount_percent / 100);
         $afterDiscount = $subtotal - $discount;
         
-        $this->total_ht = round($totalHt * (1 - $this->discount_percent / 100), 2);
-        $this->total_vat = round($totalVat * (1 - $this->discount_percent / 100), 2);
-        $this->total = round($afterDiscount, 2);
+        $this->total_ht = round($totalHt * (1 - $this->discount_percent / 100));
+        $this->total_vat = round($totalVat * (1 - $this->discount_percent / 100));
+        $this->total = round($afterDiscount);
         $this->save();
 
         // Créer la transaction bancaire si achat completed avec compte bancaire
