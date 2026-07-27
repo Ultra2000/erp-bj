@@ -219,7 +219,30 @@ class SaleResource extends Resource
                                 }
                             })
                             ->helperText('Exportation : TVA exonérée, type EV pour e-MCeF')
+                            ->hintIcon(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN) ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
+                            ->hintColor(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN) ? 'warning' : 'success')
+                            ->hint(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN) ? 'TVA 0% (exonérée)' : 'TVA appliquée')
                             ->visible(fn () => Filament::getTenant()?->emcef_enabled),
+
+                        Forms\Components\Placeholder::make('sale_type_indicator')
+                            ->hiddenLabel()
+                            ->columnSpanFull()
+                            ->visible(fn () => Filament::getTenant()?->emcef_enabled)
+                            ->content(function (Forms\Get $get) {
+                                $isExport = filter_var($get('is_export'), FILTER_VALIDATE_BOOLEAN);
+                                if ($isExport) {
+                                    return new \Illuminate\Support\HtmlString(
+                                        '<div style="padding:10px 16px;border-radius:10px;background:#fff7ed;border:1px solid #fb923c;color:#9a3412;font-weight:700;font-size:14px;">'
+                                        . '✈️ VENTE À L\'EXPORTATION — TVA 0% (exonérée). Le total est en HT, sans TVA.'
+                                        . '</div>'
+                                    );
+                                }
+                                return new \Illuminate\Support\HtmlString(
+                                    '<div style="padding:10px 16px;border-radius:10px;background:#f0fdf4;border:1px solid #4ade80;color:#166534;font-weight:700;font-size:14px;">'
+                                    . '🏠 Vente locale — TVA appliquée normalement.'
+                                    . '</div>'
+                                );
+                            }),
                     ])->columns(2),
 
                 // Section e-MCeF (Bénin) - Affichée uniquement si certifiée
