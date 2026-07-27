@@ -604,34 +604,23 @@
                                     </template>
                                 </div>
 
-                                {{-- Remise --}}
+                                {{-- Remise (montant en FCFA) --}}
                                 <div class="px-4 pt-3 pb-1 bg-white dark:bg-gray-800" x-show="cart.length > 0">
                                     <div class="flex items-center justify-between gap-2">
                                         <label class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Remise</label>
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
-                                                <template x-for="pct in [0,5,10,15]" :key="pct">
-                                                    <button type="button" @click="discountPercent = pct"
-                                                            class="px-2.5 py-1 rounded-md text-xs font-bold transition-all"
-                                                            :style="(parseFloat(discountPercent)||0) === pct ? 'background-color:#7c3aed;color:#ffffff' : ''"
-                                                            :class="(parseFloat(discountPercent)||0) !== pct ? 'text-gray-600 dark:text-gray-300' : ''"
-                                                            x-text="pct + '%'"></button>
-                                                </template>
-                                            </div>
-                                            <div class="relative">
-                                                <input type="number" x-model="discountPercent" min="0" max="100" step="1"
-                                                       class="w-16 text-right bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg py-1 pl-2 pr-5 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500">
-                                                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
-                                            </div>
+                                        <div class="relative">
+                                            <input type="number" x-model="discountValue" min="0" step="1" placeholder="0"
+                                                   class="w-32 text-right bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg py-1.5 pl-3 pr-12 text-sm font-bold text-gray-900 dark:text-white focus:ring-2 focus:ring-violet-500">
+                                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-semibold">FCFA</span>
                                         </div>
                                     </div>
-                                    <div x-show="(parseFloat(discountPercent)||0) > 0" class="mt-2 space-y-1 text-sm">
+                                    <div x-show="discountAmount > 0" class="mt-2 space-y-1 text-sm">
                                         <div class="flex justify-between text-gray-500 dark:text-gray-400">
                                             <span>Sous-total</span>
                                             <span x-text="formatPrice(cartSubtotal)"></span>
                                         </div>
                                         <div class="flex justify-between font-medium text-red-500">
-                                            <span x-text="'Remise (' + (parseFloat(discountPercent)||0) + '%)'"></span>
+                                            <span>Remise</span>
                                             <span x-text="'- ' + formatPrice(discountAmount)"></span>
                                         </div>
                                     </div>
@@ -1375,7 +1364,7 @@
                 
                 // Panier
                 cart: [],
-                discountPercent: 0,
+                discountValue: 0,
                 paymentMethod: 'cash',
                 receivedAmount: '',
                 isPartialPayment: false,
@@ -1821,7 +1810,7 @@
                 // Vider le panier
                 clearCart() {
                     this.cart = [];
-                    this.discountPercent = 0;
+                    this.discountValue = 0;
                     this.receivedAmount = '';
                     this.isPartialPayment = false;
                     this.amountPaid = '';
@@ -1832,10 +1821,10 @@
                     return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
                 },
 
-                // Montant de la remise
+                // Montant de la remise (FCFA), plafonné au sous-total
                 get discountAmount() {
-                    const pct = Math.min(100, Math.max(0, parseFloat(this.discountPercent) || 0));
-                    return Math.round(this.cartSubtotal * pct / 100);
+                    const v = Math.max(0, parseFloat(this.discountValue) || 0);
+                    return Math.min(Math.round(v), this.cartSubtotal);
                 },
 
                 // Total à payer (après remise)
@@ -1864,7 +1853,7 @@
                         const payload = {
                             items: soldItems,
                             payment_method: this.paymentMethod,
-                            discount_percent: Math.min(100, Math.max(0, parseFloat(this.discountPercent) || 0)),
+                            discount_percent: this.cartSubtotal > 0 ? (this.discountAmount / this.cartSubtotal * 100) : 0,
                             total: this.cartTotal
                         };
                         if (this.isPartialPayment && this.amountPaid !== '') {
@@ -1889,7 +1878,7 @@
                             this.lastRemaining = data.remaining || 0;
                             this.showSuccessModal = true;
                             this.cart = [];
-                            this.discountPercent = 0;
+                            this.discountValue = 0;
                             this.receivedAmount = '';
                             this.isPartialPayment = false;
                             this.amountPaid = '';
