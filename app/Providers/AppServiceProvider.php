@@ -28,6 +28,8 @@ use App\Policies\RolePolicy;
 use App\Policies\SalePolicy;
 use App\Policies\SupplierPolicy;
 use App\Policies\UserPolicy;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -69,6 +71,34 @@ class AppServiceProvider extends ServiceProvider
                 }
             });
         }
+
+        // ==========================================
+        // POLYFILL CSS — classes Tailwind « arbitraires » non compilées
+        // par le thème Filament (ex. max-h-[50vh], text-[10px], h-[calc(...)]).
+        // Injecté dans le <head> de toutes les pages des panneaux Filament.
+        // ==========================================
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            fn (): string => <<<'HTML'
+<style>
+.min-h-\[70vh\]{min-height:70vh}
+.max-h-\[50vh\]{max-height:50vh}
+.max-h-\[70vh\]{max-height:70vh}
+.max-h-\[90vh\]{max-height:90vh}
+.max-h-\[500px\]{max-height:500px}
+.min-w-\[120px\]{min-width:120px}
+.w-\[22px\]{width:22px}
+.h-\[22px\]{height:22px}
+.h-\[42px\]{height:42px}
+.top-\[3px\]{top:3px}
+.left-\[3px\]{left:3px}
+.text-\[9px\]{font-size:9px}
+.text-\[10px\]{font-size:10px}
+.h-\[calc\(100vh-180px\)\]{height:calc(100vh - 180px)}
+.hover\:scale-\[1\.02\]:hover{transform:scale(1.02)}
+</style>
+HTML
+        );
 
         // ==========================================
         // OBSERVERS
