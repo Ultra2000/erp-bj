@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestStock — Logiciel de gestion & facturation normalisée e-MCeF (Bénin)</title>
-    <meta name="description" content="GestStock : logiciel complet de gestion de stock, point de vente, ventes, achats et facturation normalisée e-MCeF certifiée DGI Bénin. Multi-entrepôts, créances, rapports.">
+    <title>FRECORP ERP, logiciel de gestion & facturation normalisée e-MCeF (Bénin)</title>
+    <meta name="description" content="FRECORP ERP : logiciel complet de gestion de stock, point de vente, ventes, achats et facturation normalisée e-MCeF certifiée DGI Bénin. Multi-entrepôts, créances, rapports.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -31,7 +31,7 @@
                 <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-violet-600 text-white shadow-lg shadow-brand-600/30">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                 </span>
-                <span class="text-xl font-extrabold tracking-tight text-gray-900">Gest<span class="text-brand-600">Stock</span></span>
+                <span class="text-xl font-extrabold tracking-tight text-gray-900">FRECORP <span class="text-brand-600">ERP</span></span>
             </a>
             <div class="hidden items-center gap-8 md:flex">
                 <a href="#fonctionnalites" class="text-sm font-medium text-gray-600 hover:text-brand-600">Fonctionnalités</a>
@@ -50,15 +50,11 @@
         <div class="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-violet-200/40 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-brand-200/40 blur-3xl"></div>
         <div class="relative mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:px-8">
-            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-semibold text-emerald-700">
-                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                Facturation certifiée e-MCeF — DGI Bénin
-            </span>
-            <h1 class="mx-auto mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            <h1 class="mx-auto max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
                 Gérez votre commerce <span class="bg-gradient-to-r from-brand-600 to-violet-600 bg-clip-text text-transparent">de A à Z</span>, en toute conformité
             </h1>
             <p class="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-                Stock, point de vente, ventes, achats et facturation normalisée dans une seule solution — pensée pour les entreprises béninoises et la certification DGI.
+                Stock, point de vente, ventes, achats et facturation normalisée dans une seule solution, pensée pour les entreprises béninoises et la certification DGI.
             </p>
             <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <a href="/admin" class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-7 py-3.5 text-base font-semibold text-white shadow-xl shadow-brand-600/30 transition hover:bg-brand-700">
@@ -195,7 +191,7 @@
         <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-600 to-violet-600 px-8 py-16 text-center shadow-2xl">
             <div class="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl"></div>
             <h2 class="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Prêt à piloter votre entreprise ?</h2>
-            <p class="mx-auto mt-4 max-w-xl text-brand-100">Connectez-vous à votre espace GestStock et gardez le contrôle sur votre stock, vos ventes et votre facturation.</p>
+            <p class="mx-auto mt-4 max-w-xl text-brand-100">Connectez-vous à votre espace FRECORP ERP et gardez le contrôle sur votre stock, vos ventes et votre facturation.</p>
             <a href="/admin" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-bold text-brand-600 shadow-lg transition hover:bg-brand-50">
                 Se connecter maintenant
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
@@ -211,7 +207,7 @@
                     <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-violet-600 text-white">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                     </span>
-                    <span class="font-extrabold text-gray-900">Gest<span class="text-brand-600">Stock</span></span>
+                    <span class="font-extrabold text-gray-900">FRECORP <span class="text-brand-600">ERP</span></span>
                 </div>
                 <div class="flex items-center gap-6 text-sm text-gray-500">
                     <a href="#fonctionnalites" class="hover:text-brand-600">Fonctionnalités</a>
@@ -220,7 +216,7 @@
                 </div>
             </div>
             <div class="mt-8 border-t border-gray-200 pt-6 text-center text-sm text-gray-400">
-                &copy; {{ now()->year }} GestStock — une solution FRECORP. Tous droits réservés.
+                &copy; {{ now()->year }} FRECORP ERP. Tous droits réservés.
             </div>
         </div>
     </footer>
