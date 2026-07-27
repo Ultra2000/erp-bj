@@ -437,20 +437,21 @@ class SaleResource extends Resource
                                     ->label('P.U. HT')
                                     ->required()
                                     ->numeric()
+                                    ->step(fn () => Filament::getTenant()?->currency_decimals === 0 ? 1 : 0.01)
                                     ->suffix(fn () => Filament::getTenant()->currency_label)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $company = Filament::getTenant();
+                                        $decimals = Filament::getTenant()?->currency_decimals ?? 0;
                                         $defaultVatRate = 0;
                                         $quantity = $get('quantity');
                                         $unitPrice = $state;
                                         $vatRate = $get('vat_rate') ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
-                                            $vat = round($totalHt * ($vatRate / 100), 2);
+                                            $vat = round($totalHt * ($vatRate / 100), $decimals);
                                             $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
-                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), 2) : 0;
-                                            $set('total_price', $totalHt + $vat + $taxSpecTotal);
+                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), $decimals) : 0;
+                                            $set('total_price', round($totalHt + $vat + $taxSpecTotal, $decimals));
                                         }
                                     }),
                                 Forms\Components\Select::make('vat_rate')
@@ -459,17 +460,17 @@ class SaleResource extends Resource
                                     ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $company = Filament::getTenant();
+                                        $decimals = Filament::getTenant()?->currency_decimals ?? 0;
                                         $defaultVatRate = 0;
                                         $quantity = $get('quantity');
                                         $unitPrice = $get('unit_price');
                                         $vatRate = $state ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
-                                            $vat = round($totalHt * ($vatRate / 100), 2);
+                                            $vat = round($totalHt * ($vatRate / 100), $decimals);
                                             $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
-                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), 2) : 0;
-                                            $set('total_price', $totalHt + $vat + $taxSpecTotal);
+                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), $decimals) : 0;
+                                            $set('total_price', round($totalHt + $vat + $taxSpecTotal, $decimals));
                                         }
                                     }),
                                 Forms\Components\Hidden::make('vat_category')
@@ -485,6 +486,7 @@ class SaleResource extends Resource
                                     ->label('Total TTC')
                                     ->required()
                                     ->numeric()
+                                    ->step(fn () => Filament::getTenant()?->currency_decimals === 0 ? 1 : 0.01)
                                     ->suffix(fn () => Filament::getTenant()->currency_label)
                                     ->disabled(),
                                 Forms\Components\Placeholder::make('wholesale_info')

@@ -57,6 +57,14 @@ class Company extends Model
         return $currency === 'XOF' ? 'FCFA' : $currency;
     }
 
+    /**
+     * Nombre de décimales pour cette devise (0 pour XOF/FCFA, 2 par défaut).
+     */
+    public function getCurrencyDecimalsAttribute(): int
+    {
+        return in_array($this->currency, ['XOF', 'FCFA', 'XAF', 'JPY', 'KRW'], true) ? 0 : 2;
+    }
+
     protected static function boot()
     {
         parent::boot();
