@@ -56,16 +56,18 @@ class Product extends Model
     protected $appends = ['total_stock', 'margin', 'margin_percent'];
 
     protected $casts = [
-        'purchase_price' => 'decimal:2',
-        'purchase_price_ht' => 'decimal:2',
-        'price' => 'decimal:2',
-        'sale_price_ht' => 'decimal:2',
-        'wholesale_price' => 'decimal:2',
-        'wholesale_price_ht' => 'decimal:2',
+        // Montants en FCFA : pas de sous-unité, on force des entiers
+        'purchase_price' => 'integer',
+        'purchase_price_ht' => 'integer',
+        'price' => 'integer',
+        'sale_price_ht' => 'integer',
+        'wholesale_price' => 'integer',
+        'wholesale_price_ht' => 'integer',
+        'tax_specific_amount' => 'integer',
         'min_wholesale_qty' => 'integer',
+        // Taux de TVA : peuvent avoir des décimales (ex. 5,5 %)
         'vat_rate_purchase' => 'decimal:2',
         'vat_rate_sale' => 'decimal:2',
-        'tax_specific_amount' => 'decimal:2',
         'prices_include_vat' => 'boolean',
     ];
 
@@ -76,6 +78,15 @@ class Product extends Model
     protected static function boot()
     {
         parent::boot();
+
+        // Arrondir les montants à l'entier (FCFA sans centime) avant toute écriture
+        static::saving(function ($model) {
+            foreach (['purchase_price', 'purchase_price_ht', 'price', 'sale_price_ht', 'wholesale_price', 'wholesale_price_ht', 'tax_specific_amount'] as $field) {
+                if (isset($model->attributes[$field]) && $model->attributes[$field] !== null && $model->attributes[$field] !== '') {
+                    $model->attributes[$field] = (int) round((float) $model->attributes[$field]);
+                }
+            }
+        });
 
         static::creating(function ($model) {
             if (empty($model->code)) {
@@ -364,9 +375,9 @@ class Product extends Model
         $vatRate = (float) ($this->attributes['vat_rate_purchase'] ?? 20);
         
         if ($this->prices_include_vat && $vatRate > 0) {
-            return round($price / (1 + $vatRate / 100), 2);
+            return round($price / (1 + $vatRate / 100));
         }
-        
+
         return $price;
     }
 
@@ -377,8 +388,8 @@ class Product extends Model
     {
         $priceHt = $this->purchase_price_ht;
         $vatRate = (float) ($this->vat_rate_purchase ?? 20);
-        
-        return round($priceHt * (1 + $vatRate / 100), 2);
+
+        return round($priceHt * (1 + $vatRate / 100));
     }
 
     /**
@@ -395,9 +406,9 @@ class Product extends Model
         $vatRate = (float) ($this->attributes['vat_rate_sale'] ?? 20);
         
         if ($this->prices_include_vat && $vatRate > 0) {
-            return round($price / (1 + $vatRate / 100), 2);
+            return round($price / (1 + $vatRate / 100));
         }
-        
+
         return $price;
     }
 
@@ -408,8 +419,8 @@ class Product extends Model
     {
         $priceHt = $this->sale_price_ht;
         $vatRate = (float) ($this->vat_rate_sale ?? 20);
-        
-        return round($priceHt * (1 + $vatRate / 100), 2);
+
+        return round($priceHt * (1 + $vatRate / 100));
     }
 
     /**
@@ -418,7 +429,7 @@ class Product extends Model
      */
     public function getMarginAttribute(): float
     {
-        return round($this->sale_price_ht - $this->purchase_price_ht, 2);
+        return round($this->sale_price_ht - $this->purchase_price_ht);
     }
 
     /**
