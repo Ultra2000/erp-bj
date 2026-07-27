@@ -56,11 +56,13 @@ return new class extends Migration
 
                 $nullable = ($meta && $meta->IS_NULLABLE === 'YES') ? 'NULL' : 'NOT NULL';
 
+                // Attention : MySQL/MariaDB peut renvoyer la CHAÎNE 'NULL' pour un défaut NULL.
+                $colDefault = $meta->COLUMN_DEFAULT ?? null;
                 $default = '';
-                if ($meta && $meta->COLUMN_DEFAULT !== null) {
-                    $default = is_numeric($meta->COLUMN_DEFAULT)
-                        ? 'DEFAULT ' . $meta->COLUMN_DEFAULT
-                        : "DEFAULT '" . $meta->COLUMN_DEFAULT . "'";
+                if ($colDefault !== null && strtoupper((string) $colDefault) !== 'NULL') {
+                    $default = is_numeric($colDefault)
+                        ? 'DEFAULT ' . $colDefault
+                        : "DEFAULT '" . $colDefault . "'";
                 }
 
                 DB::statement("ALTER TABLE `{$table}` MODIFY `{$column}` {$type} {$nullable} {$default}");
