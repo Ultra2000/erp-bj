@@ -87,9 +87,10 @@ class ProductImport implements ToCollection, WithHeadingRow, WithChunkReading
                 $prixGros = $this->parseDecimal($row['prix_gros'] ?? $row['wholesale'] ?? 0);
                 $qteMinGros = $this->parseInt($row['qte_min_gros'] ?? $row['min_gros'] ?? 0);
                 
-                // TVA
-                $tvaSale = $this->parseDecimal($row['tva_vente'] ?? $row['tva'] ?? $row['tax'] ?? '18');
-                $tvaPurchase = $this->parseDecimal($row['tva_achat'] ?? $row['tva'] ?? $row['tax'] ?? '18');
+                // TVA : défaut 0% (Groupe B) — le fichier peut surcharger via colonne tva_vente/tva_achat
+                $tvaSale = $this->parseDecimal($row['tva_vente'] ?? $row['tva'] ?? $row['tax'] ?? '0');
+                $tvaPurchase = $this->parseDecimal($row['tva_achat'] ?? $row['tva'] ?? $row['tax'] ?? '0');
+                $vatCategory = trim($row['groupe_tva'] ?? $row['vat_category'] ?? $row['categorie_tva'] ?? '') ?: 'B';
                 
                 // Mode prix TTC/HT
                 $prixTtcFlag = trim($row['prix_ttc'] ?? $row['ttc'] ?? 'oui');
@@ -120,6 +121,7 @@ class ProductImport implements ToCollection, WithHeadingRow, WithChunkReading
                     'price' => round($prixVente, 2),
                     'sale_price_ht' => round($salePriceHt, 2),
                     'vat_rate_sale' => $tvaSale,
+                    'vat_category' => $vatCategory,
                     'prices_include_vat' => $priceIncludesVat,
                     'wholesale_price' => $prixGros > 0 ? round($prixGros, 2) : null,
                     'wholesale_price_ht' => $wholesalePriceHt > 0 ? round($wholesalePriceHt, 2) : null,

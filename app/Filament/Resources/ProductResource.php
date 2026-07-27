@@ -138,7 +138,7 @@ class ProductResource extends Resource
                                 Forms\Components\Select::make('vat_rate_purchase')
                                     ->label('TVA Achat')
                                     ->options(Product::getCommonVatRates())
-                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
+                                    ->default(0.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $price = (float) ($get('purchase_price') ?? 0);
@@ -194,7 +194,7 @@ class ProductResource extends Resource
                                 Forms\Components\Select::make('vat_rate_sale')
                                     ->label('TVA Vente')
                                     ->options(Product::getCommonVatRates())
-                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
+                                    ->default(0.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $price = (float) ($get('price') ?? 0);
@@ -230,7 +230,7 @@ class ProductResource extends Resource
                         Forms\Components\Select::make('vat_category')
                             ->label(fn () => Filament::getTenant()?->emcef_enabled ? 'Groupe TVA e-MCeF' : 'Catégorie TVA')
                             ->options(Product::getVatCategories())
-                            ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S')
+                            ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'B' : 'S')
                             ->helperText(fn () => Filament::getTenant()?->emcef_enabled 
                                 ? 'Groupe de taxation DGI Bénin (A=18%, B=0%, C=Export, E=TPS)' 
                                 : 'Utilisé pour la facturation électronique')

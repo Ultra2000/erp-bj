@@ -84,6 +84,16 @@ class Product extends Model
             if (empty($model->barcode_type)) {
                 $model->barcode_type = 'code128';
             }
+            // Défauts fiscaux : produits non taxés (Groupe B) sauf indication contraire
+            if (! isset($model->attributes['vat_rate_purchase'])) {
+                $model->vat_rate_purchase = 0;
+            }
+            if (! isset($model->attributes['vat_rate_sale'])) {
+                $model->vat_rate_sale = 0;
+            }
+            if (! isset($model->attributes['vat_category']) || $model->vat_category === null || $model->vat_category === '') {
+                $model->vat_category = 'B';
+            }
         });
 
         // Assigner automatiquement le produit à l'entrepôt par défaut après création
