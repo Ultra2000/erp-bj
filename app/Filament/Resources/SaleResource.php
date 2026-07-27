@@ -219,30 +219,7 @@ class SaleResource extends Resource
                                 }
                             })
                             ->helperText('Exportation : TVA exonérée, type EV pour e-MCeF')
-                            ->hintIcon(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN) ? 'heroicon-m-exclamation-triangle' : 'heroicon-m-check-circle')
-                            ->hintColor(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN) ? 'warning' : 'success')
-                            ->hint(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN) ? 'TVA 0% (exonérée)' : 'TVA appliquée')
                             ->visible(fn () => Filament::getTenant()?->emcef_enabled),
-
-                        Forms\Components\Placeholder::make('sale_type_indicator')
-                            ->hiddenLabel()
-                            ->columnSpanFull()
-                            ->visible(fn () => Filament::getTenant()?->emcef_enabled)
-                            ->content(function (Forms\Get $get) {
-                                $isExport = filter_var($get('is_export'), FILTER_VALIDATE_BOOLEAN);
-                                if ($isExport) {
-                                    return new \Illuminate\Support\HtmlString(
-                                        '<div style="padding:10px 16px;border-radius:10px;background:#fff7ed;border:1px solid #fb923c;color:#9a3412;font-weight:700;font-size:14px;">'
-                                        . '✈️ VENTE À L\'EXPORTATION — TVA 0% (exonérée). Le total est en HT, sans TVA.'
-                                        . '</div>'
-                                    );
-                                }
-                                return new \Illuminate\Support\HtmlString(
-                                    '<div style="padding:10px 16px;border-radius:10px;background:#f0fdf4;border:1px solid #4ade80;color:#166534;font-weight:700;font-size:14px;">'
-                                    . '🏠 Vente locale — TVA appliquée normalement.'
-                                    . '</div>'
-                                );
-                            }),
                     ])->columns(2),
 
                 // Section e-MCeF (Bénin) - Affichée uniquement si certifiée
@@ -437,21 +414,20 @@ class SaleResource extends Resource
                                     ->label('P.U. HT')
                                     ->required()
                                     ->numeric()
-                                    ->step(fn () => Filament::getTenant()?->currency_decimals === 0 ? 1 : 0.01)
-                                    ->suffix(fn () => Filament::getTenant()->currency_label)
+                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $decimals = Filament::getTenant()?->currency_decimals ?? 0;
+                                        $company = Filament::getTenant();
                                         $defaultVatRate = 0;
                                         $quantity = $get('quantity');
                                         $unitPrice = $state;
                                         $vatRate = $get('vat_rate') ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
-                                            $vat = round($totalHt * ($vatRate / 100), $decimals);
+                                            $vat = round($totalHt * ($vatRate / 100), 2);
                                             $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
-                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), $decimals) : 0;
-                                            $set('total_price', round($totalHt + $vat + $taxSpecTotal, $decimals));
+                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), 2) : 0;
+                                            $set('total_price', $totalHt + $vat + $taxSpecTotal);
                                         }
                                     }),
                                 Forms\Components\Select::make('vat_rate')
@@ -460,17 +436,17 @@ class SaleResource extends Resource
                                     ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $decimals = Filament::getTenant()?->currency_decimals ?? 0;
+                                        $company = Filament::getTenant();
                                         $defaultVatRate = 0;
                                         $quantity = $get('quantity');
                                         $unitPrice = $get('unit_price');
                                         $vatRate = $state ?? $defaultVatRate;
                                         if ($quantity && $unitPrice) {
                                             $totalHt = $quantity * $unitPrice;
-                                            $vat = round($totalHt * ($vatRate / 100), $decimals);
+                                            $vat = round($totalHt * ($vatRate / 100), 2);
                                             $taxSpec = (float) ($get('tax_specific_amount') ?? 0);
-                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), $decimals) : 0;
-                                            $set('total_price', round($totalHt + $vat + $taxSpecTotal, $decimals));
+                                            $taxSpecTotal = $taxSpec > 0 ? round($taxSpec * floatval($quantity), 2) : 0;
+                                            $set('total_price', $totalHt + $vat + $taxSpecTotal);
                                         }
                                     }),
                                 Forms\Components\Hidden::make('vat_category')
@@ -486,8 +462,7 @@ class SaleResource extends Resource
                                     ->label('Total TTC')
                                     ->required()
                                     ->numeric()
-                                    ->step(fn () => Filament::getTenant()?->currency_decimals === 0 ? 1 : 0.01)
-                                    ->suffix(fn () => Filament::getTenant()->currency_label)
+                                    ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                                     ->disabled(),
                                 Forms\Components\Placeholder::make('wholesale_info')
                                     ->label('')
@@ -509,7 +484,7 @@ class SaleResource extends Resource
                             ->label('Remise (FCFA)')
                             ->numeric()->minValue(0)->default(0)
                             ->live(debounce: '750ms')
-                            ->suffix(fn () => Filament::getTenant()->currency_label)
+                            ->suffix(fn () => Filament::getTenant()->currency ?? 'XOF')
                             ->dehydrated(false)
                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                 $discountAmount = floatval($state ?? 0);
@@ -538,7 +513,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_ht_display')
                             ->label('Total HT')
                             ->content(function (Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency_label;
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
                                 $totalVat = 0;
@@ -559,7 +534,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_vat_display')
                             ->label('Total TVA')
                             ->content(function (Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency_label;
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
                                 $totalVat = 0;
@@ -580,7 +555,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_ttc_display')
                             ->label('Total TTC')
                             ->content(function (Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency_label;
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
                                 $items = $get('items') ?? [];
                                 $totalHt = 0;
                                 $totalVat = 0;
@@ -673,7 +648,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('aib_amount_display')
                             ->label('Montant AIB')
                             ->content(function (?Sale $record, Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency_label;
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
                                 // En édition, utiliser la valeur stockée ; en création, la valeur calculée
                                 if ($record && $record->aib_amount > 0) {
                                     return number_format($record->aib_amount, 0, ',', ' ') . ' ' . $currency;
@@ -684,7 +659,7 @@ class SaleResource extends Resource
                         Forms\Components\Placeholder::make('total_with_aib_display')
                             ->label('Net à payer (TTC + AIB)')
                             ->content(function (?Sale $record, Forms\Get $get) {
-                                $currency = Filament::getTenant()->currency_label;
+                                $currency = Filament::getTenant()->currency ?? 'XOF';
                                 if ($record && $record->aib_amount > 0) {
                                     return number_format($record->total_with_aib, 0, ',', ' ') . ' ' . $currency;
                                 }
@@ -809,7 +784,7 @@ class SaleResource extends Resource
                     ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled'),
                 Tables\Columns\TextColumn::make('aib_amount')
                     ->label('Montant AIB')
-                    ->formatStateUsing(fn ($state) => number_format($state ?? 0, 0, ',', ' ') . ' ' . (Filament::getTenant()?->currency_label ?? 'FCFA'))
+                    ->money(fn () => Filament::getTenant()?->currency ?? 'XOF')
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->visible(fn () => Filament::getTenant()?->aib_mode !== 'disabled'),
                 Tables\Columns\TextColumn::make('created_at')

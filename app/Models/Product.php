@@ -348,15 +348,15 @@ class Product extends Model
         if ($this->attributes['purchase_price_ht'] ?? null) {
             return (float) $this->attributes['purchase_price_ht'];
         }
-
+        
         // Si pas de prix HT stocké, calculer depuis le prix TTC
         $price = (float) ($this->attributes['purchase_price'] ?? 0);
         $vatRate = (float) ($this->attributes['vat_rate_purchase'] ?? 20);
-
+        
         if ($this->prices_include_vat && $vatRate > 0) {
-            return round($price / (1 + $vatRate / 100), $this->currencyDecimals());
+            return round($price / (1 + $vatRate / 100), 2);
         }
-
+        
         return $price;
     }
 
@@ -367,8 +367,8 @@ class Product extends Model
     {
         $priceHt = $this->purchase_price_ht;
         $vatRate = (float) ($this->vat_rate_purchase ?? 20);
-
-        return round($priceHt * (1 + $vatRate / 100), $this->currencyDecimals());
+        
+        return round($priceHt * (1 + $vatRate / 100), 2);
     }
 
     /**
@@ -379,15 +379,15 @@ class Product extends Model
         if ($this->attributes['sale_price_ht'] ?? null) {
             return (float) $this->attributes['sale_price_ht'];
         }
-
+        
         // Si pas de prix HT stocké, calculer depuis le prix TTC
         $price = (float) ($this->attributes['price'] ?? 0);
         $vatRate = (float) ($this->attributes['vat_rate_sale'] ?? 20);
-
+        
         if ($this->prices_include_vat && $vatRate > 0) {
-            return round($price / (1 + $vatRate / 100), $this->currencyDecimals());
+            return round($price / (1 + $vatRate / 100), 2);
         }
-
+        
         return $price;
     }
 
@@ -398,18 +398,8 @@ class Product extends Model
     {
         $priceHt = $this->sale_price_ht;
         $vatRate = (float) ($this->vat_rate_sale ?? 20);
-
-        return round($priceHt * (1 + $vatRate / 100), $this->currencyDecimals());
-    }
-
-    /**
-     * Nombre de décimales à utiliser pour arrondir les prix selon la devise
-     * de l'entreprise (0 pour XOF/FCFA, 2 sinon).
-     */
-    protected function currencyDecimals(): int
-    {
-        $company = $this->company ?? \App\Models\Company::find($this->company_id);
-        return $company?->currency_decimals ?? 0;
+        
+        return round($priceHt * (1 + $vatRate / 100), 2);
     }
 
     /**
