@@ -366,19 +366,20 @@ class Product extends Model
      */
     public function getPurchasePriceHtAttribute(): float
     {
-        if ($this->attributes['purchase_price_ht'] ?? null) {
-            return (float) $this->attributes['purchase_price_ht'];
-        }
-        
-        // Si pas de prix HT stocké, calculer depuis le prix TTC
+        // Le prix d'achat saisi (purchase_price) fait foi. On en dérive le HT
+        // pour éviter qu'une colonne purchase_price_ht obsolète ne soit utilisée.
         $price = (float) ($this->attributes['purchase_price'] ?? 0);
-        $vatRate = (float) ($this->attributes['vat_rate_purchase'] ?? 20);
-        
-        if ($this->prices_include_vat && $vatRate > 0) {
-            return round($price / (1 + $vatRate / 100));
+
+        if ($price > 0) {
+            $vatRate = (float) ($this->attributes['vat_rate_purchase'] ?? 0);
+            if ($this->prices_include_vat && $vatRate > 0) {
+                return round($price / (1 + $vatRate / 100));
+            }
+            return round($price);
         }
 
-        return $price;
+        // Repli : valeur HT stockée (produits sans prix d'achat renseigné)
+        return round((float) ($this->attributes['purchase_price_ht'] ?? 0));
     }
 
     /**
@@ -397,19 +398,21 @@ class Product extends Model
      */
     public function getSalePriceHtAttribute(): float
     {
-        if ($this->attributes['sale_price_ht'] ?? null) {
-            return (float) $this->attributes['sale_price_ht'];
-        }
-        
-        // Si pas de prix HT stocké, calculer depuis le prix TTC
+        // Le prix de vente saisi (price) fait foi. On en dérive le HT pour éviter
+        // qu'une colonne sale_price_ht obsolète (ex. contenant le prix d'achat)
+        // ne soit utilisée lors des ventes.
         $price = (float) ($this->attributes['price'] ?? 0);
-        $vatRate = (float) ($this->attributes['vat_rate_sale'] ?? 20);
-        
-        if ($this->prices_include_vat && $vatRate > 0) {
-            return round($price / (1 + $vatRate / 100));
+
+        if ($price > 0) {
+            $vatRate = (float) ($this->attributes['vat_rate_sale'] ?? 0);
+            if ($this->prices_include_vat && $vatRate > 0) {
+                return round($price / (1 + $vatRate / 100));
+            }
+            return round($price);
         }
 
-        return $price;
+        // Repli : valeur HT stockée (produits sans prix de vente renseigné)
+        return round((float) ($this->attributes['sale_price_ht'] ?? 0));
     }
 
     /**
