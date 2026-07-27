@@ -202,8 +202,8 @@ class SaleResource extends Resource
                                             if ($product) {
                                                 $company = \Filament\Facades\Filament::getTenant();
                                                 $defaultVatRate = 0;
-                                                $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
-                                                $set("items.{$index}.vat_category", $product->vat_category ?? ($company?->emcef_enabled ? 'A' : 'S'));
+                                                $vatRate = (float) ($product->vat_rate_sale ?? $defaultVatRate);
+                                                $set("items.{$index}.vat_category", $product->vat_category ?? ($company?->emcef_enabled ? 'B' : 'S'));
                                                 $set("items.{$index}.vat_rate", $vatRate);
                                                 $set("items.{$index}.tax_specific_amount", $product->tax_specific_amount);
                                                 $set("items.{$index}.tax_specific_label", $product->tax_specific_label);
@@ -307,18 +307,18 @@ class SaleResource extends Resource
 
                                                 if ($isExport) {
                                                     // Export : forcer Groupe C, TVA 0%, pas de taxe spécifique
-                                                    $set('vat_rate', 0);
+                                                    $set('vat_rate', 0.00);
                                                     $set('vat_category', 'C');
                                                     $set('tax_specific_amount', null);
                                                     $set('tax_specific_label', null);
                                                     $set('total_price', $product->sale_price_ht);
                                                 } else {
-                                                    $set('vat_rate', $product->vat_rate_sale ?? $defaultVatRate);
+                                                    $vatRate = (float) ($product->vat_rate_sale ?? $defaultVatRate);
+                                                    $set('vat_rate', $vatRate);
                                                     $set('vat_category', $product->vat_category ?? $defaultVatCategory);
                                                     $set('tax_specific_amount', $product->tax_specific_amount);
                                                     $set('tax_specific_label', $product->tax_specific_label);
                                                     // Calculer le total TTC = HT + TVA + taxe spécifique
-                                                    $vatRate = $product->vat_rate_sale ?? $defaultVatRate;
                                                     $totalHt = $product->sale_price_ht;
                                                     $vat = round($totalHt * ($vatRate / 100), 2);
                                                     $taxSpec = $product->tax_specific_amount > 0 ? round($product->tax_specific_amount * 1, 2) : 0;
@@ -433,7 +433,8 @@ class SaleResource extends Resource
                                 Forms\Components\Select::make('vat_rate')
                                     ->label('TVA')
                                     ->options(Product::getCommonVatRates())
-                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 18.00 : 20.00)
+                                    ->default(0.00)
+                                    ->selectablePlaceholder(false)
                                     ->live()
                                     ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $company = Filament::getTenant();
@@ -450,7 +451,7 @@ class SaleResource extends Resource
                                         }
                                     }),
                                 Forms\Components\Hidden::make('vat_category')
-                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'A' : 'S'),
+                                    ->default(fn () => Filament::getTenant()?->emcef_enabled ? 'B' : 'S'),
                                 Forms\Components\Hidden::make('tax_specific_amount')
                                     ->default(null),
                                 Forms\Components\Hidden::make('tax_specific_label')
