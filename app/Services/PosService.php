@@ -157,7 +157,7 @@ class PosService
     /**
      * Liste les produits disponibles pour le POS.
      */
-    public function getProducts(int $companyId, ?Warehouse $warehouse = null, int $limit = 50): array
+    public function getProducts(int $companyId, ?Warehouse $warehouse = null, int $limit = 1000): array
     {
         if ($warehouse) {
             return Product::select('products.id', 'products.name', 'products.code', 'products.price')
@@ -198,7 +198,7 @@ class PosService
     /**
      * Recherche de produits par nom ou code.
      */
-    public function searchProducts(int $companyId, string $query, ?Warehouse $warehouse = null, int $limit = 25): array
+    public function searchProducts(int $companyId, string $query, ?Warehouse $warehouse = null, int $limit = 100): array
     {
         if (strlen($query) < 1) return [];
 
