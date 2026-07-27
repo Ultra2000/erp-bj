@@ -325,7 +325,7 @@ class PosService
             $itemsToCreate = [];
             $totalHt = 0;
             $totalVat = 0;
-            $totalTtc = 0;
+            $totalTaxSpec = 0;
 
             foreach ($items as $item) {
                 $product = Product::where('company_id', $companyId)->findOrFail($item['product_id']);
@@ -358,7 +358,7 @@ class PosService
 
                 $totalHt += $lineHt;
                 $totalVat += $lineVat;
-                $totalTtc += $lineTtc;
+                $totalTaxSpec += $lineTaxSpec;
 
                 $itemsToCreate[] = [
                     'product_id' => $product->id,
@@ -376,10 +376,14 @@ class PosService
                 ];
             }
 
-            // Arrondir les totaux à l'entier (FCFA, pas de sous-unité)
-            $totalHt = round($totalHt);
-            $totalVat = round($totalVat);
-            $totalTtc = round($totalTtc);
+            // Appliquer la remise globale sur HT + TVA (la taxe spécifique n'est pas remisée),
+            // puis arrondir à l'entier (FCFA, pas de sous-unité)
+            $discountMultiplier = 1 - ($discountPercent / 100);
+            $discountedHt = $totalHt * $discountMultiplier;
+            $discountedVat = $totalVat * $discountMultiplier;
+            $totalHt = round($discountedHt);
+            $totalVat = round($discountedVat);
+            $totalTtc = round($discountedHt + $discountedVat + $totalTaxSpec);
 
             // ── 2. Créer la vente avec totaux pré-calculés ──
             $sale = DB::transaction(function () use (
