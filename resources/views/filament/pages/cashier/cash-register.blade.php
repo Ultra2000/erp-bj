@@ -380,7 +380,7 @@
                     {{-- Colonne droite - Panier (vente) / Factures impayées (encaisser) --}}
                     <div class="space-y-0">
                         {{-- Panier (mode vente uniquement) --}}
-                        <div x-show="activeTab === 'vente'" class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col overflow-hidden" style="max-height: calc(100vh - 180px);">
+                        <div x-show="activeTab === 'vente'" class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 flex flex-col overflow-hidden">
                             {{-- Header panier avec dégradé --}}
                             <div class="relative p-4" style="background: linear-gradient(to right, #1e293b, #334155, #1e293b);">
                                 <div class="flex items-center justify-between">
@@ -402,7 +402,7 @@
                             </div>
                             
                             {{-- Liste des articles avec scroll custom --}}
-                            <div class="flex-1 overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 custom-scrollbar" style="overscroll-behavior: contain; min-height: 200px;">
+                            <div class="overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 custom-scrollbar" style="overscroll-behavior: contain; min-height: 120px; max-height: 40vh;">
                                 <template x-for="(item, index) in cart" :key="index">
                                     <div class="group bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-violet-200 dark:hover:border-violet-800">
                                         <div class="flex items-center gap-4">
