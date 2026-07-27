@@ -8,6 +8,7 @@ use App\Filament\Widgets\StockAlert;
 use App\Filament\Widgets\WarehouseOverview;
 use App\Filament\Widgets\WarehouseStockSummary;
 use App\Filament\Widgets\QuickActionsWidget;
+use App\Filament\Widgets\TopProductsWidget;
 use App\Models\Warehouse;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -88,6 +89,7 @@ class Dashboard extends Page implements HasForms
     protected function getCustomFooterWidgets(): array
     {
         return [
+            TopProductsWidget::make(['selectedWarehouse' => $this->selectedWarehouse]),
             WarehouseOverview::make(['selectedWarehouse' => $this->selectedWarehouse]),
             WarehouseStockSummary::make(['selectedWarehouse' => $this->selectedWarehouse]),
         ];
