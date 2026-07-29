@@ -136,10 +136,44 @@ class CompanyObserver
     }
 
     /**
+     * Handle the Company "deleting" event.
+     *
+     * Certaines tables (stock_movements, inventory_items, stock_transfer_items)
+     * référencent products/warehouses en RESTRICT : elles bloquent la cascade
+     * de suppression de l'entreprise. On les supprime d'abord.
+     */
+    public function deleting(Company $company): void
+    {
+        $id = $company->id;
+
+        \DB::transaction(function () use ($id) {
+            // Mouvements de stock (product_id / warehouse_id en RESTRICT)
+            \DB::table('stock_movements')->where('company_id', $id)->delete();
+
+            // Transferts + lignes (product_id en RESTRICT)
+            $transferIds = \DB::table('stock_transfers')->where('company_id', $id)->pluck('id');
+            if ($transferIds->isNotEmpty()) {
+                \DB::table('stock_transfer_items')->whereIn('stock_transfer_id', $transferIds)->delete();
+            }
+            \DB::table('stock_transfers')->where('company_id', $id)->delete();
+
+            // Inventaires + lignes (product_id / warehouse_id en RESTRICT)
+            $inventoryIds = \DB::table('inventories')->where('company_id', $id)->pluck('id');
+            if ($inventoryIds->isNotEmpty()) {
+                \DB::table('inventory_items')->whereIn('inventory_id', $inventoryIds)->delete();
+            }
+            \DB::table('inventories')->where('company_id', $id)->delete();
+
+            // Emplacements de stock produit (pivot)
+            \DB::table('product_warehouse')->where('company_id', $id)->delete();
+        });
+    }
+
+    /**
      * Handle the Company "deleted" event.
      */
     public function deleted(Company $company): void
     {
-        // Les rôles seront supprimés en cascade grâce aux foreign keys
+        // Les rôles et autres relations sont supprimés en cascade (foreign keys)
     }
 }
