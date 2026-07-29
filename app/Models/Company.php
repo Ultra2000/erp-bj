@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Company extends Model
@@ -73,6 +75,64 @@ class Company extends Model
         static::deleted(function ($company) {
             $company->clearCache();
         });
+    }
+
+    /**
+     * Réinitialise l'entreprise : supprime TOUTES ses données métier
+     * (produits, ventes, achats, clients, fournisseurs, stock, factures,
+     * caisse, comptabilité...) tout en conservant l'entreprise elle-même,
+     * ses utilisateurs, ses rôles et ses entrepôts. N'affecte aucune autre
+     * entreprise. Suppression dans un ordre respectant les clés étrangères.
+     */
+    public function resetBusinessData(): void
+    {
+        $id = $this->id;
+
+        DB::transaction(function () use ($id) {
+            $wipe = function (string $table) use ($id) {
+                if (Schema::hasTable($table) && Schema::hasColumn($table, 'company_id')) {
+                    DB::table($table)->where('company_id', $id)->delete();
+                }
+            };
+
+            // 1. Tables aux FK RESTRICT vers products/warehouses (à vider en premier)
+            $wipe('stock_movements');
+
+            // 2. Parents qui cascadent vers leurs lignes (référencent products en RESTRICT)
+            $wipe('inventories');       // -> inventory_items (cascade)
+            $wipe('stock_transfers');   // -> stock_transfer_items (cascade)
+
+            // 3. Paiements (relations morph / sans cascade automatique)
+            $wipe('payments');
+            $wipe('purchase_payments');
+
+            // 4. Documents commerciaux (cascadent vers leurs lignes)
+            $wipe('sales');
+            $wipe('purchases');
+            $wipe('quotes');
+            $wipe('delivery_notes');
+            $wipe('recurring_orders');
+
+            // 5. Caisse
+            $wipe('cash_sessions');
+
+            // 6. Comptabilité / banque
+            $wipe('accounting_entries');
+            $wipe('bank_transactions');
+            $wipe('bank_accounts');
+
+            // 7. Stock produit (pivot) + produits
+            if (Schema::hasTable('product_warehouse') && Schema::hasColumn('product_warehouse', 'company_id')) {
+                DB::table('product_warehouse')->where('company_id', $id)->delete();
+            }
+            $wipe('products');
+
+            // 8. Tiers
+            $wipe('customers');
+            $wipe('suppliers');
+        });
+
+        $this->clearCache();
     }
 
     /**

@@ -249,6 +249,34 @@ class CompanyResource extends Resource
                                 ->send();
                         }
                     }),
+                Tables\Actions\Action::make('reset_data')
+                    ->label('Réinitialiser')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Réinitialiser l\'entreprise')
+                    ->modalDescription(fn (Company $record) => new \Illuminate\Support\HtmlString(
+                        'Toutes les données métier de <strong>' . e($record->name) . '</strong> seront <strong>supprimées définitivement</strong> : '
+                        . 'produits, ventes, achats, clients, fournisseurs, stock, factures, devis, caisse, comptabilité.<br><br>'
+                        . 'L\'entreprise, ses utilisateurs, ses rôles et ses entrepôts sont <strong>conservés</strong>. Les autres entreprises ne sont pas affectées.<br><br>'
+                        . '<span style="color:#b91c1c;font-weight:600;">Cette action est irréversible.</span>'
+                    ))
+                    ->modalSubmitActionLabel('Oui, tout réinitialiser')
+                    ->form([
+                        Forms\Components\TextInput::make('confirmation')
+                            ->label('Tapez le nom exact de l\'entreprise pour confirmer')
+                            ->required()
+                            ->rules([fn (Company $record) => 'in:' . $record->name])
+                            ->validationMessages(['in' => 'Le nom saisi ne correspond pas à l\'entreprise.']),
+                    ])
+                    ->action(function (Company $record) {
+                        $record->resetBusinessData();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Entreprise réinitialisée')
+                            ->body('Toutes les données métier de « ' . $record->name . ' » ont été supprimées.')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
