@@ -89,9 +89,16 @@ class CompanyObserver
      */
     protected function createDefaultWarehouse(Company $company): void
     {
+        // Le code entrepôt peut être unique globalement selon le schéma :
+        // garantir l'unicité pour ne pas bloquer la création d'une nouvelle entreprise.
+        $code = 'MAIN';
+        if (Warehouse::where('code', $code)->exists()) {
+            $code = 'MAIN-' . $company->id;
+        }
+
         Warehouse::create([
             'company_id' => $company->id,
-            'code' => 'MAIN',
+            'code' => $code,
             'name' => 'Entrepôt Principal',
             'type' => 'warehouse',
             'is_default' => true,
