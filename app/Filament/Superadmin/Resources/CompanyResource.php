@@ -278,6 +278,14 @@ class CompanyResource extends Resource
                             ->send();
                     }),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Supprimer')
+                    ->modalHeading('Supprimer l\'entreprise')
+                    ->modalDescription(fn (Company $record) => new \Illuminate\Support\HtmlString(
+                        'L\'entreprise <strong>' . e($record->name) . '</strong> et <strong>toutes ses données</strong> '
+                        . '(produits, ventes, achats, clients, stock, utilisateurs, rôles, entrepôts...) seront supprimées définitivement.<br><br>'
+                        . '<span style="color:#b91c1c;font-weight:600;">Cette action est irréversible.</span> Les autres entreprises ne sont pas affectées.'
+                    )),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
