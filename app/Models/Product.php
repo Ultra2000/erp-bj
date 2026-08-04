@@ -118,6 +118,43 @@ class Product extends Model
                 $model->code = $model->getOriginal('code');
             }
         });
+
+        // Avant suppression : nettoyer les enregistrements de stock internes qui
+        // référencent le produit en RESTRICT (sinon MySQL bloque avec une 500).
+        // Les documents commerciaux (ventes/achats) doivent être vérifiés en amont
+        // via hasCommercialHistory() : on ne les supprime jamais ici.
+        static::deleting(function ($model) {
+            $id = $model->id;
+            \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+                foreach (['stock_movements', 'stock_transfer_items', 'inventory_items', 'product_warehouse'] as $table) {
+                    if (\Illuminate\Support\Facades\Schema::hasTable($table)
+                        && \Illuminate\Support\Facades\Schema::hasColumn($table, 'product_id')) {
+                        \Illuminate\Support\Facades\DB::table($table)->where('product_id', $id)->delete();
+                    }
+                }
+            });
+        });
+    }
+
+    /**
+     * Indique si le produit est utilisé dans des documents commerciaux
+     * (lignes de vente ou d'achat). Dans ce cas il ne doit PAS être supprimé :
+     * ses lignes de facture seraient effacées en cascade, corrompant les
+     * totaux et les déclarations e-MCeF. Le désactiver/masquer est préférable.
+     */
+    public function hasCommercialHistory(): bool
+    {
+        $id = $this->id;
+
+        foreach (['sale_items', 'purchase_items'] as $table) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($table)
+                && \Illuminate\Support\Facades\Schema::hasColumn($table, 'product_id')
+                && \Illuminate\Support\Facades\DB::table($table)->where('product_id', $id)->exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

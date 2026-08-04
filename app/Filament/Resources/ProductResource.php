@@ -659,12 +659,35 @@ class ProductResource extends Resource
                         return redirect()->route('products.labels.print', $params);
                     }),
                 Tables\Actions\DeleteAction::make()
-                    ->label('Supprimer'),
+                    ->label('Supprimer')
+                    ->before(function (Product $record, Tables\Actions\DeleteAction $action) {
+                        if ($record->hasCommercialHistory()) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Suppression impossible')
+                                ->body('Ce produit est utilisé dans des ventes ou des achats. Supprimez-le priverait ces documents de leurs lignes. Retirez-le plutôt de la vente ou archivez-le.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                            $action->cancel();
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->label('Supprimer la sélection'),
+                        ->label('Supprimer la sélection')
+                        ->before(function (\Illuminate\Support\Collection $records, Tables\Actions\DeleteBulkAction $action) {
+                            $blocked = $records->filter(fn (Product $p) => $p->hasCommercialHistory());
+                            if ($blocked->isNotEmpty()) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Suppression impossible')
+                                    ->body($blocked->count() . ' produit(s) sont utilisés dans des ventes ou des achats et ne peuvent pas être supprimés : ' . $blocked->pluck('name')->take(10)->implode(', ') . '. Désélectionnez-les puis réessayez.')
+                                    ->danger()
+                                    ->persistent()
+                                    ->send();
+                                $action->cancel();
+                            }
+                        }),
                     Tables\Actions\BulkAction::make('print_labels')
                         ->label('Imprimer étiquettes')
                         ->icon('heroicon-o-printer')
