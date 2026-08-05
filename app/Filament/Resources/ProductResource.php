@@ -658,6 +658,105 @@ class ProductResource extends Resource
                         if(!empty($data['show_price'])){ $params['price'] = 1; }
                         return redirect()->route('products.labels.print', $params);
                     }),
+                Tables\Actions\Action::make('adjust_stock')
+                    ->label('Ajuster le stock')
+                    ->icon('heroicon-o-adjustments-horizontal')
+                    ->color('warning')
+                    ->modalHeading(fn (Product $record) => 'Ajuster le stock — ' . $record->name)
+                    ->modalDescription('Corrige la quantité réelle en stock. Un mouvement d\'ajustement traçable est créé automatiquement.')
+                    ->modalSubmitActionLabel('Enregistrer l\'ajustement')
+                    ->form(function (Product $record) {
+                        $warehouses = \App\Models\Warehouse::where('company_id', $record->company_id)
+                            ->where('is_active', true)
+                            ->orderByDesc('is_default')
+                            ->get();
+
+                        $options = [];
+                        foreach ($warehouses as $w) {
+                            $current = (float) $w->getProductStock($record->id);
+                            $options[$w->id] = $w->name . ' (stock actuel : ' . number_format($current, 0, ',', ' ') . ')';
+                        }
+
+                        $defaultId = $warehouses->firstWhere('is_default', true)?->id ?? $warehouses->first()?->id;
+
+                        return [
+                            Forms\Components\Select::make('warehouse_id')
+                                ->label('Entrepôt')
+                                ->options($options)
+                                ->default($defaultId)
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function ($state, Forms\Set $set) use ($record) {
+                                    if ($state) {
+                                        $w = \App\Models\Warehouse::find($state);
+                                        $set('new_quantity', $w ? (int) round($w->getProductStock($record->id)) : 0);
+                                    }
+                                }),
+                            Forms\Components\Placeholder::make('current_stock')
+                                ->label('Stock actuel dans cet entrepôt')
+                                ->content(function (Forms\Get $get) use ($record) {
+                                    $w = $get('warehouse_id') ? \App\Models\Warehouse::find($get('warehouse_id')) : null;
+                                    return $w ? number_format($w->getProductStock($record->id), 0, ',', ' ') . ' ' . ($record->unit ?? 'unités') : '—';
+                                }),
+                            Forms\Components\TextInput::make('new_quantity')
+                                ->label('Quantité réelle (corrigée)')
+                                ->helperText('Saisis la bonne quantité. Ex. : si tu avais mis 100 par erreur et qu\'il y en a 50, saisis 50.')
+                                ->numeric()
+                                ->minValue(0)
+                                ->required()
+                                ->default(function () use ($defaultId, $record) {
+                                    $w = $defaultId ? \App\Models\Warehouse::find($defaultId) : null;
+                                    return $w ? (int) round($w->getProductStock($record->id)) : 0;
+                                }),
+                            Forms\Components\TextInput::make('reason')
+                                ->label('Motif')
+                                ->placeholder('Ex. : correction saisie initiale')
+                                ->default('Correction manuelle du stock')
+                                ->maxLength(255),
+                        ];
+                    })
+                    ->action(function (Product $record, array $data) {
+                        $warehouse = \App\Models\Warehouse::find($data['warehouse_id']);
+                        if (! $warehouse) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Entrepôt introuvable')->danger()->send();
+                            return;
+                        }
+
+                        $current = (float) $warehouse->getProductStock($record->id);
+                        $target = (float) round((float) $data['new_quantity']);
+                        $delta = $target - $current;
+
+                        if ($delta == 0.0) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Aucun changement')
+                                ->body('La quantité saisie est identique au stock actuel.')
+                                ->warning()->send();
+                            return;
+                        }
+
+                        $type = $delta > 0 ? 'adjustment_in' : 'adjustment_out';
+
+                        try {
+                            $warehouse->adjustStock(
+                                $record->id,
+                                $delta,
+                                $type,
+                                $data['reason'] ?: 'Correction manuelle du stock',
+                            );
+                        } catch (\Throwable $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Ajustement impossible')
+                                ->body($e->getMessage())
+                                ->danger()->persistent()->send();
+                            return;
+                        }
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Stock ajusté')
+                            ->body($record->name . ' : ' . number_format($current, 0, ',', ' ') . ' → ' . number_format($target, 0, ',', ' ') . ' dans ' . $warehouse->name . '.')
+                            ->success()->send();
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->label('Supprimer')
                     ->before(function (Product $record, Tables\Actions\DeleteAction $action) {
