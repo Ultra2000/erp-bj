@@ -22,4 +22,14 @@ class EditPurchase extends EditRecord
     {
         return 'Modifier l\'achat';
     }
+
+    protected function afterSave(): void
+    {
+        // Le Repeater a enregistré/ajouté/supprimé les lignes, mais les totaux
+        // de l'achat ne sont pas recalculés automatiquement. On les recalcule
+        // depuis les lignes puis on rafraîchit les champs affichés (Total HT,
+        // TVA, Total TTC).
+        $this->record->recalculateTotals();
+        $this->refreshFormData(['total', 'total_ht', 'total_vat']);
+    }
 } 
