@@ -52,7 +52,7 @@ class CreancesClients extends Page implements HasTable
 
     public static function getNavigationBadge(): ?string
     {
-        $count = static::baseDebtorQuery()->count();
+        $count = static::baseInvoiceQuery()->count();
         return $count > 0 ? (string) $count : null;
     }
 
