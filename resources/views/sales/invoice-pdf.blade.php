@@ -487,6 +487,14 @@
                 <span class="status-badge {{ $statusClass }}">
                     {{ $statusLabels[$status] ?? ucfirst($status) }}
                 </span>
+                @php
+                    $payStatus = $sale->payment_status ?? 'unpaid';
+                    $payLabels = ['paid' => 'Payé', 'partial' => 'Partiellement payé', 'unpaid' => 'Non payé', 'pending' => 'Non payé'];
+                    $payColor = $payStatus === 'paid' ? '#166534' : '#b45309';
+                @endphp
+                <br><span class="status-badge" style="border-color:{{ $payColor }};color:{{ $payColor }};margin-top:4px;">
+                    {{ $payLabels[$payStatus] ?? 'Non payé' }}
+                </span>
             </td>
         </tr>
     </table>
@@ -664,6 +672,33 @@
                                 <td class="totals-value">{{ number_format($grandTotal + $sale->aib_amount, 0, ',', ' ') }} {{ $currency }}</td>
                             </tr>
                         </table>
+                    </div>
+                    @endif
+                    @php
+                        $netDueInv = $grandTotal + ($sale->aib_amount ?? 0);
+                        $amountPaidInv = (float) ($sale->amount_paid ?? 0);
+                        $remainingInv = max(0, round($netDueInv - $amountPaidInv));
+                    @endphp
+                    <div class="totals-row" style="border-top:1px dashed #ccc;">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label">Montant payé</td>
+                                <td class="totals-value">{{ number_format($amountPaidInv, 0, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @if($remainingInv > 0)
+                    <div class="totals-row grand-total">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label">RESTE À PAYER</td>
+                                <td class="totals-value">{{ number_format($remainingInv, 0, ',', ' ') }} {{ $currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @else
+                    <div class="totals-row" style="text-align:center;padding:4px 10px;font-size:8px;font-weight:bold;color:#166534;">
+                        FACTURE PAYÉE INTÉGRALEMENT
                     </div>
                     @endif
                     <div class="amount-words">
