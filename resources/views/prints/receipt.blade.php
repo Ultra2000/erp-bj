@@ -317,6 +317,15 @@
         @endif
     </div>
 
+    {{-- Marchandise payée mais laissée en magasin --}}
+    @if($sale->delivery_status === 'to_deliver')
+    <hr class="divider">
+    <div class="center bold" style="border:1px dashed #000;padding:6px;margin-top:4px;">
+        ⚠ MARCHANDISE À RETIRER<br>
+        <span class="small" style="font-weight:normal;">À présenter ce ticket lors du retrait</span>
+    </div>
+    @endif
+
     <hr class="divider">
 
     {{-- Informations de paiement --}}

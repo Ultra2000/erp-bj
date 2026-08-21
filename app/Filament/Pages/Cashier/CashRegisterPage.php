@@ -173,7 +173,8 @@ class CashRegisterPage extends Page
             paymentDetails: $payload['payment_details'] ?? null,
             customerId: $payload['customer_id'] ?? null,
             discountPercent: floatval($payload['discount_percent'] ?? 0),
-            warehouse: $warehouse
+            warehouse: $warehouse,
+            deliveryStatus: ($payload['delivery_status'] ?? 'delivered') === 'to_deliver' ? 'to_deliver' : 'delivered'
         );
     }
 }

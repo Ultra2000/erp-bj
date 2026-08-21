@@ -39,6 +39,8 @@ class Sale extends Model
         'aib_exempt',
         'status',
         'payment_status',
+        'delivery_status',
+        'delivered_at',
         'amount_paid',
         'paid_at',
         'payment_method',
@@ -68,6 +70,8 @@ class Sale extends Model
     protected $casts = [
         'status' => 'string',
         'payment_status' => 'string',
+        'delivery_status' => 'string',
+        'delivered_at' => 'datetime',
         // Montants en FCFA : entiers
         'total' => 'integer',
         'total_ht' => 'integer',
@@ -620,6 +624,32 @@ class Sale extends Model
             'partial' => 'Partiel',
             default => 'Non payé',
         };
+    }
+
+    public function getDeliveryStatusLabelAttribute(): string
+    {
+        return match ($this->delivery_status) {
+            'to_deliver' => 'À retirer',
+            default => 'Retiré',
+        };
+    }
+
+    /**
+     * La marchandise est-elle encore à retirer par le client ?
+     */
+    public function isAwaitingCollection(): bool
+    {
+        return $this->delivery_status === 'to_deliver';
+    }
+
+    /**
+     * Marquer la marchandise comme retirée/remise au client.
+     */
+    public function markAsDelivered(): void
+    {
+        $this->delivery_status = 'delivered';
+        $this->delivered_at = now();
+        $this->saveQuietly();
     }
 
     public function updatePaymentStatus(): void

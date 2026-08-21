@@ -725,6 +725,11 @@ class SaleResource extends Resource
                         'partial' => 'Partiel',
                         default => 'Non payé',
                     }),
+                Tables\Columns\TextColumn::make('delivery_status')
+                    ->label('Retrait')
+                    ->badge()
+                    ->color(fn (?string $state): string => $state === 'to_deliver' ? 'warning' : 'success')
+                    ->formatStateUsing(fn (?string $state): string => $state === 'to_deliver' ? 'À retirer' : 'Retiré'),
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
                     ->getStateUsing(fn (Sale $record) => $record->total + ($record->aib_amount ?? 0))
@@ -821,6 +826,12 @@ class SaleResource extends Resource
                         'completed' => 'Terminée',
                         'cancelled' => 'Annulée',
                     ]),
+                Tables\Filters\SelectFilter::make('delivery_status')
+                    ->label('Retrait')
+                    ->options([
+                        'to_deliver' => 'À retirer',
+                        'delivered' => 'Retiré',
+                    ]),
             ])
             ->deferLoading() // Optimisation: Chargement différé via AJAX
             ->defaultSort('created_at', 'desc')
@@ -829,6 +840,21 @@ class SaleResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->label('Voir'),
+                Tables\Actions\Action::make('mark_delivered')
+                    ->label('Marquer comme retiré')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmer le retrait')
+                    ->modalDescription(fn (Sale $record) => 'Confirmer que le client a récupéré la marchandise de la vente ' . $record->invoice_number . ' ?')
+                    ->visible(fn (Sale $record) => $record->delivery_status === 'to_deliver')
+                    ->action(function (Sale $record) {
+                        $record->markAsDelivered();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Marchandise retirée')
+                            ->body('La vente ' . $record->invoice_number . ' est marquée comme retirée.')
+                            ->success()->send();
+                    }),
                 Tables\Actions\EditAction::make()
                     ->label('Modifier')
                     ->hidden(fn (Sale $record) => $record->status === 'completed'),

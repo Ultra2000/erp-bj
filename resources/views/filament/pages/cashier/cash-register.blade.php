@@ -517,6 +517,28 @@
                                         </label>
                                     </template>
 
+                                    {{-- Toggle « À retirer » : marchandise payée mais laissée en magasin --}}
+                                    <template x-if="cart.length > 0">
+                                        <label class="mt-2 flex items-center justify-between py-2.5 px-3 rounded-xl border-2 cursor-pointer select-none transition-all"
+                                               :class="deliveryStatus === 'to_deliver' ? 'bg-teal-50 dark:bg-teal-900/20 border-teal-400 dark:border-teal-600' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-gray-300'">
+                                            <div class="flex items-center gap-2.5">
+                                                <svg class="w-5 h-5 flex-shrink-0" :class="deliveryStatus === 'to_deliver' ? 'text-teal-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                                <span class="text-sm font-semibold" :class="deliveryStatus === 'to_deliver' ? 'text-teal-700 dark:text-teal-300' : 'text-gray-600 dark:text-gray-300'">
+                                                    <span x-text="deliveryStatus === 'to_deliver' ? 'À retirer (laissé en magasin)' : 'Emporté immédiatement'"></span>
+                                                </span>
+                                            </div>
+                                            <button type="button"
+                                                    @click="deliveryStatus = deliveryStatus === 'to_deliver' ? 'delivered' : 'to_deliver'"
+                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 flex-shrink-0"
+                                                    :class="deliveryStatus === 'to_deliver' ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-500'"
+                                                    role="switch"
+                                                    :aria-checked="deliveryStatus === 'to_deliver'">
+                                                <span class="absolute top-[3px] left-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform duration-200"
+                                                      :class="deliveryStatus === 'to_deliver' ? 'translate-x-5' : 'translate-x-0'"></span>
+                                            </button>
+                                        </label>
+                                    </template>
+
                                     {{-- Montant payé (paiement partiel) --}}
                                     <template x-if="isPartialPayment && cart.length > 0">
                                         <div class="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800"
@@ -1369,6 +1391,7 @@
                 receivedAmount: '',
                 isPartialPayment: false,
                 amountPaid: '',
+                deliveryStatus: 'delivered',
                 processing: false,
                 
                 // Scanner
@@ -1814,6 +1837,7 @@
                     this.receivedAmount = '';
                     this.isPartialPayment = false;
                     this.amountPaid = '';
+                    this.deliveryStatus = 'delivered';
                 },
                 
                 // Sous-total (avant remise)
@@ -1854,6 +1878,7 @@
                             items: soldItems,
                             payment_method: this.paymentMethod,
                             discount_percent: this.cartSubtotal > 0 ? (this.discountAmount / this.cartSubtotal * 100) : 0,
+                            delivery_status: this.deliveryStatus,
                             total: this.cartTotal
                         };
                         if (this.isPartialPayment && this.amountPaid !== '') {
@@ -1882,6 +1907,7 @@
                             this.receivedAmount = '';
                             this.isPartialPayment = false;
                             this.amountPaid = '';
+                            this.deliveryStatus = 'delivered';
                             this.sessionStats = data.session;
 
                             // Mise à jour locale immédiate du stock affiché

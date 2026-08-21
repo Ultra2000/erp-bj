@@ -310,7 +310,8 @@ class PosService
         ?int $customerId = null,
         float $discountPercent = 0,
         ?Warehouse $warehouse = null,
-        ?float $amountPaid = null
+        ?float $amountPaid = null,
+        string $deliveryStatus = 'delivered'
     ): array {
         if (empty($items)) {
             return ['success' => false, 'message' => 'Le panier est vide'];
@@ -389,7 +390,7 @@ class PosService
             $sale = DB::transaction(function () use (
                 $companyId, $session, $company,
                 $paymentMethod, $paymentDetails, $customerId, $discountPercent,
-                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse, $amountPaid
+                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse, $amountPaid, $deliveryStatus
             ) {
                 // Client comptoir par défaut
                 $resolvedCustomerId = $customerId;
@@ -434,6 +435,8 @@ class PosService
                     'payment_details' => $paymentDetails,
                     'payment_status' => $paymentStatus,
                     'amount_paid' => $effectiveAmountPaid,
+                    'delivery_status' => $deliveryStatus === 'to_deliver' ? 'to_deliver' : 'delivered',
+                    'delivered_at' => $deliveryStatus === 'to_deliver' ? null : now(),
                     'status' => 'completed',
                     'discount_percent' => $discountPercent,
                     'tax_percent' => 0,
