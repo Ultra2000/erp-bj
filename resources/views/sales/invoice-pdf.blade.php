@@ -675,6 +675,13 @@
     </table>
 </div>
 
+<!-- MARCHANDISE À RETIRER -->
+@if($sale->delivery_status === 'to_deliver')
+<div style="border:1px dashed #b45309;background:#fffbeb;padding:8px 12px;margin-bottom:12px;font-size:9px;color:#92400e;">
+    <strong>Marchandise à retirer</strong> — Cette commande est payée mais n'a pas encore été retirée. Le présent document fait foi lors du retrait en magasin.
+</div>
+@endif
+
 <!-- NOTES -->
 @if($sale->notes)
 <div class="notes-box">

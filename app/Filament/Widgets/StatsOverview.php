@@ -92,6 +92,10 @@ class StatsOverview extends BaseWidget
             ->selectRaw('COALESCE(SUM((total + COALESCE(aib_amount, 0)) - COALESCE(amount_paid, 0)), 0) as due')
             ->value('due');
 
+        // ── Ventes payées, marchandise à retirer ──
+        $toCollect = (int) $this->salesQuery($warehouseIds)
+            ->where('delivery_status', 'to_deliver')->count();
+
         // ── Produits en alerte de stock ──
         $lowStock = Product::where('stock', '<', 10)->count();
 
@@ -122,6 +126,14 @@ class StatsOverview extends BaseWidget
                 ->description($receivables > 0 ? 'À recouvrer' : 'Tout est soldé')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($receivables > 0 ? 'warning' : 'success'),
+
+            Stat::make('Ventes à retirer', $toCollect)
+                ->description($toCollect > 0 ? 'Marchandise en attente de retrait' : 'Rien en attente')
+                ->descriptionIcon('heroicon-m-archive-box')
+                ->color($toCollect > 0 ? 'warning' : 'success')
+                ->url($toCollect > 0
+                    ? \App\Filament\Resources\SaleResource::getUrl('index', ['tableFilters' => ['delivery_status' => ['value' => 'to_deliver']]])
+                    : null),
 
             Stat::make('Produits en alerte', $lowStock)
                 ->description($warehouseLabel . ' - Stock faible')
