@@ -42,6 +42,9 @@ class CreancesClients extends Page implements HasTable
         // Le tri d'un mode ne s'applique pas à l'autre (colonnes différentes)
         $this->tableSortColumn = null;
         $this->tableSortDirection = null;
+        // Filament met le tableau en cache au boot : le reconstruire pour que
+        // le changement de mode prenne effet dès ce clic (sinon décalage d'un cran).
+        $this->resetTable();
     }
 
     public static function canAccess(): bool
