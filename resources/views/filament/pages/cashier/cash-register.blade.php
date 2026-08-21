@@ -507,8 +507,8 @@
                                             </div>
                                             <button type="button"
                                                     @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''; if (isPartialPayment) isCreditSale = false"
-                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 flex-shrink-0"
-                                                    :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-500'"
+                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex-shrink-0"
+                                                    :class="isPartialPayment ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-500'"
                                                     role="switch"
                                                     :aria-checked="isPartialPayment">
                                                 <span class="absolute top-[3px] left-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform duration-200"
@@ -527,8 +527,8 @@
                                             </div>
                                             <button type="button"
                                                     @click="isCreditSale = !isCreditSale; if (isCreditSale) { isPartialPayment = false; amountPaid = ''; }"
-                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 flex-shrink-0"
-                                                    :class="isCreditSale ? 'bg-rose-500' : 'bg-gray-300 dark:bg-gray-500'"
+                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex-shrink-0"
+                                                    :class="isCreditSale ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-500'"
                                                     role="switch"
                                                     :aria-checked="isCreditSale">
                                                 <span class="absolute top-[3px] left-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform duration-200"
@@ -557,8 +557,8 @@
                                             </div>
                                             <button type="button"
                                                     @click="deliveryStatus = deliveryStatus === 'to_deliver' ? 'delivered' : 'to_deliver'"
-                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 flex-shrink-0"
-                                                    :class="deliveryStatus === 'to_deliver' ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-500'"
+                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 flex-shrink-0"
+                                                    :class="deliveryStatus === 'to_deliver' ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-500'"
                                                     role="switch"
                                                     :aria-checked="deliveryStatus === 'to_deliver'">
                                                 <span class="absolute top-[3px] left-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform duration-200"
