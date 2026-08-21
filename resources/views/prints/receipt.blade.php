@@ -301,6 +301,20 @@
             <span>TOTAL TTC</span>
             <span>{{ number_format($sale->total, 0, ',', ' ') }} FCFA</span>
         </div>
+
+        {{-- Paiement partiel : montant payé et reste à payer --}}
+        @php $remainingToPay = $sale->remaining_amount; @endphp
+        @if($sale->payment_status === 'partial' || $sale->payment_status === 'unpaid' || $remainingToPay > 0)
+        <hr class="divider">
+        <div class="total-row">
+            <span>Montant payé</span>
+            <span>{{ number_format($sale->amount_paid, 0, ',', ' ') }} FCFA</span>
+        </div>
+        <div class="total-row grand">
+            <span>RESTE À PAYER</span>
+            <span>{{ number_format($remainingToPay, 0, ',', ' ') }} FCFA</span>
+        </div>
+        @endif
     </div>
 
     <hr class="divider">
