@@ -34,7 +34,7 @@ class CreancesClients extends Page implements HasTable
     protected static string $view = 'filament.pages.creances-clients';
 
     /** Mode d'affichage du tableau : 'client' (regroupé) ou 'facture' (détaillé). */
-    public ?string $viewMode = 'client';
+    public ?string $viewMode = 'facture';
 
     public function toggleViewMode(): void
     {
