@@ -33,6 +33,17 @@ class CreancesClients extends Page implements HasTable
 
     protected static string $view = 'filament.pages.creances-clients';
 
+    /** Mode d'affichage du tableau : 'client' (regroupé) ou 'facture' (détaillé). */
+    public ?string $viewMode = 'client';
+
+    public function toggleViewMode(): void
+    {
+        $this->viewMode = $this->viewMode === 'client' ? 'facture' : 'client';
+        // Le tri d'un mode ne s'applique pas à l'autre (colonnes différentes)
+        $this->tableSortColumn = null;
+        $this->tableSortDirection = null;
+    }
+
     public static function canAccess(): bool
     {
         $user = auth()->user();
@@ -55,6 +66,12 @@ class CreancesClients extends Page implements HasTable
         $companyId = Filament::getTenant()?->id;
 
         return [
+            HeaderAction::make('toggleView')
+                ->label(fn () => $this->viewMode === 'client' ? 'Voir par facture' : 'Regrouper par client')
+                ->icon(fn () => $this->viewMode === 'client' ? 'heroicon-o-document-text' : 'heroicon-o-users')
+                ->color('gray')
+                ->action(fn () => $this->toggleViewMode()),
+
             HeaderAction::make('exportPdf')
                 ->label('Export PDF')
                 ->icon('heroicon-o-document-arrow-down')
@@ -104,6 +121,27 @@ class CreancesClients extends Page implements HasTable
     }
 
     /**
+     * Requête « par facture » : chaque vente constituant une dette, avec le
+     * reste dû calculé, pour l'affichage détaillé.
+     */
+    protected static function invoicesBuilderFor(int $companyId): Builder
+    {
+        $cond = static::debtConditionSql();
+
+        return Sale::withoutGlobalScopes()
+            ->where('sales.company_id', $companyId)
+            ->whereRaw('(' . $cond . ')')
+            ->with('customer')
+            ->select('sales.*')
+            ->selectRaw('((sales.total + COALESCE(sales.aib_amount, 0)) - COALESCE(sales.amount_paid, 0)) as debt_remaining');
+    }
+
+    protected static function baseInvoiceQuery(): Builder
+    {
+        return static::invoicesBuilderFor((int) (Filament::getTenant()?->id));
+    }
+
+    /**
      * Données normalisées des créances d'une entreprise (pour les exports PDF/CSV).
      */
     public static function debtorsForCompany(int $companyId): array
@@ -129,6 +167,16 @@ class CreancesClients extends Page implements HasTable
     }
 
     public function table(Table $table): Table
+    {
+        return $this->viewMode === 'facture'
+            ? $this->invoiceTable($table)
+            : $this->clientTable($table);
+    }
+
+    /**
+     * Vue regroupée par client (comportement historique).
+     */
+    protected function clientTable(Table $table): Table
     {
         return $table
             ->query(static::baseDebtorQuery())
@@ -228,6 +276,117 @@ class CreancesClients extends Page implements HasTable
             ->defaultSort('debt_total', 'desc')
             ->striped()
             ->emptyStateHeading('Aucune créance')
+            ->emptyStateDescription('Toutes les factures clients sont soldées.')
+            ->emptyStateIcon('heroicon-o-check-circle');
+    }
+
+    /**
+     * Vue détaillée : une ligne par facture impayée.
+     */
+    protected function invoiceTable(Table $table): Table
+    {
+        return $table
+            ->query(static::baseInvoiceQuery())
+            ->columns([
+                TextColumn::make('invoice_number')
+                    ->label('Facture')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold'),
+
+                TextColumn::make('customer.name')
+                    ->label('Client')
+                    ->searchable()
+                    ->sortable()
+                    ->description(fn (Sale $record) => optional($record->customer)->registration_number
+                        ? 'IFU : ' . $record->customer->registration_number
+                        : null),
+
+                TextColumn::make('created_at')
+                    ->label('Date')
+                    ->date('d/m/Y')
+                    ->sortable(),
+
+                TextColumn::make('net_total')
+                    ->label('Total')
+                    ->alignEnd()
+                    ->state(fn (Sale $record) => (float) $record->total + (float) ($record->aib_amount ?? 0))
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 0, ',', ' ') . ' FCFA'),
+
+                TextColumn::make('amount_paid')
+                    ->label('Payé')
+                    ->alignEnd()
+                    ->color('success')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 0, ',', ' ') . ' FCFA'),
+
+                TextColumn::make('debt_remaining')
+                    ->label('Reste dû')
+                    ->alignEnd()
+                    ->weight('bold')
+                    ->color('danger')
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 0, ',', ' ') . ' FCFA'),
+
+                TextColumn::make('payment_status')
+                    ->label('Statut')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'partial' ? 'warning' : 'danger')
+                    ->formatStateUsing(fn ($state) => $state === 'partial' ? 'Partiel' : 'Non payé'),
+
+                TextColumn::make('created_at')
+                    ->label('Ancienneté')
+                    ->badge()
+                    ->color(fn (Sale $record) => $this->ageColor((int) $record->created_at->startOfDay()->diffInDays(now()->startOfDay())))
+                    ->state(function (Sale $record) {
+                        $days = (int) $record->created_at->startOfDay()->diffInDays(now()->startOfDay());
+                        return $days . ' jour' . ($days > 1 ? 's' : '');
+                    }),
+            ])
+            ->filters([
+                SelectFilter::make('anciennete')
+                    ->label('Ancienneté minimale')
+                    ->options([
+                        '7' => 'Plus de 7 jours',
+                        '15' => 'Plus de 15 jours',
+                        '30' => 'Plus de 30 jours',
+                        '60' => 'Plus de 60 jours',
+                        '90' => 'Plus de 90 jours',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+                        $cutoff = now()->subDays((int) $data['value'])->toDateTimeString();
+                        return $query->where('sales.created_at', '<=', $cutoff);
+                    }),
+                SelectFilter::make('payment_status')
+                    ->label('Statut')
+                    ->options([
+                        'unpaid' => 'Non payé',
+                        'partial' => 'Paiement partiel',
+                    ]),
+            ])
+            ->actions([
+                Action::make('encaisser')
+                    ->label('Encaisser')
+                    ->icon('heroicon-m-banknotes')
+                    ->color('success')
+                    ->url(fn (Sale $record) => CashRegisterPage::getUrl([
+                        'tab' => 'encaisser',
+                        'client' => optional($record->customer)->name,
+                    ]))
+                    ->visible(fn () => auth()->user()?->isAdmin() || auth()->user()?->hasPermission('pos.collect')),
+
+                Action::make('facture')
+                    ->label('Facture')
+                    ->icon('heroicon-m-document-arrow-down')
+                    ->color('gray')
+                    ->url(fn (Sale $record) => route('sales.invoice', $record))
+                    ->openUrlInNewTab(),
+            ])
+            ->defaultSort('created_at', 'asc')
+            ->striped()
+            ->emptyStateHeading('Aucune facture impayée')
             ->emptyStateDescription('Toutes les factures clients sont soldées.')
             ->emptyStateIcon('heroicon-o-check-circle');
     }
