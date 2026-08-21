@@ -506,7 +506,7 @@
                                                 <span class="text-sm font-semibold" :class="isPartialPayment ? 'text-amber-700 dark:text-amber-300' : 'text-gray-600 dark:text-gray-300'">Paiement partiel</span>
                                             </div>
                                             <button type="button"
-                                                    @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''"
+                                                    @click="isPartialPayment = !isPartialPayment; if (!isPartialPayment) amountPaid = ''; if (isPartialPayment) isCreditSale = false"
                                                     class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 flex-shrink-0"
                                                     :class="isPartialPayment ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-500'"
                                                     role="switch"
@@ -515,6 +515,34 @@
                                                       :class="isPartialPayment ? 'translate-x-5' : 'translate-x-0'"></span>
                                             </button>
                                         </label>
+                                    </template>
+
+                                    {{-- Toggle « À crédit » : vente non payée, montant total dû --}}
+                                    <template x-if="cart.length > 0">
+                                        <label class="mt-2 flex items-center justify-between py-2.5 px-3 rounded-xl border-2 cursor-pointer select-none transition-all"
+                                               :class="isCreditSale ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-400 dark:border-rose-600' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-gray-300'">
+                                            <div class="flex items-center gap-2.5">
+                                                <svg class="w-5 h-5 flex-shrink-0" :class="isCreditSale ? 'text-rose-500' : 'text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                                <span class="text-sm font-semibold" :class="isCreditSale ? 'text-rose-700 dark:text-rose-300' : 'text-gray-600 dark:text-gray-300'">À crédit (payer plus tard)</span>
+                                            </div>
+                                            <button type="button"
+                                                    @click="isCreditSale = !isCreditSale; if (isCreditSale) { isPartialPayment = false; amountPaid = ''; }"
+                                                    class="relative w-12 h-7 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 flex-shrink-0"
+                                                    :class="isCreditSale ? 'bg-rose-500' : 'bg-gray-300 dark:bg-gray-500'"
+                                                    role="switch"
+                                                    :aria-checked="isCreditSale">
+                                                <span class="absolute top-[3px] left-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform duration-200"
+                                                      :class="isCreditSale ? 'translate-x-5' : 'translate-x-0'"></span>
+                                            </button>
+                                        </label>
+                                    </template>
+
+                                    {{-- Bandeau info vente à crédit --}}
+                                    <template x-if="isCreditSale && cart.length > 0">
+                                        <div class="mt-2 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl border border-rose-200 dark:border-rose-800 flex items-center justify-between">
+                                            <span class="text-sm text-rose-700 dark:text-rose-400 font-semibold">0 F encaissé — montant total dû</span>
+                                            <span class="font-black text-base text-rose-600" x-text="formatPrice(cartTotal)"></span>
+                                        </div>
                                     </template>
 
                                     {{-- Toggle « À retirer » : marchandise payée mais laissée en magasin --}}
@@ -568,7 +596,7 @@
                                     </template>
 
                                     {{-- Montant reçu et Monnaie (Cash uniquement) --}}
-                                    <template x-if="paymentMethod === 'cash' && cart.length > 0 && !isPartialPayment">
+                                    <template x-if="paymentMethod === 'cash' && cart.length > 0 && !isPartialPayment && !isCreditSale">
                                         <div class="mt-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800"
                                              x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 transform -translate-y-2"
@@ -670,7 +698,7 @@
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                     <button @click="processSale()"
-                                            :disabled="cart.length === 0 || processing || (paymentMethod === 'cash' && !isPartialPayment && receivedAmount && changeAmount < 0) || (isPartialPayment && (amountPaid === '' || parseFloat(amountPaid) <= 0 || parseFloat(amountPaid) > cartTotal))"
+                                            :disabled="cart.length === 0 || processing || (paymentMethod === 'cash' && !isPartialPayment && !isCreditSale && receivedAmount && changeAmount < 0) || (isPartialPayment && (amountPaid === '' || parseFloat(amountPaid) <= 0 || parseFloat(amountPaid) > cartTotal))"
                                             class="col-span-4 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                             style="background: linear-gradient(to right, #10b981, #14b8a6); color: white; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);"
                                             onmouseover="this.style.background='linear-gradient(to right, #059669, #0d9488)'"
@@ -1391,6 +1419,7 @@
                 receivedAmount: '',
                 isPartialPayment: false,
                 amountPaid: '',
+                isCreditSale: false,
                 deliveryStatus: 'delivered',
                 processing: false,
                 
@@ -1837,6 +1866,7 @@
                     this.receivedAmount = '';
                     this.isPartialPayment = false;
                     this.amountPaid = '';
+                    this.isCreditSale = false;
                     this.deliveryStatus = 'delivered';
                 },
                 
@@ -1881,7 +1911,9 @@
                             delivery_status: this.deliveryStatus,
                             total: this.cartTotal
                         };
-                        if (this.isPartialPayment && this.amountPaid !== '') {
+                        if (this.isCreditSale) {
+                            payload.amount_paid = 0;
+                        } else if (this.isPartialPayment && this.amountPaid !== '') {
                             payload.amount_paid = parseFloat(this.amountPaid) || 0;
                         }
 
@@ -1899,7 +1931,7 @@
                             this.lastInvoiceNumber = data.invoice_number || null;
                             this.lastEmcefResult = data.emcef || null;
                             this.lastPaymentStatus = data.payment_status || 'paid';
-                            this.lastAmountPaid = data.amount_paid || this.cartTotal;
+                            this.lastAmountPaid = (data.amount_paid ?? this.cartTotal);
                             this.lastRemaining = data.remaining || 0;
                             this.showSuccessModal = true;
                             this.cart = [];
@@ -1907,6 +1939,7 @@
                             this.receivedAmount = '';
                             this.isPartialPayment = false;
                             this.amountPaid = '';
+                            this.isCreditSale = false;
                             this.deliveryStatus = 'delivered';
                             this.sessionStats = data.session;
 
