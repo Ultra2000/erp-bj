@@ -36,7 +36,7 @@
         </div>
         <div class="box">
             <span class="label">Date</span>
-            <div>{{ $date->format('d/m/Y H:i') }}</div>
+            <div>@dt($date, 'd/m/Y H:i')</div>
         </div>
         <div class="box">
             <span class="label">Code de contrôle</span>
@@ -69,7 +69,7 @@
     <p style="margin-top:28px;font-size:13px;">Si ce code et ces montants ne correspondent pas à la facture physique/PDF en votre possession, contactez immédiatement l'émetteur.</p>
 
     <footer>
-        Page de vérification générée le {{ now()->format('d/m/Y H:i') }} | Lien signé Laravel
+        Page de vérification générée le @dt(now(), 'd/m/Y H:i') | Lien signé Laravel
     </footer>
 </div>
 </body>

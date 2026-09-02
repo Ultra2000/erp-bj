@@ -443,7 +443,7 @@
             @if($settings && $settings->registration_number) SIRET: {{ $settings->registration_number }} - @endif
             @if($settings && $settings->tax_number) TVA: {{ $settings->tax_number }} - @endif
             <br>
-            Document généré le {{ now()->format('d/m/Y à H:i') }}
+            Document généré le @dt(now())
         </div>
     </div>
 </body>

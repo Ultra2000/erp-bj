@@ -468,7 +468,7 @@
                             <td class="text-right">{{ number_format($invoice->total_ht, 0, ',', ' ') }}</td>
                             <td class="text-right">{{ number_format($invoice->total_vat, 0, ',', ' ') }}</td>
                             <td class="text-right font-bold">{{ number_format($invoice->total, 0, ',', ' ') }}</td>
-                            <td>{{ $invoice->emcef_certified_at?->format('d/m/Y H:i') }}</td>
+                            <td>@dt($invoice->emcef_certified_at, 'd/m/Y H:i')</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -487,7 +487,7 @@
     @endif
 
     <div class="footer">
-        Rapport généré le {{ now()->format('d/m/Y à H:i') }} • {{ $company->name }} • IFU: {{ $company->tax_number ?? 'N/A' }}<br>
+        Rapport généré le @dt(now()) • {{ $company->name }} • IFU: {{ $company->tax_number ?? 'N/A' }}<br>
         Ce document est un récapitulatif interne. Les données officielles sont celles enregistrées sur la plateforme e-MCeF de la DGI.
     </div>
 </body>

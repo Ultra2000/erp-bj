@@ -383,11 +383,11 @@
 
         @if($quote->status === 'accepted')
             <div class="status-banner status-accepted">
-                ✓ Ce devis a été accepté le {{ $quote->accepted_at->format('d/m/Y à H:i') }}
+                ✓ Ce devis a été accepté le @dt($quote->accepted_at)
             </div>
         @elseif($quote->status === 'rejected')
             <div class="status-banner status-rejected">
-                ✗ Ce devis a été refusé le {{ $quote->rejected_at->format('d/m/Y à H:i') }}
+                ✗ Ce devis a été refusé le @dt($quote->rejected_at)
                 @if($quote->refusal_reason)
                     <div style="margin-top: 8px; font-weight: 400;">Motif : {{ $quote->refusal_reason }}</div>
                 @endif

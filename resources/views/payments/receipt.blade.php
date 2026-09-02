@@ -391,7 +391,7 @@
             <td class="invoice-title">
                 <div class="invoice-label">Reçu N°</div>
                 <div class="invoice-number">REC-{{ str_pad($payment->id, 6, '0', STR_PAD_LEFT) }}</div>
-                <div class="invoice-date">{{ $payment->payment_date->format('d/m/Y') }}</div>
+                <div class="invoice-date">@dt($payment->payment_date, 'd/m/Y')</div>
                 <span class="status-badge">Paiement reçu</span>
             </td>
         </tr>
@@ -409,7 +409,7 @@
                         Mode : {{ \App\Models\Payment::METHODS[$payment->payment_method] ?? ucfirst($payment->payment_method) }}<br>
                         @if($payment->reference)Référence : {{ $payment->reference }}<br>@endif
                         Reçu par : {{ $payment->creator?->name ?? 'N/A' }}<br>
-                        Heure : {{ $payment->payment_date->format('H:i') }}
+                        Heure : @dt($payment->payment_date, 'H:i')
                     </div>
                 </div>
             </td>
@@ -447,7 +447,7 @@
     </tr>
     <tr>
         <td class="details-label">Date facture</td>
-        <td class="details-value">{{ $sale->created_at->format('d/m/Y') }}</td>
+        <td class="details-value">@dt($sale->created_at, 'd/m/Y')</td>
     </tr>
     @if($sale->emcef_nim)
     <tr>
@@ -539,7 +539,7 @@
 
 <!-- FOOTER -->
 <div class="footer">
-    Reçu généré le {{ now()->format('d/m/Y à H:i') }}<br>
+    Reçu généré le @dt(now())<br>
     Règlement de la Facture N° {{ $sale->invoice_number }}
     @if($sale->emcef_nim)
         — Facture certifiée e-MCeF — NIM: {{ $sale->emcef_nim }}

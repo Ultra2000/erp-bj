@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapport de Caisse - {{ $session->opened_at->format('d/m/Y') }}</title>
+    <title>Rapport de Caisse - @dt($session->opened_at, 'd/m/Y')</title>
     <style>
         @page { size: A4; margin: 0; }
 
@@ -215,7 +215,7 @@
             @if($company)
                 <div class="company">{{ $company->name }}</div>
             @endif
-            <div class="date">{{ $session->opened_at->format('d/m/Y') }} - 
+            <div class="date">@dt($session->opened_at, 'd/m/Y') - 
                 @if($session->closed_at)
                     <span class="status-closed">Session clôturée</span>
                 @else
@@ -241,11 +241,11 @@
                         <div class="info-grid">
                             <div class="info-row">
                                 <div class="info-label">Ouverture</div>
-                                <div class="info-value">{{ $session->opened_at->format('d/m/Y H:i') }}</div>
+                                <div class="info-value">@dt($session->opened_at, 'd/m/Y H:i')</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">Fermeture</div>
-                                <div class="info-value">{{ $session->closed_at ? $session->closed_at->format('d/m/Y H:i') : 'En cours' }}</div>
+                                <div class="info-value">{{ $session->closed_at ? \App\Support\DateHelper::fmt($session->closed_at, 'd/m/Y H:i') : 'En cours' }}</div>
                             </div>
                             <div class="info-row">
                                 <div class="info-label">Durée</div>
@@ -378,7 +378,7 @@
                     @foreach($sales as $sale)
                     <tr>
                         <td>{{ $sale->invoice_number }}</td>
-                        <td>{{ $sale->created_at->format('H:i') }}</td>
+                        <td>@dt($sale->created_at, 'H:i')</td>
                         <td class="center">
                             @switch($sale->payment_method)
                                 @case('cash') ESP @break
@@ -415,7 +415,7 @@
                     <tr>
                         <td>{{ $sale?->invoice_number ?? '-' }}</td>
                         <td>{{ $sale?->customer?->name ?? 'Client comptoir' }}</td>
-                        <td>{{ $payment->created_at->format('H:i') }}</td>
+                        <td>@dt($payment->created_at, 'H:i')</td>
                         <td class="center">
                             @switch($payment->payment_method)
                                 @case('cash') ESP @break
@@ -437,7 +437,7 @@
         @endif
 
         <div class="footer">
-            Rapport généré le {{ now()->format('d/m/Y à H:i') }} | GestStock POS
+            Rapport généré le @dt(now()) | GestStock POS
         </div>
     </div>
 </body>

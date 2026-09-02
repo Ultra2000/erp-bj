@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>État des Stocks - {{ $generatedAt->format('d/m/Y H:i') }}</title>
+    <title>État des Stocks - @dt($generatedAt, 'd/m/Y H:i')</title>
     <style>
         @page {
             size: A4 landscape;
@@ -156,7 +156,7 @@
     <div class="header">
         <h1>📦 ÉTAT DES STOCKS</h1>
         <div class="company">{{ $company->name ?? 'Entreprise' }}</div>
-        <div class="date">Généré le {{ $generatedAt->format('d/m/Y à H:i') }}</div>
+        <div class="date">Généré le @dt($generatedAt)</div>
     </div>
 
     {{-- Statistiques globales --}}
@@ -250,7 +250,7 @@
     @endforeach
 
     <div class="footer">
-        {{ $company->name ?? 'GestStock' }} - État des stocks généré le {{ $generatedAt->format('d/m/Y H:i') }} - Page <span class="pagenum"></span>
+        {{ $company->name ?? 'GestStock' }} - État des stocks généré le @dt($generatedAt, 'd/m/Y H:i') - Page <span class="pagenum"></span>
     </div>
 </body>
 </html>

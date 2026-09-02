@@ -628,7 +628,7 @@
                 {{ $purchase->invoice_number }}
             </div>
             <div class="invoice-date">
-                {{ $purchase->created_at->format('d M Y') }}
+                @dt($purchase->created_at, 'd M Y')
             </div>
             <div style="margin-top: 16px;">
                 <span class="status-badge {{ $statusClass }}">

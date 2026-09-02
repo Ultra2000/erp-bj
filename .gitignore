@@ -25,3 +25,4 @@ Thumbs.db
 
 # Cache de polices DomPDF (généré)
 storage/fonts/*.ufm.json
+storage/fonts/*.afm.json

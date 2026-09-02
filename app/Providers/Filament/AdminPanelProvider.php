@@ -125,7 +125,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentFullCalendarPlugin::make()
                     ->selectable(true)
                     ->editable(true)
-                    ->timezone('Europe/Paris')
+                    ->timezone(config('app.display_timezone', 'Africa/Porto-Novo'))
                     ->locale('fr'),
             ])
             ->middleware([

@@ -311,7 +311,7 @@
     </div>
 
     <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #6b7280;">
-        Document généré le {{ now()->format('d/m/Y à H:i') }} | {{ $transfer->reference }}
+        Document généré le @dt(now()) | {{ $transfer->reference }}
     </div>
 </body>
 </html>

@@ -68,6 +68,12 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Fuseau horaire d'AFFICHAGE (les dates restent stockées en UTC).
+    | Bénin = Africa/Porto-Novo (UTC+1, sans heure d'été).
+    */
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Africa/Porto-Novo'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

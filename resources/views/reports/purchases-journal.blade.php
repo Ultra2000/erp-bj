@@ -176,7 +176,7 @@
                     };
                 @endphp
                 <tr>
-                    <td>{{ $purchase->created_at->format('d/m/Y') }}</td>
+                    <td>@dt($purchase->created_at, 'd/m/Y')</td>
                     <td><strong>{{ $purchase->reference ?? $purchase->id }}</strong></td>
                     <td>{{ Str::limit($purchase->supplier?->name ?? 'Fournisseur inconnu', 25) }}</td>
                     <td class="{{ $statusClass }}">{{ $statusLabel }}</td>
@@ -197,7 +197,7 @@
     </table>
 
     <div class="footer">
-        {{ $company->name ?? 'GestStock' }} - Journal des achats du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }} - Généré le {{ $generatedAt->format('d/m/Y H:i') }}
+        {{ $company->name ?? 'GestStock' }} - Journal des achats du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }} - Généré le @dt($generatedAt, 'd/m/Y H:i')
     </div>
 </body>
 </html>

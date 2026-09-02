@@ -544,7 +544,7 @@
                 {{ $sale->invoice_number }}
             </div>
             <div class="invoice-date">
-                {{ $sale->created_at->format('d/m/Y') }}
+                @dt($sale->created_at, 'd/m/Y')
             </div>
             <div>
                 <span class="status-badge {{ $statusClass }}">
@@ -782,7 +782,7 @@
                     Cette facture a été certifiée conformément à la réglementation fiscale béninoise (e-MCeF).<br>
                     <strong>NIM :</strong> {{ $sale->emcef_nim }}<br>
                     <strong>Code MECeF :</strong> {{ $sale->emcef_code_mecef }}<br>
-                    <strong>Date de certification :</strong> {{ $sale->emcef_certified_at?->format('d/m/Y à H:i') }}
+                    <strong>Date de certification :</strong> @dt($sale->emcef_certified_at)
                 </p>
                 @if($sale->emcef_counters)
                     <span class="verification-code">{{ $sale->emcef_counters }}</span>

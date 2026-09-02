@@ -188,7 +188,7 @@
                     };
                 @endphp
                 <tr>
-                    <td>{{ $sale->created_at->format('d/m/Y') }}</td>
+                    <td>@dt($sale->created_at, 'd/m/Y')</td>
                     <td><strong>{{ $sale->invoice_number }}</strong></td>
                     <td>{{ Str::limit($sale->customer?->name ?? 'Client comptoir', 25) }}</td>
                     <td class="{{ $paymentClass }}">{{ $paymentLabel }}</td>
@@ -215,7 +215,7 @@
     </table>
 
     <div class="footer">
-        {{ $company->name ?? 'GestStock' }} - Journal des ventes du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }} - Généré le {{ $generatedAt->format('d/m/Y H:i') }}
+        {{ $company->name ?? 'GestStock' }} - Journal des ventes du {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} au {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }} - Généré le @dt($generatedAt, 'd/m/Y H:i')
     </div>
 </body>
 </html>

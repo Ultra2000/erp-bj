@@ -483,7 +483,7 @@
             <td class="invoice-title">
                 <div class="invoice-label">{{ $invoiceTypeLabel }}</div>
                 <div class="invoice-number">{{ $sale->invoice_number }}</div>
-                <div class="invoice-date">{{ $sale->created_at->format('d/m/Y à H:i') }}</div>
+                <div class="invoice-date">@dt($sale->created_at)</div>
                 <span class="status-badge {{ $statusClass }}">
                     {{ $statusLabels[$status] ?? ucfirst($status) }}
                 </span>
@@ -503,7 +503,7 @@
 {{-- Référence facture d'origine pour les avoirs (exigence DGI) --}}
 @if($sale->type === 'credit_note' && $sale->parent)
 <div style="background:#fff3cd;border:1px solid #d4a913;padding:8px 12px;margin-bottom:10px;font-size:10px;">
-    <strong>Avoir relatif à la facture N° {{ $sale->parent->invoice_number }} du {{ $sale->parent->created_at->format('d/m/Y') }}</strong><br>
+    <strong>Avoir relatif à la facture N° {{ $sale->parent->invoice_number }} du @dt($sale->parent->created_at, 'd/m/Y')</strong><br>
     Facture d'origine : {{ $sale->parent->invoice_number }}
     @if($sale->parent->emcef_code_mecef)
         &nbsp;&mdash;&nbsp;Code MECeF/DGI : {{ $sale->parent->emcef_code_mecef }}
@@ -786,7 +786,7 @@
                 <div class="verification-text">
                     NIM : {{ $sale->emcef_nim }}<br>
                     Code MECeF : {{ $sale->emcef_code_mecef }}<br>
-                    Certifiée le : {{ $sale->emcef_certified_at?->format('d/m/Y H:i') }}
+                    Certifiée le : @dt($sale->emcef_certified_at, 'd/m/Y H:i')
                 </div>
                 @if($sale->emcef_counters)
                     <span class="verification-code">{{ $sale->emcef_counters }}</span>

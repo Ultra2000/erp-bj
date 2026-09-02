@@ -340,7 +340,7 @@
     @endif
 
     <div style="margin-top: 30px; text-align: center; font-size: 9px; color: #6b7280;">
-        Document généré le {{ now()->format('d/m/Y à H:i') }} | {{ $inventory->reference }}
+        Document généré le @dt(now()) | {{ $inventory->reference }}
     </div>
 </body>
 </html>

@@ -461,7 +461,7 @@
             <td class="invoice-title">
                 <div class="invoice-label">Facture d'achat N°</div>
                 <div class="invoice-number">{{ $purchase->invoice_number }}</div>
-                <div class="invoice-date">{{ $purchase->created_at->format('d/m/Y à H:i') }}</div>
+                <div class="invoice-date">@dt($purchase->created_at)</div>
                 <span class="status-badge {{ $statusClass }}">
                     {{ $statusLabels[$status] ?? ucfirst($status) }}
                 </span>

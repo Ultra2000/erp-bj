@@ -225,7 +225,7 @@
     {{-- Métadonnées --}}
     <div class="meta-row">
         <span>N°: {{ $sale->invoice_number }}</span>
-        <span>{{ $sale->created_at->format('d/m/Y H:i') }}</span>
+        <span>@dt($sale->created_at, 'd/m/Y H:i')</span>
     </div>
     @if($sale->customer && $sale->customer->email !== 'walkin@pos.local')
     <div class="meta-row">
@@ -414,7 +414,7 @@
         <p>{{ $company->website }}</p>
         @endif
         <p class="xsmall" style="margin-top: 6px;">
-            {{ $sale->invoice_number }} — {{ $sale->created_at->format('d/m/Y H:i') }}
+            {{ $sale->invoice_number }} — @dt($sale->created_at, 'd/m/Y H:i')
         </p>
         <p class="xsmall">
             {{ $sale->items->count() }} article(s) — {{ number_format($sale->items->sum('quantity'), 0) }} unité(s)

@@ -98,7 +98,7 @@
                 </td>
                 <td class="report-title">
                     <div class="t">État des créances clients</div>
-                    <div class="d">Généré le {{ $generatedAt->format('d/m/Y à H:i') }}</div>
+                    <div class="d">Généré le @dt($generatedAt)</div>
                 </td>
             </tr>
         </table>
@@ -162,7 +162,7 @@
     @endif
 
     <div class="footer">
-        Document interne de suivi des créances &bull; {{ $company->name }} &bull; {{ $generatedAt->format('d/m/Y H:i') }}
+        Document interne de suivi des créances &bull; {{ $company->name }} &bull; @dt($generatedAt, 'd/m/Y H:i')
     </div>
 </body>
 </html>

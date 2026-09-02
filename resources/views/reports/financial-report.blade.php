@@ -498,7 +498,7 @@
 
     <div class="footer">
         {{ $company->name ?? 'GestStock' }} - {{ $company->getTaxIdLabel() }} : {{ $company->tax_number ?? 'N/A' }}<br>
-        Bilan comptable généré le {{ $generatedAt->format('d/m/Y à H:i') }} - Document à usage interne.
+        Bilan comptable généré le @dt($generatedAt) - Document à usage interne.
     </div>
 </body>
 </html>

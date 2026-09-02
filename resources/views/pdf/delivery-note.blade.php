@@ -388,13 +388,13 @@
                 @if($deliveryNote->shipped_at)
                 <tr>
                     <td>Date d'expédition :</td>
-                    <td>{{ $deliveryNote->shipped_at->format('d/m/Y H:i') }}</td>
+                    <td>@dt($deliveryNote->shipped_at, 'd/m/Y H:i')</td>
                 </tr>
                 @endif
                 @if($deliveryNote->delivered_at)
                 <tr>
                     <td>Date de livraison :</td>
-                    <td>{{ $deliveryNote->delivered_at->format('d/m/Y H:i') }}</td>
+                    <td>@dt($deliveryNote->delivered_at, 'd/m/Y H:i')</td>
                 </tr>
                 @endif
                 @if($deliveryNote->total_weight)
@@ -531,7 +531,7 @@
             {{ $settings->name ?? '' }} - 
             @if($settings && $settings->registration_number) SIRET: {{ $settings->registration_number }} @endif
             <br>
-            Document généré le {{ now()->format('d/m/Y à H:i') }} - Veuillez conserver ce bon de livraison
+            Document généré le @dt(now()) - Veuillez conserver ce bon de livraison
         </div>
     </div>
 </body>

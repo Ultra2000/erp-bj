@@ -51,6 +51,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Directive Blade @dt : affiche une date/heure dans le fuseau local
+        // (stockage UTC -> affichage Africa/Porto-Novo). Ex: @dt($sale->created_at)
+        // ou @dt($sale->created_at, 'd/m/Y').
+        \Illuminate\Support\Facades\Blade::directive('dt', function ($expression) {
+            return "<?php echo e(\\App\\Support\\DateHelper::fmt({$expression})); ?>";
+        });
+
         // ==========================================
         // OPTIMISATIONS DE PERFORMANCE
         // ==========================================
