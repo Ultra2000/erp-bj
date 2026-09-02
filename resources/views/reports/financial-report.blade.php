@@ -349,7 +349,7 @@
             </thead>
             <tbody>
                 @php
-                    $months = collect();
+                    $months = [];
                     foreach($salesByMonth as $s) {
                         $key = $s->year . '-' . str_pad($s->month, 2, '0', STR_PAD_LEFT);
                         $months[$key] = ['year' => $s->year, 'month' => $s->month, 'sales_count' => $s->count, 'sales_total' => $s->total, 'purchases_count' => 0, 'purchases_total' => 0];
@@ -362,7 +362,7 @@
                         $months[$key]['purchases_count'] = $p->count;
                         $months[$key]['purchases_total'] = $p->total;
                     }
-                    $months = $months->sortKeys();
+                    ksort($months);
                     $monthNames = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
                 @endphp
                 @foreach($months as $m)
