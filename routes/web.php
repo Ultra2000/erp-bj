@@ -284,4 +284,5 @@ Route::middleware('auth')->prefix('reports')->group(function () {
     Route::get('/sales-journal/{companyId?}', [AccountingReportController::class, 'salesJournal'])->name('reports.sales-journal');
     Route::get('/purchases-journal/{companyId?}', [AccountingReportController::class, 'purchasesJournal'])->name('reports.purchases-journal');
     Route::get('/vat-report/{companyId?}', [AccountingReportController::class, 'vatReport'])->name('reports.vat-report');
+    Route::get('/sales-profit/{companyId?}', [AccountingReportController::class, 'profitReport'])->name('reports.profit');
 });

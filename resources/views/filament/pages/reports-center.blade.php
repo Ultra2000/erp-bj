@@ -82,6 +82,38 @@
                 </div>
             </div>
 
+            {{-- Carte Rapport de Rentabilité (Bénéfices) --}}
+            <div style="background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e5e7eb;" class="dark:!bg-gray-800 dark:!border-gray-700">
+                <div style="background: #0d9488; padding: 1rem;">
+                    <div class="flex items-center gap-3" style="color: white;">
+                        <x-heroicon-o-arrow-trending-up class="w-6 h-6" />
+                        <h3 style="font-size: 1.125rem; font-weight: bold; color: white;">Rentabilité des Ventes</h3>
+                    </div>
+                    <p style="color: #99f6e4; font-size: 0.875rem; margin-top: 0.25rem;">Bénéfice réel par période et par produit</p>
+                </div>
+                <div style="padding: 1.5rem;" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;" class="dark:!text-gray-300">Date début</label>
+                            <input type="date" wire:model="profit_start_date" style="width: 100%; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 0.5rem;" class="dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;" class="dark:!text-gray-300">Date fin</label>
+                            <input type="date" wire:model="profit_end_date" style="width: 100%; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 0.5rem;" class="dark:!bg-gray-700 dark:!border-gray-600 dark:!text-white">
+                        </div>
+                    </div>
+                    <div style="background: #f0fdfa; border-radius: 0.75rem; padding: 1rem;" class="dark:!bg-teal-900/20">
+                        <p style="font-size: 0.875rem; color: #0f766e;" class="dark:!text-teal-300">
+                            <strong>Inclut :</strong> bénéfice net (vente réelle après remise − prix d'achat), marge %, coût, remises accordées, produits les plus rentables et ventes à perte
+                        </p>
+                    </div>
+                    <button wire:click="downloadProfitReport" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #0d9488; color: white !important; font-weight: 600; border-radius: 0.75rem; border: none; cursor: pointer;" onmouseover="this.style.background='#0f766e'" onmouseout="this.style.background='#0d9488'">
+                        <x-heroicon-o-arrow-down-tray class="w-5 h-5" />
+                        <span style="color: white !important;">Télécharger le rapport PDF</span>
+                    </button>
+                </div>
+            </div>
+
             {{-- Carte Journal des Ventes --}}
             <div style="background: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #e5e7eb;" class="dark:!bg-gray-800 dark:!border-gray-700">
                 <div style="background: #10b981; padding: 1rem;">

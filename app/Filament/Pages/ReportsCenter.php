@@ -70,6 +70,10 @@ class ReportsCenter extends Page implements HasForms
     public ?string $vat_start_date = null;
     public ?string $vat_end_date = null;
 
+    // Formulaire rapport de rentabilité (bénéfices)
+    public ?string $profit_start_date = null;
+    public ?string $profit_end_date = null;
+
     public function mount(): void
     {
         $this->financial_start_date = now()->startOfYear()->toDateString();
@@ -80,6 +84,8 @@ class ReportsCenter extends Page implements HasForms
         $this->purchases_end_date = now()->toDateString();
         $this->vat_start_date = now()->startOfMonth()->toDateString();
         $this->vat_end_date = now()->toDateString();
+        $this->profit_start_date = now()->startOfMonth()->toDateString();
+        $this->profit_end_date = now()->toDateString();
     }
 
     public function getCompanyId(): ?int
@@ -150,6 +156,18 @@ class ReportsCenter extends Page implements HasForms
         
         $url = route('reports.vat-report', ['companyId' => $this->getCompanyId()]) . '?' . http_build_query($params);
         
+        $this->js("window.open('{$url}', '_blank')");
+    }
+
+    public function downloadProfitReport(): void
+    {
+        $params = [
+            'start_date' => $this->profit_start_date,
+            'end_date' => $this->profit_end_date,
+        ];
+
+        $url = route('reports.profit', ['companyId' => $this->getCompanyId()]) . '?' . http_build_query($params);
+
         $this->js("window.open('{$url}', '_blank')");
     }
 

@@ -523,4 +523,122 @@ class AccountingReportController extends Controller
 
         return $pdf->download($filename);
     }
+
+    /**
+     * Rapport de rentabilité des ventes (bénéfice sur une période).
+     *
+     * Bénéfice = prix de vente réel (HT, après remise globale) − coût d'achat
+     * (prix d'achat HT du produit). Le coût provient du produit (aucun coût
+     * figé n'est stocké par ligne de vente) : c'est une estimation au prix
+     * d'achat courant.
+     */
+    public function profitReport(Request $request, $companyId = null)
+    {
+        $companyId = $companyId ?? $request->query('company_id') ?? Filament::getTenant()?->id;
+
+        if (! $companyId) {
+            abort(400, 'Company ID required');
+        }
+
+        $company = Company::findOrFail($companyId);
+
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', now()->toDateString());
+
+        $sales = Sale::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('status', 'completed')
+            ->where(fn ($q) => $q->whereNull('type')->orWhere('type', '!=', 'credit_note'))
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->with(['items.product'])
+            ->get();
+
+        $products = [];      // agrégat par produit
+        $totalRevenue = 0.0; // CA HT net de remise
+        $totalGross = 0.0;   // CA HT brut (avant remise)
+        $totalCost = 0.0;    // coût d'achat HT
+        $totalQty = 0.0;
+        $missingCost = false;
+
+        foreach ($sales as $sale) {
+            $discountMultiplier = 1 - ((float) ($sale->discount_percent ?? 0) / 100);
+
+            foreach ($sale->items as $item) {
+                $qty = (float) $item->quantity;
+                $gross = (float) ($item->total_price_ht ?? ($item->unit_price_ht * $qty));
+                $revenue = $gross * $discountMultiplier;
+
+                $product = $item->product;
+                $unitCost = (float) ($product->purchase_price_ht ?? 0);
+                if ($unitCost <= 0) {
+                    $unitCost = (float) ($product->purchase_price ?? 0);
+                }
+                $cost = $unitCost * $qty;
+                if ($unitCost <= 0) {
+                    $missingCost = true;
+                }
+
+                $pid = $item->product_id ?? 0;
+                if (! isset($products[$pid])) {
+                    $products[$pid] = [
+                        'name' => $product->name ?? 'Produit supprimé',
+                        'code' => $product->code ?? '',
+                        'qty' => 0.0,
+                        'revenue' => 0.0,
+                        'cost' => 0.0,
+                        'profit' => 0.0,
+                        'no_cost' => $unitCost <= 0,
+                    ];
+                }
+                $products[$pid]['qty'] += $qty;
+                $products[$pid]['revenue'] += $revenue;
+                $products[$pid]['cost'] += $cost;
+                $products[$pid]['profit'] += ($revenue - $cost);
+                if ($unitCost <= 0) {
+                    $products[$pid]['no_cost'] = true;
+                }
+
+                $totalRevenue += $revenue;
+                $totalGross += $gross;
+                $totalCost += $cost;
+                $totalQty += $qty;
+            }
+        }
+
+        // Marge par produit + tri par bénéfice décroissant
+        foreach ($products as &$p) {
+            $p['margin'] = $p['revenue'] > 0 ? round($p['profit'] / $p['revenue'] * 100, 1) : 0;
+        }
+        unset($p);
+        uasort($products, fn ($a, $b) => $b['profit'] <=> $a['profit']);
+
+        $totalProfit = $totalRevenue - $totalCost;
+        $lossProducts = array_filter($products, fn ($p) => $p['profit'] < 0);
+
+        $totals = [
+            'sales_count' => $sales->count(),
+            'qty' => $totalQty,
+            'revenue' => round($totalRevenue),          // CA HT net
+            'gross' => round($totalGross),              // CA HT brut
+            'discount' => round($totalGross - $totalRevenue), // remises accordées (HT)
+            'cost' => round($totalCost),
+            'profit' => round($totalProfit),
+            'margin' => $totalRevenue > 0 ? round($totalProfit / $totalRevenue * 100, 1) : 0,
+            'markup' => $totalCost > 0 ? round($totalProfit / $totalCost * 100, 1) : 0,
+            'avg_basket' => $sales->count() > 0 ? round($totalRevenue / $sales->count()) : 0,
+        ];
+
+        $pdf = Pdf::loadView('reports.sales-profit', [
+            'company' => $company,
+            'products' => $products,
+            'lossProducts' => $lossProducts,
+            'totals' => $totals,
+            'missingCost' => $missingCost,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'generatedAt' => now(),
+        ])->setPaper('a4');
+
+        return $pdf->download('rapport-benefices-' . $startDate . '-' . $endDate . '.pdf');
+    }
 }
