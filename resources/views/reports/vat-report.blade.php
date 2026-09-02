@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapport TVA - {{ $company->name }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
+        @page { size: A4; margin: 15mm; }
+
         * {
             margin: 0;
             padding: 0;
@@ -20,7 +20,7 @@
             letter-spacing: 0.01em;
         }
         .container {
-            padding: 20px;
+            padding: 0;
         }
         .header {
             border-bottom: 2px solid #2563eb;

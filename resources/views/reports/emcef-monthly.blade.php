@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Rapport e-MCeF {{ $monthName }} {{ $year }}</title>
     <style>
+        @page { size: A4; margin: 15mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
