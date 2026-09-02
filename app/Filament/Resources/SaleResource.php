@@ -1099,7 +1099,7 @@ class SaleResource extends Resource
                         
                         if ($company?->emcef_enabled) {
                             if ($record->emcef_status !== 'certified' || empty($record->emcef_code_mecef)) {
-                                return '⚠️ ATTENTION : Cette facture n\'est pas certifiée e-MCeF. L\'avoir ne pourra pas être envoyé à la DGI.';
+                                return $desc . "\n\n⚠️ La facture d'origine n'est pas certifiée e-MCeF : l'avoir sera créé en interne mais ne sera pas transmis à la DGI.";
                             }
                             $desc .= "\n\n✅ L'avoir sera automatiquement certifié e-MCeF avec référence à la facture " . $record->emcef_code_mecef;
                         }
@@ -1107,16 +1107,14 @@ class SaleResource extends Resource
                     })
                     ->action(function (Sale $record) {
                         $company = \Filament\Facades\Filament::getTenant();
-                        
-                        // Vérifier la certification e-MCeF si activé
-                        if ($company?->emcef_enabled && ($record->emcef_status !== 'certified' || empty($record->emcef_code_mecef))) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Facture non certifiée')
-                                ->body('Vous devez d\'abord certifier la facture originale avant de créer un avoir e-MCeF.')
-                                ->danger()
-                                ->send();
-                            return;
-                        }
+
+                        // On ne certifie l'avoir e-MCeF que si la facture d'origine est
+                        // certifiée (la DGI exige la référence de la facture certifiée).
+                        // Sinon l'avoir est quand même créé en interne (annulation +
+                        // réintégration du stock), mais non transmis à la DGI.
+                        $willCertify = $company?->emcef_enabled
+                            && $record->emcef_status === 'certified'
+                            && ! empty($record->emcef_code_mecef);
 
                         // 1. Dupliquer la vente en avoir
                         $creditNote = $record->replicate([
@@ -1143,7 +1141,7 @@ class SaleResource extends Resource
                         $creditNote->total = -abs($record->total);
                         $creditNote->total_ht = -abs($record->total_ht ?? 0);
                         $creditNote->total_vat = -abs($record->total_vat ?? 0);
-                        $creditNote->emcef_status = $company?->emcef_enabled ? 'pending' : null;
+                        $creditNote->emcef_status = $willCertify ? 'pending' : null;
                         $creditNote->save();
 
                         // 2. Dupliquer les articles avec les mêmes taux TVA
@@ -1160,11 +1158,12 @@ class SaleResource extends Resource
                             ]);
                         }
                         
-                        // 3. Certifier automatiquement l'avoir si e-MCeF activé
-                        if ($company?->emcef_enabled) {
+                        // 3. Certifier automatiquement l'avoir uniquement si la facture
+                        //    d'origine est certifiée (référence DGI disponible).
+                        if ($willCertify) {
                             $emcefService = new \App\Services\EmcefService($company);
                             $result = $emcefService->submitInvoice($creditNote);
-                            
+
                             if ($result['success']) {
                                 \Filament\Notifications\Notification::make()
                                     ->title('Avoir créé et certifié !')
@@ -1178,6 +1177,12 @@ class SaleResource extends Resource
                                     ->warning()
                                     ->send();
                             }
+                        } elseif ($company?->emcef_enabled) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Avoir créé (non transmis à la DGI)')
+                                ->body('L\'avoir ' . $creditNote->invoice_number . ' a été créé. La facture d\'origine n\'étant pas certifiée e-MCeF, l\'avoir n\'a pas été transmis à la DGI.')
+                                ->warning()
+                                ->send();
                         } else {
                             \Filament\Notifications\Notification::make()
                                 ->title('Avoir créé')
