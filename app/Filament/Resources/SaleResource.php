@@ -143,6 +143,16 @@ class SaleResource extends Resource
                             ->required()
                             ->default('pending')
                             ->live(),
+                        Forms\Components\Select::make('delivery_status')
+                            ->label('Retrait de la marchandise')
+                            ->options([
+                                'delivered' => 'Emporté immédiatement',
+                                'to_deliver' => 'À retirer (laissé en magasin)',
+                            ])
+                            ->default('delivered')
+                            ->required()
+                            ->native(false)
+                            ->helperText('« À retirer » : payé/facturé mais la marchandise reste en magasin.'),
                         Forms\Components\Select::make('payment_method')
                             ->label('Mode de paiement')
                             ->options(function () {

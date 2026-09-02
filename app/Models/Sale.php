@@ -265,6 +265,13 @@ class Sale extends Model
             if ($sale->isDirty('status') && $sale->status === 'completed') {
                 $sale->processStockDeduction();
             }
+
+            // Garder delivered_at cohérent avec delivery_status
+            if ($sale->delivery_status === 'to_deliver') {
+                $sale->delivered_at = null;
+            } elseif ($sale->delivery_status === 'delivered' && $sale->delivered_at === null) {
+                $sale->delivered_at = now();
+            }
         });
 
         static::deleting(function ($sale) {
