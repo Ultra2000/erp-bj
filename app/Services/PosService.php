@@ -546,7 +546,12 @@ class PosService
             ->where('status', 'completed')
             ->where(function ($q) {
                 $q->whereNull('type')->orWhere('type', '!=', 'credit_note');
-            });
+            })
+            // Exclure les factures annulées par un avoir (plus encaissables)
+            ->where(function ($q) {
+                $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'cancelled');
+            })
+            ->whereDoesntHave('creditNotes');
 
         if (strlen($query) >= 1) {
             // Recherche : par n° de facture ou nom du client, impayées en priorité
@@ -609,6 +614,10 @@ class PosService
 
         if ($sale->payment_status === 'paid') {
             return ['success' => false, 'message' => 'Cette facture est déjà réglée'];
+        }
+
+        if ($sale->payment_status === 'cancelled' || $sale->type === 'credit_note' || $sale->hasCreditNote()) {
+            return ['success' => false, 'message' => 'Cette facture est annulée (un avoir a été généré) : aucun paiement ne peut être enregistré.'];
         }
 
         $remaining = $sale->remaining_amount;

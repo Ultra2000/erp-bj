@@ -98,6 +98,7 @@ class CreancesClients extends Page implements HasTable
     {
         return "sales.status = 'completed'"
             . " AND (sales.type IS NULL OR sales.type <> 'credit_note')"
+            . " AND (sales.payment_status IS NULL OR sales.payment_status <> 'cancelled')"
             . " AND ((sales.total + COALESCE(sales.aib_amount, 0)) - COALESCE(sales.amount_paid, 0)) > 0.5";
     }
 

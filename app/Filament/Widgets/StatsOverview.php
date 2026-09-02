@@ -86,8 +86,9 @@ class StatsOverview extends BaseWidget
             ->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
         $panierMoyen = $salesMonth > 0 ? $caMonth / $salesMonth : 0;
 
-        // ── Créances clients (impayés) ──
+        // ── Créances clients (impayés, hors factures annulées par avoir) ──
         $receivables = (float) $this->salesQuery($warehouseIds)
+            ->where(fn ($q) => $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'cancelled'))
             ->whereRaw('((total + COALESCE(aib_amount, 0)) - COALESCE(amount_paid, 0)) > 0')
             ->selectRaw('COALESCE(SUM((total + COALESCE(aib_amount, 0)) - COALESCE(amount_paid, 0)), 0) as due')
             ->value('due');

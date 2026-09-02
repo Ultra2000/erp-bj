@@ -728,11 +728,13 @@ class SaleResource extends Resource
                     ->color(fn (?string $state): string => match ($state) {
                         'paid' => 'success',
                         'partial' => 'warning',
+                        'cancelled' => 'gray',
                         default => 'danger',
                     })
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'paid' => 'Payé',
                         'partial' => 'Partiel',
+                        'cancelled' => 'Annulé',
                         default => 'Non payé',
                     }),
                 Tables\Columns\TextColumn::make('delivery_status')
@@ -872,7 +874,7 @@ class SaleResource extends Resource
                     ->label('Paiement')
                     ->icon('heroicon-o-banknotes')
                     ->color('success')
-                    ->hidden(fn (Sale $record) => $record->payment_status === 'paid')
+                    ->hidden(fn (Sale $record) => ! $record->canReceivePayment())
                     ->form([
                         Forms\Components\DatePicker::make('payment_date')
                             ->label('Date')
@@ -1158,6 +1160,14 @@ class SaleResource extends Resource
                             ]);
                         }
                         
+                        // 2.b La facture d'origine est annulée par l'avoir : la part non
+                        //      réglée n'est plus due (plus de créance) et aucun paiement
+                        //      ne peut plus être enregistré sur la facture ni sur l'avoir.
+                        $record->payment_status = 'cancelled';
+                        $record->saveQuietly();
+                        $creditNote->payment_status = 'cancelled';
+                        $creditNote->saveQuietly();
+
                         // 3. Certifier automatiquement l'avoir uniquement si la facture
                         //    d'origine est certifiée (référence DGI disponible).
                         if ($willCertify) {

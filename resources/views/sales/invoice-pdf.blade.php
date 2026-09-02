@@ -489,8 +489,8 @@
                 </span>
                 @php
                     $payStatus = $sale->payment_status ?? 'unpaid';
-                    $payLabels = ['paid' => 'Payé', 'partial' => 'Partiellement payé', 'unpaid' => 'Non payé', 'pending' => 'Non payé'];
-                    $payColor = $payStatus === 'paid' ? '#166534' : '#b45309';
+                    $payLabels = ['paid' => 'Payé', 'partial' => 'Partiellement payé', 'unpaid' => 'Non payé', 'pending' => 'Non payé', 'cancelled' => 'Annulée'];
+                    $payColor = $payStatus === 'paid' ? '#166534' : ($payStatus === 'cancelled' ? '#64748b' : '#b45309');
                 @endphp
                 <br><span class="status-badge" style="border-color:{{ $payColor }};color:{{ $payColor }};margin-top:4px;">
                     {{ $payLabels[$payStatus] ?? 'Non payé' }}
@@ -687,7 +687,11 @@
                             </tr>
                         </table>
                     </div>
-                    @if($remainingInv > 0)
+                    @if($sale->payment_status === 'cancelled')
+                    <div class="totals-row" style="text-align:center;padding:4px 10px;font-size:8px;font-weight:bold;color:#64748b;">
+                        FACTURE ANNULÉE PAR AVOIR
+                    </div>
+                    @elseif($remainingInv > 0)
                     <div class="totals-row grand-total">
                         <table class="totals-row-table">
                             <tr>

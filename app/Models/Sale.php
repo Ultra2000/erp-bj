@@ -629,8 +629,30 @@ class Sale extends Model
         return match ($this->payment_status) {
             'paid' => 'Payé',
             'partial' => 'Partiel',
+            'cancelled' => 'Annulé',
             default => 'Non payé',
         };
+    }
+
+    /**
+     * La facture a-t-elle un avoir (donc elle est annulée) ?
+     */
+    public function hasCreditNote(): bool
+    {
+        return $this->creditNotes()->exists();
+    }
+
+    /**
+     * Peut-on encore encaisser un paiement sur cette vente ?
+     * Non si : ce n'est pas une vente finalisée, c'est un avoir, elle est
+     * déjà réglée, elle a été annulée par un avoir.
+     */
+    public function canReceivePayment(): bool
+    {
+        return $this->status === 'completed'
+            && $this->type !== 'credit_note'
+            && ! in_array($this->payment_status, ['paid', 'cancelled'], true)
+            && ! $this->hasCreditNote();
     }
 
     public function getDeliveryStatusLabelAttribute(): string
