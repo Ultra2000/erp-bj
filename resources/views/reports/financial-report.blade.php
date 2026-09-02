@@ -370,7 +370,7 @@
                         $result = ($m['sales_total'] ?? 0) - ($m['purchases_total'] ?? 0);
                     @endphp
                     <tr>
-                        <td><strong>{{ $monthNames[$m['month']] }} {{ $m['year'] }}</strong></td>
+                        <td><strong>{{ $monthNames[(int) $m['month']] ?? $m['month'] }} {{ $m['year'] }}</strong></td>
                         <td>{{ $m['sales_count'] }}</td>
                         <td class="positive">{{ number_format($m['sales_total'], 2, ',', ' ') }} FCFA</td>
                         <td>{{ $m['purchases_count'] }}</td>
