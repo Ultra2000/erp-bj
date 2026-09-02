@@ -5,10 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Journal des Ventes - {{ $startDate }} au {{ $endDate }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
         @page {
-            margin: 15mm;
+            size: A4;
+            margin: 0;
         }
         * {
             margin: 0;
@@ -21,6 +20,7 @@
             color: #1e293b;
             line-height: 1.3;
             letter-spacing: 0.01em;
+            padding: 14mm 14mm;
         }
         .header {
             text-align: center;

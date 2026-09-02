@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapport TVA - {{ $company->name }}</title>
     <style>
-        @page { size: A4; margin: 15mm; }
+        @page { size: A4; margin: 0; }
 
         * {
             margin: 0;
@@ -18,6 +18,7 @@
             line-height: 1.4;
             color: #1e293b;
             letter-spacing: 0.01em;
+            padding: 15mm 18mm;
         }
         .container {
             padding: 0;

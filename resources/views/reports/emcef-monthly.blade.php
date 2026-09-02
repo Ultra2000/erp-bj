@@ -5,13 +5,14 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Rapport e-MCeF {{ $monthName }} {{ $year }}</title>
     <style>
-        @page { size: A4; margin: 15mm; }
+        @page { size: A4; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
             font-size: 10px;
             color: #1e293b;
             line-height: 1.4;
+            padding: 15mm 18mm;
         }
         .header {
             background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
