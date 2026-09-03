@@ -154,7 +154,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>📦 ÉTAT DES STOCKS</h1>
+        <h1>ÉTAT DES STOCKS</h1>
         <div class="company">{{ $company->name ?? 'Entreprise' }}</div>
         <div class="date">Généré le @dt($generatedAt)</div>
     </div>
@@ -170,13 +170,13 @@
             </td>
             <td width="20%">
                 <div class="stat-box success">
-                    <div class="stat-value">{{ number_format($stats['total_value'], 2, ',', ' ') }} FCFA</div>
+                    <div class="stat-value">{{ number_format($stats['total_value'], 0, ',', ' ') }} FCFA</div>
                     <div class="stat-label">Valeur (prix achat)</div>
                 </div>
             </td>
             <td width="20%">
                 <div class="stat-box success">
-                    <div class="stat-value">{{ number_format($stats['total_sell_value'], 2, ',', ' ') }} FCFA</div>
+                    <div class="stat-value">{{ number_format($stats['total_sell_value'], 0, ',', ' ') }} FCFA</div>
                     <div class="stat-label">Valeur (prix vente)</div>
                 </div>
             </td>
@@ -219,7 +219,7 @@
                     @php
                         $stockStatus = 'ok';
                         $stockClass = 'status-ok';
-                        $stock = $product->stock ?? 0;
+                        $stock = $product->report_stock ?? $product->total_stock ?? 0;
                         $minStock = $product->min_stock ?? 0;
                         if ($stock <= 0) {
                             $stockStatus = 'RUPTURE';
@@ -239,9 +239,9 @@
                         <td>{{ $product->warehouses->first()?->name ?? 'Principal' }}</td>
                         <td class="center {{ $stockClass }}">{{ number_format($stock) }}</td>
                         <td class="center">{{ number_format($minStock) }}</td>
-                        <td class="right">{{ number_format($product->purchase_price ?? 0, 2, ',', ' ') }} FCFA</td>
-                        <td class="right">{{ number_format($product->price ?? 0, 2, ',', ' ') }} FCFA</td>
-                        <td class="right">{{ number_format($value, 2, ',', ' ') }} FCFA</td>
+                        <td class="right">{{ number_format($product->purchase_price ?? 0, 0, ',', ' ') }} FCFA</td>
+                        <td class="right">{{ number_format($product->price ?? 0, 0, ',', ' ') }} FCFA</td>
+                        <td class="right">{{ number_format($value, 0, ',', ' ') }} FCFA</td>
                         <td class="center {{ $stockClass }}">{{ $stockStatus }}</td>
                     </tr>
                 @endforeach

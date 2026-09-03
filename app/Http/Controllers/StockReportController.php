@@ -24,48 +24,68 @@ class StockReportController extends Controller
             abort(400, 'Company ID required');
         }
 
+        $data = $this->buildStockData(
+            $companyId,
+            $request->query('warehouse_id'),
+            $request->boolean('low_stock_only')
+        );
+
+        $pdf = Pdf::loadView('reports.stock-status', $data)->setPaper('a4', 'landscape');
+
+        $filename = 'etat-stocks-' . now()->format('Y-m-d-His') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
+    /**
+     * Construit les données du rapport d'état des stocks.
+     * Utilise le stock RÉEL (product_warehouse), pas la colonne products.stock
+     * (qui n'est que le stock initial et n'évolue pas avec ventes/achats).
+     */
+    protected function buildStockData(int $companyId, $warehouseId, bool $lowStockOnly): array
+    {
         $company = Company::findOrFail($companyId);
-        
-        // Filtres optionnels
-        $warehouseId = $request->query('warehouse_id');
-        $lowStockOnly = $request->boolean('low_stock_only');
-        
+        $warehouseId = $warehouseId ? (int) $warehouseId : null;
+
         $query = Product::where('company_id', $companyId)
             ->with(['warehouses', 'supplier']);
-        
+
         if ($warehouseId) {
             $query->whereHas('warehouses', function ($q) use ($warehouseId) {
                 $q->where('warehouses.id', $warehouseId);
             });
         }
-        
-        if ($lowStockOnly) {
-            $query->whereColumn('stock', '<=', 'min_stock');
-        }
-        
+
         $products = $query->orderBy('name')->get();
-        
-        // Calculs statistiques
+
+        // Stock réel affiché : dans l'entrepôt filtré, sinon total tous entrepôts
+        $products->each(function ($p) use ($warehouseId) {
+            $p->report_stock = $warehouseId
+                ? (float) $p->getStockInWarehouse($warehouseId)
+                : (float) $p->total_stock;
+        });
+
+        // Filtre stock bas appliqué sur le stock réel
+        if ($lowStockOnly) {
+            $products = $products->filter(fn ($p) => $p->report_stock <= ($p->min_stock ?? 0))->values();
+        }
+
         $stats = [
             'total_products' => $products->count(),
-            'total_value' => $products->sum(fn($p) => ($p->stock ?? 0) * ($p->purchase_price ?? 0)),
-            'total_sell_value' => $products->sum(fn($p) => ($p->stock ?? 0) * ($p->price ?? 0)),
-            'low_stock_count' => $products->filter(fn($p) => ($p->stock ?? 0) <= ($p->min_stock ?? 0))->count(),
-            'out_of_stock_count' => $products->filter(fn($p) => ($p->stock ?? 0) <= 0)->count(),
+            'total_value' => $products->sum(fn ($p) => $p->report_stock * ($p->purchase_price ?? 0)),
+            'total_sell_value' => $products->sum(fn ($p) => $p->report_stock * ($p->price ?? 0)),
+            'low_stock_count' => $products->filter(fn ($p) => $p->report_stock <= ($p->min_stock ?? 0))->count(),
+            'out_of_stock_count' => $products->filter(fn ($p) => $p->report_stock <= 0)->count(),
         ];
-        
-        // Grouper par fournisseur
-        $productsBySupplier = $products->groupBy(fn($p) => $p->supplier?->name ?? 'Sans fournisseur');
-        
-        // Grouper par entrepôt
-        $productsByWarehouse = $products->groupBy(fn($p) => $p->warehouses->first()?->name ?? 'Entrepôt principal');
-        
+
+        $productsBySupplier = $products->groupBy(fn ($p) => $p->supplier?->name ?? 'Sans fournisseur');
+        $productsByWarehouse = $products->groupBy(fn ($p) => $p->warehouses->first()?->name ?? 'Entrepôt principal');
         $warehouses = Warehouse::where('company_id', $companyId)->get();
-        
-        $pdf = Pdf::loadView('reports.stock-status', [
+
+        return [
             'company' => $company,
             'products' => $products,
-            'productsByCategory' => $productsBySupplier, // On utilise le même nom pour la vue
+            'productsByCategory' => $productsBySupplier,
             'productsByWarehouse' => $productsByWarehouse,
             'stats' => $stats,
             'warehouses' => $warehouses,
@@ -74,11 +94,7 @@ class StockReportController extends Controller
                 'low_stock_only' => $lowStockOnly,
             ],
             'generatedAt' => now(),
-        ])->setPaper('a4', 'landscape');
-
-        $filename = 'etat-stocks-' . now()->format('Y-m-d-His') . '.pdf';
-
-        return $pdf->download($filename);
+        ];
     }
 
     /**
@@ -92,52 +108,14 @@ class StockReportController extends Controller
             abort(400, 'Company ID required');
         }
 
-        $company = Company::findOrFail($companyId);
-        
-        $warehouseId = $request->query('warehouse_id');
-        $lowStockOnly = $request->boolean('low_stock_only');
-        
-        $query = Product::where('company_id', $companyId)
-            ->with(['warehouses', 'supplier']);
-        
-        if ($warehouseId) {
-            $query->whereHas('warehouses', function ($q) use ($warehouseId) {
-                $q->where('warehouses.id', $warehouseId);
-            });
-        }
-        
-        if ($lowStockOnly) {
-            $query->whereColumn('stock', '<=', 'min_stock');
-        }
-        
-        $products = $query->orderBy('name')->get();
-        
-        $stats = [
-            'total_products' => $products->count(),
-            'total_value' => $products->sum(fn($p) => ($p->stock ?? 0) * ($p->purchase_price ?? 0)),
-            'total_sell_value' => $products->sum(fn($p) => ($p->stock ?? 0) * ($p->price ?? 0)),
-            'low_stock_count' => $products->filter(fn($p) => ($p->stock ?? 0) <= ($p->min_stock ?? 0))->count(),
-            'out_of_stock_count' => $products->filter(fn($p) => ($p->stock ?? 0) <= 0)->count(),
-        ];
-        
-        $productsBySupplier = $products->groupBy(fn($p) => $p->supplier?->name ?? 'Sans fournisseur');
-        $productsByWarehouse = $products->groupBy(fn($p) => $p->warehouses->first()?->name ?? 'Entrepôt principal');
-        $warehouses = Warehouse::where('company_id', $companyId)->get();
-        
-        return view('reports.stock-status', [
-            'company' => $company,
-            'products' => $products,
-            'productsByCategory' => $productsBySupplier,
-            'productsByWarehouse' => $productsByWarehouse,
-            'stats' => $stats,
-            'warehouses' => $warehouses,
-            'filters' => [
-                'warehouse_id' => $warehouseId,
-                'low_stock_only' => $lowStockOnly,
-            ],
-            'generatedAt' => now(),
-            'previewMode' => true,
-        ]);
+        $data = $this->buildStockData(
+            $companyId,
+            $request->query('warehouse_id'),
+            $request->boolean('low_stock_only')
+        );
+        $data['previewMode'] = true;
+
+        return view('reports.stock-status', $data);
     }
 
     /**
