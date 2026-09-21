@@ -237,10 +237,11 @@
     </div>
     @php
         // Dernier paiement : affiché seulement s'il a eu lieu un autre jour que la vente
-        // (paiement différé sur une facture réglée après coup).
+        // (paiement différé). Pour plusieurs versements, on affiche l'historique complet
+        // plus bas dans la section paiement.
         $lastPayment = $sale->payments->sortByDesc('payment_date')->first();
     @endphp
-    @if($lastPayment && \App\Support\DateHelper::fmt($lastPayment->payment_date, 'Y-m-d') !== \App\Support\DateHelper::fmt($sale->created_at, 'Y-m-d'))
+    @if($lastPayment && $sale->payments->count() <= 1 && \App\Support\DateHelper::fmt($lastPayment->payment_date, 'Y-m-d') !== \App\Support\DateHelper::fmt($sale->created_at, 'Y-m-d'))
     <div class="meta-row small">
         <span>Dernier paiement le @dt($lastPayment->payment_date, 'd/m/Y')</span>
     </div>
@@ -373,6 +374,17 @@
                 <span>{{ number_format($sale->payment_details['mobile'], 0, ',', ' ') }} FCFA</span>
             </div>
             @endif
+        @endif
+
+        {{-- Historique des paiements (plusieurs versements) --}}
+        @if($sale->payments->count() >= 2)
+        <div class="small bold" style="margin-top:4px;">Détail des paiements</div>
+        @foreach($sale->payments->sortBy('payment_date') as $pay)
+        <div class="total-row small">
+            <span>@dt($pay->payment_date, 'd/m/Y') — {{ \App\Models\Payment::METHODS[$pay->payment_method] ?? ucfirst($pay->payment_method ?? '-') }}</span>
+            <span>{{ number_format($pay->amount, 0, ',', ' ') }} FCFA</span>
+        </div>
+        @endforeach
         @endif
     </div>
 

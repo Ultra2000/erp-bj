@@ -688,7 +688,7 @@
                             </tr>
                         </table>
                     </div>
-                    @if($lastPaymentInv && in_array($sale->payment_status, ['paid', 'partial']))
+                    @if($lastPaymentInv && $sale->payments->count() <= 1 && in_array($sale->payment_status, ['paid', 'partial']))
                     <div class="totals-row">
                         <table class="totals-row-table">
                             <tr>
@@ -724,6 +724,35 @@
         </tr>
     </table>
 </div>
+
+<!-- HISTORIQUE DES PAIEMENTS (si plusieurs versements) -->
+@if($sale->payments->count() >= 2)
+<div class="items-section">
+    <div class="section-title">Historique des paiements</div>
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 25%;">Date</th>
+                <th style="width: 45%;">Mode</th>
+                <th style="width: 30%;" class="text-right">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($sale->payments->sortBy('payment_date') as $pay)
+                <tr>
+                    <td>@dt($pay->payment_date, 'd/m/Y')</td>
+                    <td>{{ \App\Models\Payment::METHODS[$pay->payment_method] ?? ucfirst($pay->payment_method ?? '-') }}</td>
+                    <td class="text-right">{{ number_format($pay->amount, 0, ',', ' ') }} {{ $currency }}</td>
+                </tr>
+            @endforeach
+            <tr>
+                <td colspan="2" class="text-right" style="font-weight:bold;border-top:1px solid #ccc;">Total réglé</td>
+                <td class="text-right" style="font-weight:bold;border-top:1px solid #ccc;">{{ number_format($sale->payments->sum('amount'), 0, ',', ' ') }} {{ $currency }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+@endif
 
 <!-- MARCHANDISE À RETIRER -->
 @if($sale->delivery_status === 'to_deliver')
