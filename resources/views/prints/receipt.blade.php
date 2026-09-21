@@ -235,6 +235,16 @@
     <div class="meta-row small">
         <span>Caissier: {{ $sale->cashSession?->user?->name ?? auth()->user()->name }}</span>
     </div>
+    @php
+        // Dernier paiement : affiché seulement s'il a eu lieu un autre jour que la vente
+        // (paiement différé sur une facture réglée après coup).
+        $lastPayment = $sale->payments->sortByDesc('payment_date')->first();
+    @endphp
+    @if($lastPayment && \App\Support\DateHelper::fmt($lastPayment->payment_date, 'Y-m-d') !== \App\Support\DateHelper::fmt($sale->created_at, 'Y-m-d'))
+    <div class="meta-row small">
+        <span>Dernier paiement le @dt($lastPayment->payment_date, 'd/m/Y')</span>
+    </div>
+    @endif
 
     <hr class="divider">
 
