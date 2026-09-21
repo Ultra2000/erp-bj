@@ -547,11 +547,18 @@ class PosService
             ->where(function ($q) {
                 $q->whereNull('type')->orWhere('type', '!=', 'credit_note');
             })
-            // Exclure les factures annulées par un avoir (plus encaissables)
+            // Exclure les factures annulées par un avoir (plus encaissables).
+            // NB : sous-requête brute (sans les global scopes) pour retrouver
+            // l'avoir quel que soit le contexte (API caisse, entrepôt...).
             ->where(function ($q) {
                 $q->whereNull('payment_status')->orWhere('payment_status', '!=', 'cancelled');
             })
-            ->whereDoesntHave('creditNotes');
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('sales as cn')
+                    ->whereColumn('cn.parent_id', 'sales.id')
+                    ->where('cn.type', 'credit_note');
+            });
 
         if (strlen($query) >= 1) {
             // Recherche : par n° de facture ou nom du client, impayées en priorité
