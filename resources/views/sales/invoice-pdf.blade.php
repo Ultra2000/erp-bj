@@ -678,6 +678,7 @@
                         $netDueInv = $grandTotal + ($sale->aib_amount ?? 0);
                         $amountPaidInv = (float) ($sale->amount_paid ?? 0);
                         $remainingInv = max(0, round($netDueInv - $amountPaidInv));
+                        $lastPaymentInv = $sale->payments->sortByDesc('payment_date')->first();
                     @endphp
                     <div class="totals-row" style="border-top:1px dashed #ccc;">
                         <table class="totals-row-table">
@@ -687,6 +688,16 @@
                             </tr>
                         </table>
                     </div>
+                    @if($lastPaymentInv && in_array($sale->payment_status, ['paid', 'partial']))
+                    <div class="totals-row">
+                        <table class="totals-row-table">
+                            <tr>
+                                <td class="totals-label">{{ $sale->payment_status === 'paid' ? 'Payée le' : 'Dernier paiement le' }}</td>
+                                <td class="totals-value" style="font-weight:normal;">@dt($lastPaymentInv->payment_date, 'd/m/Y')</td>
+                            </tr>
+                        </table>
+                    </div>
+                    @endif
                     @if($sale->payment_status === 'cancelled')
                     <div class="totals-row" style="text-align:center;padding:4px 10px;font-size:8px;font-weight:bold;color:#64748b;">
                         FACTURE ANNULÉE PAR AVOIR
