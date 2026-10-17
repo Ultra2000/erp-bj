@@ -401,6 +401,36 @@
                                 </div>
                             </div>
                             
+                            {{-- Sélecteur de client (optionnel — pour épargne / fidélité) --}}
+                            <div class="px-4 pt-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 relative" style="z-index:30;">
+                                <template x-if="!selectedCustomer">
+                                    <div class="relative pb-3">
+                                        <input type="text" x-model="customerSearch" @input.debounce.350ms="searchCustomers()"
+                                               placeholder="Client (optionnel) — nom ou téléphone…"
+                                               class="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500">
+                                        <template x-if="customerResults.length">
+                                            <div class="absolute left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl" style="z-index:40;">
+                                                <template x-for="c in customerResults" :key="c.id">
+                                                    <button type="button" @click="selectCustomer(c)" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 border-b border-gray-50 dark:border-gray-700">
+                                                        <span><span class="font-semibold text-gray-800 dark:text-gray-100" x-text="c.name"></span> <span class="text-xs text-gray-400" x-text="c.phone"></span></span>
+                                                        <span class="text-xs font-bold text-emerald-600" x-show="c.savings_balance > 0" x-text="'Épargne : ' + formatPrice(c.savings_balance)"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                <template x-if="selectedCustomer">
+                                    <div class="mb-3 flex items-center justify-between rounded-xl bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2">
+                                        <div class="text-sm">
+                                            <span class="font-bold text-emerald-800 dark:text-emerald-300" x-text="selectedCustomer.name"></span>
+                                            <span class="ml-2 text-xs font-semibold text-emerald-600" x-show="selectedCustomer.savings_balance > 0" x-text="'Épargne : ' + formatPrice(selectedCustomer.savings_balance)"></span>
+                                        </div>
+                                        <button type="button" @click="clearCustomer()" class="text-xs font-semibold text-gray-500 hover:text-red-500">Retirer</button>
+                                    </div>
+                                </template>
+                            </div>
+
                             {{-- Liste des articles avec scroll custom --}}
                             <div class="overflow-y-auto p-4 space-y-2 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 custom-scrollbar" style="overscroll-behavior: contain; min-height: 120px; max-height: 40vh;">
                                 <template x-for="(item, index) in cart" :key="index">
@@ -565,6 +595,27 @@
                                                       :class="deliveryStatus === 'to_deliver' ? 'translate-x-5' : 'translate-x-0'"></span>
                                             </button>
                                         </label>
+                                    </template>
+
+                                    {{-- Utiliser l'épargne du client --}}
+                                    <template x-if="selectedCustomer && selectedCustomer.savings_balance > 0 && cart.length > 0">
+                                        <div class="mt-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                                            <label class="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 mb-1 block">
+                                                Utiliser l'épargne (solde : <span x-text="formatPrice(selectedCustomer.savings_balance)"></span>)
+                                            </label>
+                                            <div class="flex items-center gap-2">
+                                                <input type="number" x-model="savingsAmount" min="0" step="1"
+                                                       :max="Math.min(selectedCustomer.savings_balance, cartTotal)"
+                                                       placeholder="0"
+                                                       class="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-indigo-300 dark:border-indigo-700 rounded-lg py-2 px-3 text-right text-lg font-bold focus:ring-2 focus:ring-indigo-500">
+                                                <button type="button" @click="savingsAmount = Math.min(selectedCustomer.savings_balance, cartTotal)"
+                                                        class="whitespace-nowrap rounded-lg bg-indigo-500 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-600">Max</button>
+                                            </div>
+                                            <div class="mt-1.5 flex items-center justify-between rounded-lg bg-indigo-100/50 dark:bg-indigo-900/30 px-3 py-1.5">
+                                                <span class="text-sm font-semibold text-indigo-700 dark:text-indigo-400">Reste à payer</span>
+                                                <span class="font-black text-base text-indigo-700 dark:text-indigo-300" x-text="formatPrice(Math.max(0, cartTotal - (parseFloat(savingsAmount) || 0)))"></span>
+                                            </div>
+                                        </div>
                                     </template>
 
                                     {{-- Montant payé (paiement partiel) --}}
@@ -1421,6 +1472,10 @@
                 amountPaid: '',
                 isCreditSale: false,
                 deliveryStatus: 'delivered',
+                selectedCustomer: null,
+                customerSearch: '',
+                customerResults: [],
+                savingsAmount: '',
                 processing: false,
                 
                 // Scanner
@@ -1859,6 +1914,26 @@
                     this.cart.splice(index, 1);
                 },
                 
+                // Recherche / sélection client (pour épargne)
+                async searchCustomers() {
+                    const q = this.customerSearch.trim();
+                    if (q.length < 1) { this.customerResults = []; return; }
+                    try {
+                        const res = await fetch('/api/pos/customers/search?q=' + encodeURIComponent(q), { headers: this.getHeaders() });
+                        this.customerResults = res.ok ? await res.json() : [];
+                    } catch (e) { this.customerResults = []; }
+                },
+                selectCustomer(c) {
+                    this.selectedCustomer = c;
+                    this.customerSearch = '';
+                    this.customerResults = [];
+                    this.savingsAmount = '';
+                },
+                clearCustomer() {
+                    this.selectedCustomer = null;
+                    this.savingsAmount = '';
+                },
+
                 // Vider le panier
                 clearCart() {
                     this.cart = [];
@@ -1868,6 +1943,10 @@
                     this.amountPaid = '';
                     this.isCreditSale = false;
                     this.deliveryStatus = 'delivered';
+                    this.selectedCustomer = null;
+                    this.customerSearch = '';
+                    this.customerResults = [];
+                    this.savingsAmount = '';
                 },
                 
                 // Sous-total (avant remise)
@@ -1917,6 +1996,13 @@
                             payload.amount_paid = parseFloat(this.amountPaid) || 0;
                         }
 
+                        // Client + utilisation de l'épargne
+                        payload.customer_id = this.selectedCustomer ? this.selectedCustomer.id : null;
+                        const sav = parseFloat(this.savingsAmount) || 0;
+                        if (this.selectedCustomer && sav > 0) {
+                            payload.savings_amount = Math.min(sav, this.selectedCustomer.savings_balance, this.cartTotal);
+                        }
+
                         const response = await fetch('/api/pos/sale', {
                             method: 'POST',
                             headers: this.getHeaders(),
@@ -1941,6 +2027,10 @@
                             this.amountPaid = '';
                             this.isCreditSale = false;
                             this.deliveryStatus = 'delivered';
+                            this.selectedCustomer = null;
+                            this.customerSearch = '';
+                            this.customerResults = [];
+                            this.savingsAmount = '';
                             this.sessionStats = data.session;
 
                             // Mise à jour locale immédiate du stock affiché
