@@ -708,6 +708,11 @@ class SaleResource extends Resource
                     ->label('Client')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('created_by')
+                    ->label('Opérateur')
+                    ->getStateUsing(fn (Sale $record) => $record->createdBy?->name ?? $record->cashSession?->user?->name ?? '—')
+                    ->icon('heroicon-m-user')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Statut')
                     ->badge()

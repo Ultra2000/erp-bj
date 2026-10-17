@@ -19,6 +19,7 @@ class PurchasePayment extends Model
         'reference',
         'bank_account_id',
         'user_id',
+        'created_by',
         'notes',
     ];
 
@@ -27,9 +28,23 @@ class PurchasePayment extends Model
         'payment_date' => 'date',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function ($payment) {
+            if (empty($payment->created_by) && auth()->check()) {
+                $payment->created_by = auth()->id();
+            }
+        });
+    }
+
     public function purchase(): BelongsTo
     {
         return $this->belongsTo(Purchase::class);
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function bankAccount(): BelongsTo

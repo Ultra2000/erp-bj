@@ -279,6 +279,11 @@ class PurchaseResource extends Resource
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Fournisseur')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('createdBy.name')
+                    ->label('Opérateur')
+                    ->placeholder('—')
+                    ->icon('heroicon-m-user')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label('Entrepôt')
                     ->toggleable(),

@@ -18,6 +18,7 @@ class Purchase extends Model
 
     protected $fillable = [
         'company_id',
+        'created_by',
         'invoice_number',
         'supplier_id',
         'warehouse_id',
@@ -69,6 +70,10 @@ class Purchase extends Model
     protected static function booted()
     {
         static::creating(function ($purchase) {
+            if (empty($purchase->created_by) && auth()->check()) {
+                $purchase->created_by = auth()->id();
+            }
+
             if (empty($purchase->invoice_number)) {
                 // Numérotation séquentielle par entreprise - Compatible SQLite et MySQL
                 $driver = config('database.default');
@@ -234,6 +239,11 @@ class Purchase extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     public function items(): HasMany

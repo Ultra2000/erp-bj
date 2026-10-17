@@ -24,6 +24,7 @@ class Sale extends Model
     protected $fillable = [
         'company_id',
         'cash_session_id',
+        'created_by',
         'invoice_number',
         'type',
         'parent_id',
@@ -134,6 +135,11 @@ class Sale extends Model
         parent::boot();
 
         static::creating(function ($sale) {
+            // Opérateur : utilisateur qui crée la vente (si authentifié)
+            if (empty($sale->created_by) && auth()->check()) {
+                $sale->created_by = auth()->id();
+            }
+
             if (empty($sale->invoice_number)) {
                 // Numérotation séquentielle par entreprise avec Année (Format FAC-YYYY-XXXXX)
                 $year = date('Y');
@@ -339,6 +345,11 @@ class Sale extends Model
     public function cashSession(): BelongsTo
     {
         return $this->belongsTo(CashSession::class);
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function items(): HasMany
