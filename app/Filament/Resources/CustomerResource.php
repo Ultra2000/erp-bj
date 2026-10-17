@@ -9,6 +9,8 @@ use App\Services\EmcefService;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -204,6 +206,84 @@ class CustomerResource extends Resource
             ]);
     }
 
+    /**
+     * Fiche client en LECTURE SEULE (page « Voir ») — aucun champ modifiable,
+     * pour consulter les infos + l'épargne sans risque de modification accidentelle.
+     */
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        $currency = Filament::getTenant()->currency ?? 'FCFA';
+
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Épargne / Tontine')
+                    ->icon('heroicon-o-banknotes')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('savings_balance')
+                            ->label('Solde d\'épargne disponible')
+                            ->badge()
+                            ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                            ->color(fn ($state) => (int) $state > 0 ? 'success' : 'gray')
+                            ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', ' ') . ' ' . $currency),
+                    ]),
+                Infolists\Components\Section::make('Informations générales')
+                    ->icon('heroicon-o-identification')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('name')
+                            ->label('Nom / Raison Sociale')
+                            ->weight('bold'),
+                        Infolists\Components\TextEntry::make('customer_type')
+                            ->label('Type de client')
+                            ->badge()
+                            ->color(fn (?string $state) => match ($state) {
+                                'B2B' => 'info',
+                                'B2C' => 'success',
+                                default => 'gray',
+                            })
+                            ->formatStateUsing(fn (?string $state) => match ($state) {
+                                'B2B' => 'Professionnel (B2B)',
+                                'B2C' => 'Particulier (B2C)',
+                                default => $state ?? 'Particulier',
+                            }),
+                        Infolists\Components\TextEntry::make('registration_number')
+                            ->label('IFU')
+                            ->placeholder('Non renseigné')
+                            ->copyable(),
+                        Infolists\Components\TextEntry::make('phone')
+                            ->label('Téléphone')
+                            ->icon('heroicon-o-phone')
+                            ->copyable(),
+                        Infolists\Components\TextEntry::make('email')
+                            ->label('Email')
+                            ->icon('heroicon-o-envelope')
+                            ->placeholder('Non renseigné')
+                            ->copyable(),
+                    ])->columns(2),
+                Infolists\Components\Section::make('Adresse')
+                    ->icon('heroicon-o-map-pin')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('address')
+                            ->label('Adresse')
+                            ->placeholder('Non renseignée')
+                            ->columnSpanFull(),
+                        Infolists\Components\TextEntry::make('city')
+                            ->label('Ville')
+                            ->placeholder('—'),
+                        Infolists\Components\TextEntry::make('country')
+                            ->label('Pays')
+                            ->placeholder('—'),
+                    ])->columns(2)->collapsible(),
+                Infolists\Components\Section::make('Notes')
+                    ->icon('heroicon-o-document-text')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('notes')
+                            ->label('Notes')
+                            ->placeholder('Aucune note')
+                            ->columnSpanFull(),
+                    ])->collapsible()->collapsed(),
+            ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -269,7 +349,12 @@ class CustomerResource extends Resource
             ->defaultSort('name', 'asc')
             ->paginated([10, 25, 50, 100])
             ->defaultPaginationPageOption(25)
+            ->recordUrl(fn (Customer $record) => static::getUrl('view', ['record' => $record]))
             ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->label('Voir')
+                    ->icon('heroicon-o-eye')
+                    ->color('primary'),
                 Tables\Actions\EditAction::make()
                     ->label('Modifier'),
                 Tables\Actions\DeleteAction::make()
@@ -296,6 +381,7 @@ class CustomerResource extends Resource
         return [
             'index' => Pages\ListCustomers::route('/'),
             'create' => Pages\CreateCustomer::route('/create'),
+            'view' => Pages\ViewCustomer::route('/{record}'),
             'edit' => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }
