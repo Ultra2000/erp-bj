@@ -10,6 +10,7 @@ use App\Filament\Widgets\WarehouseStockSummary;
 use App\Filament\Widgets\QuickActionsWidget;
 use App\Filament\Widgets\TopProductsWidget;
 use App\Filament\Widgets\TopSellersWidget;
+use App\Filament\Widgets\TopCustomersWidget;
 use App\Models\Warehouse;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
@@ -91,6 +92,7 @@ class Dashboard extends Page implements HasForms
     {
         return [
             TopSellersWidget::make(),
+            TopCustomersWidget::make(),
             TopProductsWidget::make(['selectedWarehouse' => $this->selectedWarehouse]),
             WarehouseOverview::make(['selectedWarehouse' => $this->selectedWarehouse]),
             WarehouseStockSummary::make(['selectedWarehouse' => $this->selectedWarehouse]),
