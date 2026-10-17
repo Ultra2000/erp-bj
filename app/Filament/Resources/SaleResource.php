@@ -953,7 +953,14 @@ class SaleResource extends Resource
                             ->required(),
                         Forms\Components\Select::make('payment_method')
                             ->label('Mode de paiement')
-                            ->options(\App\Models\Payment::METHODS)
+                            ->options(function (Sale $record) {
+                                $opts = \App\Models\Payment::METHODS;
+                                $cust = $record->customer;
+                                if ($cust && (int) $cust->savings_balance > 0) {
+                                    $opts['savings'] = 'Épargne (solde : ' . number_format((int) $cust->savings_balance, 0, ',', ' ') . ' FCFA)';
+                                }
+                                return $opts;
+                            })
                             ->required()
                             ->default('cash'),
                         Forms\Components\TextInput::make('amount')
@@ -968,9 +975,10 @@ class SaleResource extends Resource
                             ->label('Notes'),
                     ])
                     ->action(function (Sale $record, array $data) {
+                        $method = $data['payment_method'];
+                        $amount = (int) round((float) $data['amount']);
                         $totalDue = (float) $record->total + (float) ($record->aib_amount ?? 0);
-                        $newTotal = (float) $record->amount_paid + (float) $data['amount'];
-                        if ($newTotal > $totalDue) {
+                        if ((float) $record->amount_paid + $amount > $totalDue) {
                             \Filament\Notifications\Notification::make()
                                 ->title('Montant trop élevé')
                                 ->body('Le paiement dépasse le montant restant dû.')
@@ -979,13 +987,35 @@ class SaleResource extends Resource
                             return;
                         }
 
+                        // Paiement depuis l'épargne : on débite le solde du client
+                        if ($method === 'savings') {
+                            $cust = $record->customer;
+                            if (! $cust || (int) $cust->savings_balance < $amount) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Solde d\'épargne insuffisant')
+                                    ->danger()->send();
+                                return;
+                            }
+                            try {
+                                $cust->spendSavings($amount, [
+                                    'sale_id' => $record->id,
+                                    'reference' => $record->invoice_number,
+                                    'notes' => 'Paiement facture ' . $record->invoice_number,
+                                ]);
+                            } catch (\Throwable $e) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Paiement épargne impossible')->body($e->getMessage())->danger()->send();
+                                return;
+                            }
+                        }
+
                         $record->payments()->create([
                             'company_id' => $record->company_id,
-                            'amount' => $data['amount'],
-                            'payment_method' => $data['payment_method'],
+                            'amount' => $amount,
+                            'payment_method' => $method,
                             'payment_date' => $data['payment_date'],
                             'reference' => $data['reference'] ?? null,
-                            'account_number' => \App\Models\Payment::ACCOUNTS[$data['payment_method']] ?? '512000',
+                            'account_number' => $method === 'savings' ? '419000' : (\App\Models\Payment::ACCOUNTS[$method] ?? '512000'),
                             'notes' => $data['notes'] ?? null,
                             'created_by' => auth()->id(),
                         ]);
@@ -994,6 +1024,9 @@ class SaleResource extends Resource
 
                         \Filament\Notifications\Notification::make()
                             ->title('Paiement enregistré')
+                            ->body($method === 'savings'
+                                ? 'Réglé depuis l\'épargne. Nouveau solde client : ' . number_format((int) $record->customer->fresh()->savings_balance, 0, ',', ' ') . ' FCFA'
+                                : null)
                             ->success()
                             ->send();
                     }),
