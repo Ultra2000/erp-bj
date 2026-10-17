@@ -17,6 +17,7 @@ use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class SaleResource extends Resource
 {
@@ -708,6 +709,7 @@ class SaleResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label('Client')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Statut')
@@ -844,7 +846,74 @@ class SaleResource extends Resource
                         'to_deliver' => 'À retirer',
                         'delivered' => 'Retiré',
                     ]),
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('Type')
+                    ->options([
+                        'invoice' => 'Facture',
+                        'credit_note' => 'Avoir',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? null) {
+                            'invoice' => $query->where(fn ($q) => $q->whereNull('type')->orWhere('type', '!=', 'credit_note')),
+                            'credit_note' => $query->where('type', 'credit_note'),
+                            default => $query,
+                        };
+                    }),
+                Tables\Filters\SelectFilter::make('payment_method')
+                    ->label('Mode de paiement')
+                    ->options([
+                        'cash' => 'Espèces',
+                        'card' => 'Carte bancaire',
+                        'transfer' => 'Virement',
+                        'mobile_money' => 'Mobile Money',
+                        'check' => 'Chèque',
+                        'credit' => 'Crédit',
+                        'other' => 'Autre',
+                    ]),
+                Tables\Filters\Filter::make('created_at')
+                    ->label('Période')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Du'),
+                        Forms\Components\DatePicker::make('until')->label('Au'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '>=', $d))
+                            ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '<=', $d));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $ind = [];
+                        if ($data['from'] ?? null) {
+                            $ind[] = 'Du ' . \Carbon\Carbon::parse($data['from'])->format('d/m/Y');
+                        }
+                        if ($data['until'] ?? null) {
+                            $ind[] = 'Au ' . \Carbon\Carbon::parse($data['until'])->format('d/m/Y');
+                        }
+                        return $ind;
+                    }),
+                Tables\Filters\Filter::make('montant')
+                    ->label('Montant')
+                    ->form([
+                        Forms\Components\TextInput::make('min')->label('Montant min')->numeric(),
+                        Forms\Components\TextInput::make('max')->label('Montant max')->numeric(),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['min'] ?? null, fn (Builder $q, $v) => $q->where('total', '>=', $v))
+                            ->when($data['max'] ?? null, fn (Builder $q, $v) => $q->where('total', '<=', $v));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $ind = [];
+                        if ($data['min'] ?? null) {
+                            $ind[] = 'Min ' . number_format((float) $data['min'], 0, ',', ' ');
+                        }
+                        if ($data['max'] ?? null) {
+                            $ind[] = 'Max ' . number_format((float) $data['max'], 0, ',', ' ');
+                        }
+                        return $ind;
+                    }),
             ])
+            ->filtersFormColumns(2)
             ->deferLoading() // Optimisation: Chargement différé via AJAX
             ->defaultSort('created_at', 'desc')
             ->paginated([10, 25, 50, 100])
