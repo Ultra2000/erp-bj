@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CustomerResource\RelationManagers;
 
 use App\Models\SaleItem;
 use Filament\Facades\Filament;
+use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -70,7 +71,7 @@ class PurchasedProductsRelationManager extends RelationManager
             ->defaultSort('qty', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('periode')
-                    ->label('Période')
+                    ->label('Période rapide')
                     ->options([
                         'week' => 'Cette semaine',
                         'month' => 'Ce mois',
@@ -87,6 +88,27 @@ class PurchasedProductsRelationManager extends RelationManager
                         return $from
                             ? $query->where('sales.created_at', '>=', $from)
                             : $query;
+                    }),
+                Tables\Filters\Filter::make('plage')
+                    ->label('Période personnalisée')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Du'),
+                        Forms\Components\DatePicker::make('until')->label('Au'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('sales.created_at', '>=', $d))
+                            ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('sales.created_at', '<=', $d));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $ind = [];
+                        if ($data['from'] ?? null) {
+                            $ind[] = 'Du ' . \Carbon\Carbon::parse($data['from'])->format('d/m/Y');
+                        }
+                        if ($data['until'] ?? null) {
+                            $ind[] = 'Au ' . \Carbon\Carbon::parse($data['until'])->format('d/m/Y');
+                        }
+                        return $ind;
                     }),
             ])
             ->paginated([10, 25, 50])

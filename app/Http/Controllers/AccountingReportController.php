@@ -525,6 +525,34 @@ class AccountingReportController extends Controller
     }
 
     /**
+     * Classement des vendeurs sur une période (PDF).
+     */
+    public function sellersRanking(Request $request, $companyId = null)
+    {
+        $companyId = $companyId ?? $request->query('company') ?? Filament::getTenant()?->id;
+
+        if (! $companyId) {
+            abort(400, 'Company ID required');
+        }
+
+        $company = Company::findOrFail($companyId);
+
+        $data = \App\Filament\Pages\SellersRanking::buildData(
+            (int) $companyId,
+            $request->query('start_date'),
+            $request->query('end_date'),
+        );
+
+        $pdf = Pdf::loadView('reports.sellers-ranking', array_merge($data, [
+            'company' => $company,
+            'currency' => $company->currency ?? 'FCFA',
+            'generatedAt' => now(),
+        ]))->setPaper('a4');
+
+        return $pdf->download('classement-vendeurs-' . $data['start']->format('Y-m-d') . '-' . $data['end']->format('Y-m-d') . '.pdf');
+    }
+
+    /**
      * Rapport de rentabilité des ventes (bénéfice sur une période).
      *
      * Bénéfice = prix de vente réel (HT, après remise globale) − coût d'achat

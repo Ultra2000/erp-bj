@@ -287,4 +287,5 @@ Route::middleware('auth')->prefix('reports')->group(function () {
     Route::get('/vat-report/{companyId?}', [AccountingReportController::class, 'vatReport'])->name('reports.vat-report');
     Route::get('/sales-profit/{companyId?}', [AccountingReportController::class, 'profitReport'])->name('reports.profit');
     Route::get('/tontine-overview/{company?}', [\App\Http\Controllers\TontineReportController::class, 'export'])->name('tontine.export');
+    Route::get('/sellers-ranking/{companyId?}', [AccountingReportController::class, 'sellersRanking'])->name('reports.sellers');
 });
