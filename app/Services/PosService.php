@@ -311,7 +311,8 @@ class PosService
         float $discountPercent = 0,
         ?Warehouse $warehouse = null,
         ?float $amountPaid = null,
-        string $deliveryStatus = 'delivered'
+        string $deliveryStatus = 'delivered',
+        ?int $savingsAmount = null
     ): array {
         if (empty($items)) {
             return ['success' => false, 'message' => 'Le panier est vide'];
@@ -390,7 +391,7 @@ class PosService
             $sale = DB::transaction(function () use (
                 $companyId, $session, $company,
                 $paymentMethod, $paymentDetails, $customerId, $discountPercent,
-                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse, $amountPaid, $deliveryStatus
+                $itemsToCreate, $totalHt, $totalVat, $totalTtc, $warehouse, $amountPaid, $deliveryStatus, $savingsAmount
             ) {
                 // Client comptoir par défaut
                 $resolvedCustomerId = $customerId;
@@ -417,7 +418,21 @@ class PosService
                     $isWalkInCustomer = true;
                 }
 
-                $effectiveAmountPaid = $amountPaid !== null ? min($amountPaid, $totalTtc) : $totalTtc;
+                // Épargne appliquée (client identifié uniquement, pas le comptoir)
+                $savingsApplied = 0;
+                $savingsCustomer = null;
+                if (! $isWalkInCustomer && $savingsAmount && $savingsAmount > 0 && $resolvedCustomerId) {
+                    $savingsCustomer = Customer::withoutGlobalScopes()->find($resolvedCustomerId);
+                    if ($savingsCustomer) {
+                        $savingsApplied = (int) min($savingsAmount, (int) $savingsCustomer->savings_balance, $totalTtc);
+                    }
+                }
+
+                // Part réglée par le mode choisi (hors épargne)
+                $remainingToPay = max(0, $totalTtc - $savingsApplied);
+                $otherPaid = $amountPaid !== null ? min($amountPaid, $remainingToPay) : $remainingToPay;
+                $effectiveAmountPaid = $savingsApplied + $otherPaid;
+
                 if ($effectiveAmountPaid <= 0) {
                     $paymentStatus = 'unpaid';
                 } elseif ($effectiveAmountPaid >= $totalTtc) {
@@ -468,12 +483,34 @@ class PosService
                     );
                 }
 
-                if ($effectiveAmountPaid > 0) {
+                // Paiement par l'épargne (débite le solde du client + journalise)
+                if ($savingsApplied > 0 && $savingsCustomer) {
+                    $savingsCustomer->spendSavings($savingsApplied, [
+                        'sale_id' => $sale->id,
+                        'cash_session_id' => $session->id,
+                        'reference' => $sale->invoice_number,
+                        'notes' => 'Paiement caisse ' . $sale->invoice_number,
+                    ]);
                     Payment::create([
                         'company_id' => $companyId,
                         'payable_type' => Sale::class,
                         'payable_id' => $sale->id,
-                        'amount' => $effectiveAmountPaid,
+                        'amount' => $savingsApplied,
+                        'payment_method' => 'savings',
+                        'payment_date' => now(),
+                        'account_number' => '419000',
+                        'cash_session_id' => $session->id,
+                        'created_by' => auth()->id(),
+                    ]);
+                }
+
+                // Paiement par le mode choisi (espèces, carte...)
+                if ($otherPaid > 0) {
+                    Payment::create([
+                        'company_id' => $companyId,
+                        'payable_type' => Sale::class,
+                        'payable_id' => $sale->id,
+                        'amount' => $otherPaid,
                         'payment_method' => $paymentMethod,
                         'payment_date' => now(),
                         'account_number' => Payment::ACCOUNTS[$paymentMethod] ?? '530000',

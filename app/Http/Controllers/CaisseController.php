@@ -171,6 +171,41 @@ class CaisseController extends Controller
         );
     }
 
+    /**
+     * Recherche de clients identifiés (pour le POS) avec leur solde d'épargne.
+     */
+    public function searchCustomers(Request $request)
+    {
+        if (!$this->userCan($request, 'pos.sell')) {
+            return response()->json(['success' => false, 'message' => 'Permission refusée'], 403);
+        }
+
+        $companyId = $this->getCompanyId($request);
+        if (!$companyId) return response()->json([]);
+
+        $query = trim((string) $request->query('q', ''));
+
+        $customers = \App\Models\Customer::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('email', '!=', 'walkin@example.com')
+            ->where('email', '!=', 'walkin@pos.local')
+            ->where('name', '!=', 'Client comptoir')
+            ->when($query !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('name', 'like', "%{$query}%")
+                ->orWhere('phone', 'like', "%{$query}%")))
+            ->orderBy('name')
+            ->limit(30)
+            ->get(['id', 'name', 'phone', 'savings_balance'])
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'phone' => $c->phone,
+                'savings_balance' => (int) $c->savings_balance,
+            ]);
+
+        return response()->json($customers);
+    }
+
     public function payInvoice(Request $request, int $id)
     {
         if (!$this->userCan($request, 'pos.collect')) {
@@ -234,7 +269,8 @@ class CaisseController extends Controller
             discountPercent: floatval($request->input('discount_percent', 0)),
             warehouse: $warehouse,
             amountPaid: $request->has('amount_paid') ? floatval($request->input('amount_paid')) : null,
-            deliveryStatus: $request->input('delivery_status') === 'to_deliver' ? 'to_deliver' : 'delivered'
+            deliveryStatus: $request->input('delivery_status') === 'to_deliver' ? 'to_deliver' : 'delivered',
+            savingsAmount: $request->filled('savings_amount') ? (int) $request->input('savings_amount') : null
         );
 
         return response()->json($result, $result['success'] ? 200 : 500);
