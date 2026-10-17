@@ -319,6 +319,26 @@
                                                     </button>
                                                 </template>
                                             </div>
+
+                                            {{-- Paiement par l'épargne / tontine du client (si solde disponible) --}}
+                                            <template x-if="(selectedInvoice.savings_balance || 0) > 0">
+                                                <button type="button"
+                                                        @click="invoicePaymentMethod = 'savings'; invoiceAmount = Math.min(parseFloat(invoiceAmount) || selectedInvoice.remaining, selectedInvoice.remaining, selectedInvoice.savings_balance)"
+                                                        class="mt-2 w-full py-2.5 px-3 rounded-xl border-2 transition-all text-xs font-bold flex items-center justify-between gap-2"
+                                                        :style="invoicePaymentMethod === 'savings' ? 'background:#6366f1; color:white; border-color:#6366f1;' : ''"
+                                                        :class="invoicePaymentMethod !== 'savings' ? 'bg-white dark:bg-gray-700 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700' : ''">
+                                                    <span class="flex items-center gap-1.5">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                                        Épargne du client
+                                                    </span>
+                                                    <span x-text="'Solde : ' + formatPrice(selectedInvoice.savings_balance)"></span>
+                                                </button>
+                                            </template>
+                                            <template x-if="invoicePaymentMethod === 'savings'">
+                                                <p class="mt-2 text-xs text-indigo-600 dark:text-indigo-400">
+                                                    Le montant est débité du solde d'épargne (max <span x-text="formatPrice(Math.min(selectedInvoice.remaining, selectedInvoice.savings_balance))"></span>).
+                                                </p>
+                                            </template>
                                         </div>
 
                                         {{-- Montant à encaisser --}}
@@ -328,12 +348,12 @@
                                                 <input type="number"
                                                        x-model="invoiceAmount"
                                                        class="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                       :max="selectedInvoice.remaining"
+                                                       :max="invoicePaymentMethod === 'savings' ? Math.min(selectedInvoice.remaining, selectedInvoice.savings_balance) : selectedInvoice.remaining"
                                                        min="1" step="1">
                                                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">FCFA</span>
                                             </div>
                                             <div class="flex gap-2 mt-2">
-                                                <button @click="invoiceAmount = selectedInvoice.remaining"
+                                                <button @click="invoiceAmount = invoicePaymentMethod === 'savings' ? Math.min(selectedInvoice.remaining, selectedInvoice.savings_balance) : selectedInvoice.remaining"
                                                         class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 transition-colors">
                                                     Totalité
                                                 </button>
@@ -350,7 +370,7 @@
 
                                         {{-- Bouton valider --}}
                                         <button @click="submitInvoicePayment()"
-                                                :disabled="invoiceProcessing || !invoiceAmount || parseFloat(invoiceAmount) <= 0 || parseFloat(invoiceAmount) > selectedInvoice.remaining"
+                                                :disabled="invoiceProcessing || !invoiceAmount || parseFloat(invoiceAmount) <= 0 || parseFloat(invoiceAmount) > selectedInvoice.remaining || (invoicePaymentMethod === 'savings' && parseFloat(invoiceAmount) > selectedInvoice.savings_balance)"
                                                 class="w-full py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                                                 style="background: linear-gradient(to right, #10b981, #14b8a6); color: white; box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);">
                                             <template x-if="!invoiceProcessing">

@@ -619,13 +619,15 @@ class PosService
         }
 
         return $builder
-            ->with('customer:id,name')
+            ->with('customer:id,name,savings_balance')
             ->limit($limit)
             ->get()
             ->map(fn (Sale $sale) => [
                 'id' => $sale->id,
                 'invoice_number' => $sale->invoice_number,
+                'customer_id' => $sale->customer_id,
                 'customer_name' => $sale->customer?->name ?? 'Client comptoir',
+                'savings_balance' => (int) ($sale->customer?->savings_balance ?? 0),
                 'total' => round((float) $sale->total_with_aib),
                 'amount_paid' => round((float) $sale->amount_paid),
                 'remaining' => round($sale->remaining_amount),
@@ -671,20 +673,64 @@ class PosService
 
         $effectiveAmount = min($amount, $remaining);
 
+        // Paiement par l'épargne : nécessite un client identifié avec un solde suffisant.
+        $savingsCustomer = null;
+        if ($paymentMethod === 'savings') {
+            $savingsCustomer = $sale->customer_id
+                ? Customer::withoutGlobalScopes()->find($sale->customer_id)
+                : null;
+
+            if (!$savingsCustomer) {
+                return ['success' => false, 'message' => 'Aucun client identifié sur cette facture : paiement par épargne impossible.'];
+            }
+
+            $balance = (int) $savingsCustomer->savings_balance;
+            if ($balance <= 0) {
+                return ['success' => false, 'message' => 'Ce client n\'a pas de solde d\'épargne disponible.'];
+            }
+
+            $effectiveAmount = (int) min($effectiveAmount, $balance);
+            if ($effectiveAmount <= 0) {
+                return ['success' => false, 'message' => 'Solde d\'épargne insuffisant.'];
+            }
+        }
+
         try {
-            DB::transaction(function () use ($sale, $session, $effectiveAmount, $paymentMethod, $paymentDetails, $companyId) {
-                Payment::create([
-                    'company_id' => $companyId,
-                    'payable_type' => Sale::class,
-                    'payable_id' => $sale->id,
-                    'amount' => $effectiveAmount,
-                    'payment_method' => $paymentMethod,
-                    'payment_date' => now(),
-                    'account_number' => Payment::ACCOUNTS[$paymentMethod] ?? '530000',
-                    'cash_session_id' => $session->id,
-                    'created_by' => auth()->id(),
-                    'notes' => 'Encaissement facture ' . $sale->invoice_number,
-                ]);
+            DB::transaction(function () use ($sale, $session, $effectiveAmount, $paymentMethod, $paymentDetails, $companyId, $savingsCustomer) {
+                if ($paymentMethod === 'savings' && $savingsCustomer) {
+                    // Débite le solde d'épargne du client + journalise la transaction.
+                    $savingsCustomer->spendSavings($effectiveAmount, [
+                        'sale_id' => $sale->id,
+                        'cash_session_id' => $session->id,
+                        'reference' => $sale->invoice_number,
+                        'notes' => 'Encaissement facture ' . $sale->invoice_number,
+                    ]);
+                    Payment::create([
+                        'company_id' => $companyId,
+                        'payable_type' => Sale::class,
+                        'payable_id' => $sale->id,
+                        'amount' => $effectiveAmount,
+                        'payment_method' => 'savings',
+                        'payment_date' => now(),
+                        'account_number' => '419000',
+                        'cash_session_id' => $session->id,
+                        'created_by' => auth()->id(),
+                        'notes' => 'Encaissement facture ' . $sale->invoice_number . ' (épargne)',
+                    ]);
+                } else {
+                    Payment::create([
+                        'company_id' => $companyId,
+                        'payable_type' => Sale::class,
+                        'payable_id' => $sale->id,
+                        'amount' => $effectiveAmount,
+                        'payment_method' => $paymentMethod,
+                        'payment_date' => now(),
+                        'account_number' => Payment::ACCOUNTS[$paymentMethod] ?? '530000',
+                        'cash_session_id' => $session->id,
+                        'created_by' => auth()->id(),
+                        'notes' => 'Encaissement facture ' . $sale->invoice_number,
+                    ]);
+                }
 
                 if ($paymentMethod !== 'mixed') {
                     $sale->payment_method = $paymentMethod;
