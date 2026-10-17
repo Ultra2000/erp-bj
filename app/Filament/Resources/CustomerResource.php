@@ -237,6 +237,13 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Téléphone')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('savings_balance')
+                    ->label('Solde épargne')
+                    ->alignEnd()
+                    ->sortable()
+                    ->badge()
+                    ->color(fn ($state) => (int) $state > 0 ? 'success' : 'gray')
+                    ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', ' ') . ' ' . (Filament::getTenant()->currency ?? 'FCFA')),
                 Tables\Columns\TextColumn::make('city')
                     ->label('Ville')
                     ->searchable()
@@ -279,6 +286,7 @@ class CustomerResource extends Resource
     public static function getRelations(): array
     {
         return [
+            RelationManagers\SavingsRelationManager::class,
             RelationManagers\PurchasedProductsRelationManager::class,
         ];
     }
