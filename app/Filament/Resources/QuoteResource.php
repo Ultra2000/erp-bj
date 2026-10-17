@@ -79,9 +79,7 @@ class QuoteResource extends Resource
                                     ->searchable()
                                     ->preload()
                                     ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('Nom')
-                                            ->required(),
+                                        \App\Filament\Resources\CustomerResource::nameInput('Nom'),
                                         Forms\Components\TextInput::make('email')
                                             ->email(),
                                         Forms\Components\TextInput::make('phone')

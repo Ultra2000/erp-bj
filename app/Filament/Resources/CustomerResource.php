@@ -43,6 +43,27 @@ class CustomerResource extends Resource
         return static::canAccess();
     }
 
+    /**
+     * Champ « nom » réutilisable, imposant un nom bien identifiable :
+     * obligatoire, au moins 2 lettres (pas seulement des chiffres/ponctuation),
+     * espaces superflus retirés.
+     */
+    public static function nameInput(string $label = 'Nom / Raison Sociale'): Forms\Components\TextInput
+    {
+        return Forms\Components\TextInput::make('name')
+            ->label($label)
+            ->required()
+            ->minLength(2)
+            ->maxLength(255)
+            ->rule('regex:/\p{L}.*\p{L}/u')
+            ->dehydrateStateUsing(fn (?string $state) => trim((string) $state))
+            ->validationMessages([
+                'required' => 'Le nom du client est obligatoire.',
+                'min' => 'Le nom doit comporter au moins 2 caractères.',
+                'regex' => 'Saisissez un nom identifiable (au moins 2 lettres).',
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -128,10 +149,7 @@ class CustomerResource extends Resource
                                         }
                                     })
                             ),
-                        Forms\Components\TextInput::make('name')
-                            ->label('Nom / Raison Sociale')
-                            ->required()
-                            ->maxLength(255),
+                        static::nameInput(),
                         Forms\Components\Select::make('customer_type')
                             ->label('Type de client')
                             ->options([

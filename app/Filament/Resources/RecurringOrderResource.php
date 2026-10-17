@@ -57,10 +57,7 @@ class RecurringOrderResource extends Resource
                                     ->preload()
                                     ->required()
                                     ->createOptionForm([
-                                        Forms\Components\TextInput::make('name')
-                                            ->label('Nom')
-                                            ->required()
-                                            ->maxLength(255),
+                                        \App\Filament\Resources\CustomerResource::nameInput('Nom'),
                                         Forms\Components\TextInput::make('email')
                                             ->label('Email')
                                             ->email(),

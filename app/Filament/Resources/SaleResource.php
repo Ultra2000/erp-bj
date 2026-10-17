@@ -106,10 +106,7 @@ class SaleResource extends Resource
                             ->searchable()
                             ->preload()
                             ->createOptionForm([
-                                Forms\Components\TextInput::make('name')
-                                    ->label('Nom')
-                                    ->required()
-                                    ->maxLength(255),
+                                \App\Filament\Resources\CustomerResource::nameInput('Nom'),
                                 Forms\Components\TextInput::make('phone')
                                     ->label('Téléphone')
                                     ->tel()
