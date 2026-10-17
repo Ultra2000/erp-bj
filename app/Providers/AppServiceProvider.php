@@ -58,6 +58,17 @@ class AppServiceProvider extends ServiceProvider
             return "<?php echo e(\\App\\Support\\DateHelper::fmt({$expression})); ?>";
         });
 
+        // Fuseau d'affichage des dates/heures dans Filament (écran).
+        // Le stockage reste en UTC ; on affiche en heure locale (Bénin, UTC+1)
+        // dans tous les tableaux et fiches, sans avoir à le répéter par colonne.
+        $displayTz = config('app.display_timezone', 'Africa/Porto-Novo');
+        \Filament\Tables\Columns\TextColumn::configureUsing(
+            fn (\Filament\Tables\Columns\TextColumn $column) => $column->timezone($displayTz)
+        );
+        \Filament\Infolists\Components\TextEntry::configureUsing(
+            fn (\Filament\Infolists\Components\TextEntry $entry) => $entry->timezone($displayTz)
+        );
+
         // ==========================================
         // OPTIMISATIONS DE PERFORMANCE
         // ==========================================
