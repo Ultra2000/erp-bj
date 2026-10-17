@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\SavingsTransaction;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 
 class TontineOverview extends Page
@@ -31,9 +33,92 @@ class TontineOverview extends Page
         return Filament::getTenant()?->id;
     }
 
+    protected static function canWithdraw(): bool
+    {
+        $user = auth()->user();
+        return $user && ($user->is_super_admin || $user->isAdmin() || $user->hasPermission('pos.collect'));
+    }
+
+    protected function customerSelect(): Forms\Components\Select
+    {
+        $companyId = $this->getCompanyId();
+
+        return Forms\Components\Select::make('customer_id')
+            ->label('Client')
+            ->required()
+            ->searchable()
+            ->getSearchResultsUsing(fn (string $search) => Customer::withoutGlobalScopes()
+                ->where('company_id', $companyId)
+                ->where('name', 'like', "%{$search}%")
+                ->limit(30)
+                ->pluck('name', 'id')
+                ->all())
+            ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name);
+    }
+
     protected function getHeaderActions(): array
     {
+        $currency = Filament::getTenant()->currency ?? 'FCFA';
+
         return [
+            Action::make('deposit')
+                ->label('Dépôt')
+                ->icon('heroicon-o-plus-circle')
+                ->color('success')
+                ->modalHeading('Enregistrer un dépôt d\'épargne')
+                ->form([
+                    $this->customerSelect(),
+                    Forms\Components\TextInput::make('amount')->label('Montant')->numeric()->minValue(1)->required()->suffix($currency),
+                    Forms\Components\Select::make('payment_method')->label('Mode')
+                        ->options(['cash' => 'Espèces', 'card' => 'Carte', 'transfer' => 'Virement', 'mobile_money' => 'Mobile Money'])
+                        ->default('cash'),
+                    Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
+                ])
+                ->action(function (array $data) use ($currency) {
+                    $c = Customer::findOrFail($data['customer_id']);
+                    $c->deposit((int) $data['amount'], [
+                        'payment_method' => $data['payment_method'] ?? 'cash',
+                        'notes' => $data['notes'] ?? null,
+                    ]);
+                    Notification::make()->title('Dépôt enregistré')
+                        ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
+                        ->success()->send();
+                }),
+
+            Action::make('withdraw')
+                ->label('Retrait')
+                ->icon('heroicon-o-minus-circle')
+                ->color('warning')
+                ->visible(fn () => static::canWithdraw())
+                ->modalHeading('Retrait d\'épargne (espèces)')
+                ->form([
+                    $this->customerSelect()
+                        ->helperText('Le solde disponible s\'affiche après sélection.')
+                        ->live()
+                        ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('solde', $state ? (int) (Customer::find($state)?->savings_balance ?? 0) : 0)),
+                    Forms\Components\Placeholder::make('solde')
+                        ->label('Solde disponible')
+                        ->content(fn (Forms\Get $get) => $get('customer_id')
+                            ? number_format((int) (Customer::find($get('customer_id'))?->savings_balance ?? 0), 0, ',', ' ') . ' ' . $currency
+                            : '—'),
+                    Forms\Components\TextInput::make('amount')->label('Montant à retirer')->numeric()->minValue(1)->required()->suffix($currency),
+                    Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
+                ])
+                ->action(function (array $data) use ($currency) {
+                    $c = Customer::findOrFail($data['customer_id']);
+                    try {
+                        $c->withdraw((int) $data['amount'], [
+                            'payment_method' => 'cash',
+                            'notes' => $data['notes'] ?? null,
+                        ]);
+                        Notification::make()->title('Retrait effectué')
+                            ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
+                            ->success()->send();
+                    } catch (\Throwable $e) {
+                        Notification::make()->title('Retrait impossible')->body($e->getMessage())->danger()->send();
+                    }
+                }),
+
             Action::make('exportPdf')
                 ->label('Export PDF')
                 ->icon('heroicon-o-document-arrow-down')
