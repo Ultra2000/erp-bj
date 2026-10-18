@@ -553,6 +553,34 @@ class AccountingReportController extends Controller
     }
 
     /**
+     * Export PDF du classement des clients sur une période.
+     */
+    public function customersRanking(Request $request, $companyId = null)
+    {
+        $companyId = $companyId ?? $request->query('company') ?? Filament::getTenant()?->id;
+
+        if (! $companyId) {
+            abort(400, 'Company ID required');
+        }
+
+        $company = Company::findOrFail($companyId);
+
+        $data = \App\Filament\Pages\CustomersRanking::buildData(
+            (int) $companyId,
+            $request->query('start_date'),
+            $request->query('end_date'),
+        );
+
+        $pdf = Pdf::loadView('reports.customers-ranking', array_merge($data, [
+            'company' => $company,
+            'currency' => $company->currency ?? 'FCFA',
+            'generatedAt' => now(),
+        ]))->setPaper('a4');
+
+        return $pdf->download('classement-clients-' . $data['start']->format('Y-m-d') . '-' . $data['end']->format('Y-m-d') . '.pdf');
+    }
+
+    /**
      * Rapport de rentabilité des ventes (bénéfice sur une période).
      *
      * Bénéfice = prix de vente réel (HT, après remise globale) − coût d'achat

@@ -309,4 +309,5 @@ Route::middleware('auth')->prefix('reports')->group(function () {
     Route::get('/tontine-statement/{customer}', [\App\Http\Controllers\TontineReportController::class, 'statement'])->name('tontine.statement');
     Route::get('/tontine-movements/{company?}', [\App\Http\Controllers\TontineReportController::class, 'movements'])->name('reports.savings-movements');
     Route::get('/sellers-ranking/{companyId?}', [AccountingReportController::class, 'sellersRanking'])->name('reports.sellers');
+    Route::get('/customers-ranking/{companyId?}', [AccountingReportController::class, 'customersRanking'])->name('reports.customers');
 });
