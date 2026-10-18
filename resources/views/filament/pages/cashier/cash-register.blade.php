@@ -347,7 +347,7 @@
                                             <div class="relative">
                                                 <input type="number"
                                                        x-model="invoiceAmount"
-                                                       class="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl py-3 pl-4 pr-16 text-right text-xl font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                       class="w-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl py-3 pl-4 pr-20 text-right text-xl font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                                        :max="invoicePaymentMethod === 'savings' ? Math.min(selectedInvoice.remaining, selectedInvoice.savings_balance) : selectedInvoice.remaining"
                                                        min="1" step="1">
                                                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">FCFA</span>
