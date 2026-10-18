@@ -162,6 +162,24 @@ class SavingsRelationManager extends RelationManager
                             Notification::make()->title('Retrait impossible')->body($e->getMessage())->danger()->send();
                         }
                     }),
+                Tables\Actions\Action::make('statement')
+                    ->label('Relevé PDF')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->modalHeading('Relevé de compte épargne')
+                    ->modalSubmitActionLabel('Générer le PDF')
+                    ->form([
+                        Forms\Components\DatePicker::make('start')->label('Du')->default(now()->startOfYear())->required(),
+                        Forms\Components\DatePicker::make('end')->label('Au')->default(now())->required(),
+                    ])
+                    ->action(function (array $data) use ($customer) {
+                        $url = route('tontine.statement', [
+                            'customer' => $customer->id,
+                            'start' => $data['start'],
+                            'end' => $data['end'],
+                        ]);
+                        $this->js('window.open(' . json_encode($url) . ', "_blank")');
+                    }),
             ])
             ->paginated([10, 25, 50])
             ->emptyStateHeading('Aucun mouvement d\'épargne')
