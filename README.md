@@ -1,189 +1,212 @@
-<h1 align="center">GestStock</h1>
-<p align="center">Application de gestion de stock, facturation & point de vente (POS) construite avec Laravel 12 & Filament v3.</p>
+<div align="center">
 
-<p align="center">
-<img src="https://img.shields.io/badge/Laravel-12.x-red" />
-<img src="https://img.shields.io/badge/PHP-%5E8.2-blue" />
-<img src="https://img.shields.io/badge/Filament-v3-purple" />
-<img src="https://img.shields.io/badge/License-MIT-green" />
-</p>
+# 🏪 GestStock — ERP & Point de Vente
 
-## ✨ Fonctionnalités principales
+**Solution de gestion tout‑en‑un pour PME & commerces, pensée pour le Bénin et la zone OHADA.**
+Stock · Facturation · Caisse (POS) · Comptabilité SYSCOHADA · Fiscalisation e‑MCeF (DGI) · Tontine/Épargne · RH
 
-- Gestion des produits (stock, stock minimum, fournisseur, prix d'achat / vente, unité)
-- Génération automatique de codes produits internes (format `PYYXXXXXX`)
-- Génération & aperçu de codes-barres (Code 128) + impression d'étiquettes PDF (sélection & individuel)
-- Préparation future EAN‑13 (champ `barcode_type`)
-- Factures Achats & Ventes avec : remises (%), TVA (%), numérotation séquentielle, QR code de vérification
-- Vérification externe sécurisée via lien signé + hash d'intégrité
-- Envoi de facture PDF par e-mail (SMTP configurable)
-- Page Caisse (POS) : recherche, scan douchette, scan caméra (ZXing), mode continu, beep & vibration
-- Calcul automatique rendu monnaie / remises / TVA
-- Alerte stock bas (liste + ticket + messages d’avertissement)
-- Client « walk-in » par défaut si non sélectionné
-- Impression d’étiquettes multi-colonnes configurable (2/3/4 colonnes, option prix)
+<br>
 
-## 🗂 Structure technique
+![Laravel](https://img.shields.io/badge/Laravel-11.x-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
+![Filament](https://img.shields.io/badge/Filament-v3-FDB515?logo=laravel&logoColor=white)
+![Alpine.js](https://img.shields.io/badge/Alpine.js-3-8BC0D0?logo=alpinedotjs&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
+![e-MCeF](https://img.shields.io/badge/e--MCeF-DGI%20B%C3%A9nin-009639)
+![OHADA](https://img.shields.io/badge/Comptabilit%C3%A9-SYSCOHADA-1D4ED8)
+![Multi-tenant](https://img.shields.io/badge/Multi--entreprise-oui-6D28D9)
 
-| Élément | Détails |
-|---------|--------|
-| Backend | Laravel 12 |
-| Admin UI | Filament v3 |
-| Base de données | SQLite (dev) — compatible MySQL/PostgreSQL |
-| PDF | `barryvdh/laravel-dompdf` |
-| QR Code | `simplesoftwareio/simple-qrcode` |
-| Codes-barres | `milon/barcode` (Code128) |
-| Scan caméra | ZXing Browser (UMD) |
-| Front assets | Vite + Tailwind |
+</div>
+
+---
+
+## 📋 Sommaire
+
+- [Présentation](#-présentation)
+- [Fonctionnalités par module](#-fonctionnalités-par-module)
+- [Stack technique](#-stack-technique)
+- [Installation (développement)](#-installation-développement)
+- [Déploiement (production)](#-déploiement-production)
+- [Rôles & permissions](#-rôles--permissions)
+- [Spécificités Bénin / OHADA](#-spécificités-bénin--ohada)
+- [Conventions importantes](#-conventions-importantes)
+- [Licence](#-licence)
+
+---
+
+## 🎯 Présentation
+
+**GestStock** est un ERP web **multi‑entreprise** (multi‑tenant) qui couvre l'ensemble du cycle
+commercial et comptable d'une PME : des achats au point de vente, de la caisse à la
+déclaration fiscale, en passant par la gestion des stocks multi‑entrepôts, les ressources
+humaines et une caisse d'épargne/tontine intégrée.
+
+Il est conçu pour le contexte **béninois** : fiscalisation des factures via **e‑MCeF (DGI)**,
+comptabilité au plan **SYSCOHADA**, montants en **FCFA (XOF)**, et heures affichées en
+**Africa/Porto‑Novo**.
+
+---
+
+## ✨ Fonctionnalités par module
+
+### 🧾 Ventes & Achats
+- Factures de **vente** et **d'achat** : remises (%), TVA, AIB, numérotation séquentielle
+- **Avoirs** (notes de crédit) et annulation avec restauration du stock
+- **Devis** et **bons de livraison** PDF, **commandes récurrentes**
+- Suivi des **paiements** (partiels, multi‑versements) et des **créances clients** (relances, ancienneté)
+- Envoi de factures **PDF par e‑mail**, QR code de vérification + lien signé anti‑fraude
+
+### 🛒 Caisse / Point de vente (POS)
+- Recherche produit, **scan douchette** et **scan caméra** (ZXing), mode continu, beep & vibration
+- **Sessions de caisse** (ouverture/clôture, fond de caisse, rapprochement, écart)
+- **Encaissement** de factures impayées, multi‑modes (espèces / carte / mobile money / virement)
+- Sélection client, **paiement depuis l'épargne** du client, rendu monnaie automatique
+- **Ticket de caisse** thermique 80 mm imprimable
+
+### 📦 Stock & Entrepôts
+- Produits (prix achat/vente, stock min., unité, catégories, TVA par produit)
+- **Codes produits** auto (`PYYXXXXXX`) + **codes‑barres** Code 128 et **étiquettes PDF**
+- **Multi‑entrepôts**, **transferts** inter‑entrepôts, **inventaires**, alertes de stock bas
+- Import de produits (Excel/CSV)
+
+### 💰 Comptabilité (SYSCOHADA)
+- Plan comptable OHADA, **écritures**, **règles** d'imputation automatiques
+- **Journaux** (ventes/achats), **balance générale**, **grand‑livre**, audit du journal
+- Export **FEC** et rapports comptables PDF
+- Suivi **TVA**, **banque** (comptes & transactions)
+
+### 🏛️ Fiscalisation e‑MCeF (DGI Bénin)
+- Certification des factures via l'API **e‑MCeF**, récupération **NIM / code MECeF / QR**
+- Recherche **IFU** d'un contribuable, assistant de configuration (PPF)
+
+### 💸 Tontine / Épargne
+- **Porte‑monnaie d'épargne** par client (dépôts, retraits, utilisation en caisse)
+- **Vue d'ensemble** tontine, **relevé de compte** PDF par client, **reçus** imprimables
+- Mouvements rattachés à la **session de caisse** (traçabilité des espèces)
+
+### 👥 RH
+- Employés, **pointage**, **congés**, **planning** (calendrier), **commissions**
+
+### 📊 Tableau de bord & Rapports
+- Statistiques, graphique des ventes, **top produits / vendeurs / clients ambassadeurs**
+- **Classements** clients & vendeurs sur période personnalisable (page + PDF)
+- Centre de rapports, exports PDF/Excel
+
+---
+
+## 🧱 Stack technique
+
+| Domaine | Technologie |
+|---|---|
+| Backend | **Laravel 11** (PHP 8.2+) |
+| Admin / UI | **Filament v3** |
+| Front interactif | **Alpine.js** + **Livewire**, **Vite** + **Tailwind CSS** |
+| Base de données | **MySQL** (production) · **SQLite** (développement) |
+| PDF | `barryvdh/laravel-dompdf`, `spatie/browsershot` |
+| Excel | `maatwebsite/excel` |
+| Codes‑barres / QR | `milon/barcode`, `simplesoftwareio/simple-qrcode`, ZXing (scan caméra) |
+| E‑invoicing | `horstoeko/zugferd`, `tiime/factur-x` (Factur‑X / ZUGFeRD) |
+| Journal d'audit | `spatie/laravel-activitylog` |
+| Calendrier | `saade/filament-fullcalendar` |
+| API | `laravel/sanctum` |
+
+---
 
 ## 🚀 Installation (développement)
+
+> Prérequis : PHP 8.2+, Composer, Node.js 18+, et l'extension PHP `sqlite3`.
 
 ```bash
 git clone <url-du-repo> geststock
 cd geststock
+
 composer install
 cp .env.example .env
-touch database/database.sqlite
 php artisan key:generate
-php artisan migrate --seed   # si des seeders existent
+
+# Base SQLite locale
+touch database/database.sqlite        # (sous Windows : New-Item database/database.sqlite)
+php artisan migrate --seed
+
 npm install
-npm run dev                  # ou npm run build pour prod
+npm run build          # ou `npm run dev` pour le hot‑reload
+
 php artisan serve
 ```
 
-Ouvre ensuite: http://localhost:8000
-
-### Accès Filament
-
-Panel Filament (admin): `/admin`  
-Créer d’abord un utilisateur puis lui attribuer le rôle `admin` (via base ou interface si déjà accessible).
-
-## 🔐 Rôles & accès
-
-| Rôle | Accès |
-|------|-------|
-| admin | Tous panels, génération/regénération codes produits, gestion complète |
-| cashier | Accès page Caisse (POS), création ventes, scan codes |
-| (autres) | Accès restreint selon logique future |
-
-Méthode de filtrage : `User::canAccessPanel()` (adaptée pour autoriser admin & cashier).
-
-## 🧾 Facturation
-
-- Numérotation séquentielle configurable (ex: `FAC-000001`, `ACH-000001`)
-- Remise (%) appliquée sur sous-total puis TVA sur montant remisé
-- QR code sur facture : encode URL de vérification signée
-- Lien public sécurisé (signature URL) → page de vérification avec hash calculé (id + numéro + total + date)
-- Envoi email PDF via `InvoiceMail`
-
-## 🛒 Caisse (POS)
-
-Fonctionnalités :
-- Recherche produit (nom / code)
-- Ajout rapide via scan matériel (champ input) ou caméra (sélection device + overlay)
-- Mode scan continu optionnel
-- Avertissement produits stock bas + badge “Bas”
-- Calcul remise / TVA / rendu automatique
-- Empêche modification prix pour rôle `cashier` (admin peut modifier)
-- Client par défaut « walk-in » si null
-
-API internes utilisées :
-- `GET /admin/api/products?q=...` (recherche)
-- `GET /admin/api/product-code/{code}` (scan direct)
-- `POST /admin/api/cash-sale` (enregistrement vente rapide)
-
-## 🏷 Codes-barres & étiquettes
-
-### Génération
-- Automatique à la création produit si absent (`Product::boot()`)
-- Format interne : `P` + année (2 chiffres) + séquence sur 6 chiffres
-- Table `sequences` pour éviter scan complet
-
-### Régénération
-- Action Filament “Régénérer code” (admin uniquement)
-
-### Impression étiquettes
-- Bulk action: sélectionner produits → “Imprimer étiquettes”
-- Action individuelle sur chaque produit
-- Paramètres: quantités (`id:qty,id:qty`), colonnes (2/3/4), afficher prix
-- View PDF: `resources/views/pdf/product-labels.blade.php`
-
-### Préparation EAN‑13
-- Champ `barcode_type` (`code128` par défaut) → prêt pour extension future (`ean13`)
-
-## 📧 Emails
-
-- Envoi facture PDF client: nécessite configuration SMTP dans `.env` :
-
-```
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=...
-MAIL_PASSWORD=...
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=no-reply@exemple.com
-MAIL_FROM_NAME="GestStock"
-```
-
-## 🗃 Commandes Artisan utiles
-
-| Commande | Description |
-|----------|-------------|
-| `products:generate-barcodes` | Génère codes manquants |
-| `products:generate-barcodes --rewrite` | Regénère tous les codes (attention) |
-| `queue:listen` | Si des jobs différés sont ajoutés |
-
-## 🔍 Vérification facture (QR)
-
-1. Facture intègre un QR pointant vers `/verify/(sale|purchase)/{id}?signature=...`
-2. Route signée → hash recomputé côté serveur
-3. Si correspond → affiche “Authentique” / sinon “Invalide”.
-
-## 🧪 Tests
-
-Base Pest déjà initialisée. Pour exécuter :
-
-```bash
-php artisan test
-```
-
-Ajouter vos tests dans `tests/Feature` ou `tests/Unit`.
-
-## 📦 Build production
-
-```bash
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-npm run build
-```
-
-## 🔐 Sécurité & bonnes pratiques
-
-- Conserver `.env` hors dépôt.
-- Régénérer clé app si environnement cloné (`php artisan key:generate`).
-- Restreindre accès panel admin par firewall / HTTPS en production.
-- Mettre en place backups DB réguliers.
-
-## 🗺 Roadmap (prochaines améliorations possibles)
-
-- Support EAN‑13 complet (chiffre contrôle, double stockage code interne + EAN)
-- Ticket de caisse imprimable thermique (58 / 80 mm)
-- Multi-modes de paiement (espèces / mobile money / carte)
-- Sélection client dynamique + historique achats client
-- Cache PNG persistent des codes-barres pour performance PDF massive
-- Notifications stock bas (email / dashboard widget)
-- Journal d’audit (ventes, modifications stock)
-
-## 🤝 Contribution
-
-Fork → branche `feature/xxx` → PR. Merci de garder un style cohérent et d’ajouter des tests sur les comportements critiques (génération codes, calcul totals).
-
-## 📄 Licence
-
-Projet distribué sous licence MIT. Voir le fichier `LICENSE` si présent ou ajouter un fichier de licence spécifique selon vos besoins.
+Accès : **http://localhost:8000** — panneau d'administration sur **`/admin`**.
+Créez un premier utilisateur puis attribuez‑lui le rôle **admin** (seeder `RolesAndPermissionsSeeder`).
 
 ---
 
-Pour toute question ou amélioration, ouvrez une issue ou proposez une PR. Bon usage de GestStock !
+## 📦 Déploiement (production)
+
+L'hébergement cible est **cPanel / MySQL**. Le serveur **ne construit pas** les assets :
+le build Vite est fait **en local** et le dossier `public/build` est **versionné**.
+
+**En local — avant de pousser un changement de front (CSS/JS) :**
+
+```bash
+npm run build
+git add -A public/build
+git commit -m "build assets"
+git push
+```
+
+**Sur le serveur :**
+
+```bash
+git pull origin main
+php artisan migrate --force          # uniquement si de nouvelles migrations
+php artisan optimize:clear
+php artisan filament:optimize-clear
+```
+
+> Après un changement de CSS, le hash des fichiers change : pensez au **Ctrl+F5** côté navigateur.
+
+---
+
+## 🔐 Rôles & permissions
+
+Système de rôles/permissions granulaire (`RolesAndPermissionsSeeder`). Rôles par défaut :
+
+| Rôle | Portée |
+|---|---|
+| **admin** | Accès complet à tous les modules |
+| **manager** | Opérations quotidiennes (ventes, achats, stock, caisse, rapports, tontine) |
+| **cashier** (Caissier) | Caisse : encaissement, sessions, tontine (pas de création de vente) |
+| **vendeur** | Ventes et relation client |
+
+Permissions notables : `pos.sell`, `pos.collect`, `pos.session`, `tontine.manage`,
+`reports.view`, `customers.view`… Un **super‑admin** gère les entreprises (multi‑tenant).
+
+---
+
+## 🇧🇯 Spécificités Bénin / OHADA
+
+- **Monnaie** : FCFA (XOF), montants **entiers** (sans décimales).
+- **Fuseau horaire** : stockage en **UTC**, affichage en **Africa/Porto‑Novo** (UTC+1).
+- **Fiscalité** : certification des factures **e‑MCeF (DGI)**, IFU, AIB, TVA.
+- **Comptabilité** : plan **SYSCOHADA**, export **FEC**.
+
+---
+
+## 📌 Conventions importantes
+
+- **Dates** : afficher avec la directive Blade **`@dt(...)`** (conversion UTC → fuseau local).
+  Ne jamais afficher une date UTC brute.
+- **PDF (DomPDF)** : pas de flexbox ni de dégradés CSS ; privilégier des tableaux et des
+  couleurs pleines. Gabarit A4 : `@page { margin: 0 }` + `body { padding: 15mm 16mm }`.
+- **Assets** : toujours **rebuild + commit de `public/build`** après un changement de style.
+- **Tests** : base **Pest** initialisée — `php artisan test`.
+
+---
+
+## 📄 Licence
+
+Logiciel **propriétaire** — tous droits réservés. Toute utilisation, reproduction ou
+distribution sans autorisation écrite est interdite.
+
+<div align="center">
+<sub>Construit avec ❤️ sur Laravel & Filament.</sub>
+</div>
