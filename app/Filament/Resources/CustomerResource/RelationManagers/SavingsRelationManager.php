@@ -90,7 +90,7 @@ class SavingsRelationManager extends RelationManager
                             ->default('cash'),
                         Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
                     ])
-                    ->action(function (array $data) use ($customer) {
+                    ->action(function (array $data) use ($customer, $currency) {
                         $customer->deposit((int) $data['amount'], [
                             'payment_method' => $data['payment_method'] ?? 'cash',
                             'notes' => $data['notes'] ?? null,
