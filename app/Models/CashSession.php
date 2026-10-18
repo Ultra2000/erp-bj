@@ -25,6 +25,7 @@ class CashSession extends Model
         'total_card',
         'total_mobile',
         'total_other',
+        'total_savings',
         'notes',
         'opened_at',
         'closed_at',
@@ -41,6 +42,7 @@ class CashSession extends Model
         'total_card' => 'decimal:2',
         'total_mobile' => 'decimal:2',
         'total_other' => 'decimal:2',
+        'total_savings' => 'decimal:2',
         'opened_at' => 'datetime',
         'closed_at' => 'datetime',
     ];
@@ -156,7 +158,18 @@ class CashSession extends Model
         $this->total_mobile = $totalMobile;
         $this->total_other = $totalOther;
 
-        $this->expected_amount = $this->opening_amount + $this->total_cash;
+        // Mouvements d'épargne en espèces rattachés à cette session :
+        // dépôts (+) et retraits (-) affectent le tiroir. Les « achats »
+        // (épargne utilisée pour payer une vente) n'impliquent pas d'espèces.
+        $savingsCash = (int) SavingsTransaction::withoutGlobalScopes()
+            ->where('cash_session_id', $this->id)
+            ->where('payment_method', 'cash')
+            ->whereIn('type', ['deposit', 'withdrawal'])
+            ->sum('amount');
+
+        $this->total_savings = $savingsCash;
+
+        $this->expected_amount = $this->opening_amount + $this->total_cash + $savingsCash;
 
         $this->save();
 

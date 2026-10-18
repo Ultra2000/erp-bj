@@ -68,13 +68,19 @@
             <span class="font-medium">{{ number_format($session->total_other, 0, ',', ' ') }} FCFA</span>
         </div>
         @endif
+        @if(($session->total_savings ?? 0) != 0)
+        <div class="flex justify-between">
+            <span class="text-gray-600 dark:text-gray-400">Épargne / tontine (espèces)</span>
+            <span class="font-medium {{ $session->total_savings < 0 ? 'text-danger-600' : '' }}">{{ ($session->total_savings >= 0 ? '+' : '') . number_format($session->total_savings, 0, ',', ' ') }} FCFA</span>
+        </div>
+        @endif
     </div>
 
     @if($session->closed_at)
     <hr class="border-gray-200 dark:border-gray-700">
 
     @php
-        $expectedCash = floatval($session->opening_amount) + floatval($session->total_cash);
+        $expectedCash = floatval($session->opening_amount) + floatval($session->total_cash) + floatval($session->total_savings ?? 0);
         $difference = floatval($session->closing_amount) - $expectedCash;
     @endphp
 

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Customer;
 use App\Models\SavingsTransaction;
+use App\Support\Tontine;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -24,8 +25,7 @@ class TontineOverview extends Page
 
     public static function canAccess(): bool
     {
-        $user = auth()->user();
-        return $user && ($user->is_super_admin || $user->isAdmin() || $user->hasPermission('reports.view'));
+        return Tontine::canView();
     }
 
     public function getCompanyId(): ?int
@@ -35,8 +35,7 @@ class TontineOverview extends Page
 
     protected static function canWithdraw(): bool
     {
-        $user = auth()->user();
-        return $user && ($user->is_super_admin || $user->isAdmin() || $user->hasPermission('pos.collect'));
+        return Tontine::canManage();
     }
 
     protected function customerSelect(): Forms\Components\Select
@@ -65,6 +64,7 @@ class TontineOverview extends Page
                 ->label('Dépôt')
                 ->icon('heroicon-o-plus-circle')
                 ->color('success')
+                ->visible(fn () => Tontine::canManage())
                 ->modalHeading('Enregistrer un dépôt d\'épargne')
                 ->form([
                     $this->customerSelect(),
@@ -76,10 +76,16 @@ class TontineOverview extends Page
                 ])
                 ->action(function (array $data) use ($currency) {
                     $c = Customer::findOrFail($data['customer_id']);
-                    $tx = $c->deposit((int) $data['amount'], [
-                        'payment_method' => $data['payment_method'] ?? 'cash',
-                        'notes' => $data['notes'] ?? null,
-                    ]);
+                    $method = $data['payment_method'] ?? 'cash';
+                    $meta = ['payment_method' => $method, 'notes' => $data['notes'] ?? null];
+                    $session = $method === 'cash'
+                        ? \App\Models\CashSession::getOpenSession($c->company_id, auth()->id())
+                        : null;
+                    if ($session) {
+                        $meta['cash_session_id'] = $session->id;
+                    }
+                    $tx = $c->deposit((int) $data['amount'], $meta);
+                    $session?->recalculate();
                     Notification::make()->title('Dépôt enregistré')
                         ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                         ->success()
@@ -114,10 +120,13 @@ class TontineOverview extends Page
                 ->action(function (array $data) use ($currency) {
                     $c = Customer::findOrFail($data['customer_id']);
                     try {
-                        $tx = $c->withdraw((int) $data['amount'], [
-                            'payment_method' => 'cash',
-                            'notes' => $data['notes'] ?? null,
-                        ]);
+                        $session = \App\Models\CashSession::getOpenSession($c->company_id, auth()->id());
+                        $meta = ['payment_method' => 'cash', 'notes' => $data['notes'] ?? null];
+                        if ($session) {
+                            $meta['cash_session_id'] = $session->id;
+                        }
+                        $tx = $c->withdraw((int) $data['amount'], $meta);
+                        $session?->recalculate();
                         Notification::make()->title('Retrait effectué')
                             ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                             ->success()

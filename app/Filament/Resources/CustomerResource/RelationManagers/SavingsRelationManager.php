@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CustomerResource\RelationManagers;
 
 use App\Models\Customer;
 use App\Models\SavingsTransaction;
+use App\Support\Tontine;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Notifications\Notification;
@@ -26,8 +27,7 @@ class SavingsRelationManager extends RelationManager
 
     protected static function canWithdraw(): bool
     {
-        $user = auth()->user();
-        return $user && ($user->is_super_admin || $user->isAdmin() || $user->hasPermission('pos.collect'));
+        return Tontine::canManage();
     }
 
     public function table(Table $table): Table
@@ -86,6 +86,7 @@ class SavingsRelationManager extends RelationManager
                     ->label('Dépôt')
                     ->icon('heroicon-o-plus-circle')
                     ->color('success')
+                    ->visible(fn () => Tontine::canManage())
                     ->modalHeading('Enregistrer un dépôt d\'épargne')
                     ->form([
                         Forms\Components\TextInput::make('amount')
@@ -99,10 +100,16 @@ class SavingsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
                     ])
                     ->action(function (array $data) use ($customer, $currency) {
-                        $tx = $customer->deposit((int) $data['amount'], [
-                            'payment_method' => $data['payment_method'] ?? 'cash',
-                            'notes' => $data['notes'] ?? null,
-                        ]);
+                        $method = $data['payment_method'] ?? 'cash';
+                        $meta = ['payment_method' => $method, 'notes' => $data['notes'] ?? null];
+                        $session = $method === 'cash'
+                            ? \App\Models\CashSession::getOpenSession($customer->company_id, auth()->id())
+                            : null;
+                        if ($session) {
+                            $meta['cash_session_id'] = $session->id;
+                        }
+                        $tx = $customer->deposit((int) $data['amount'], $meta);
+                        $session?->recalculate();
                         Notification::make()->title('Dépôt enregistré')
                             ->body('Nouveau solde : ' . number_format((int) $customer->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                             ->success()
@@ -134,10 +141,13 @@ class SavingsRelationManager extends RelationManager
                     ])
                     ->action(function (array $data) use ($customer, $currency) {
                         try {
-                            $tx = $customer->withdraw((int) $data['amount'], [
-                                'payment_method' => 'cash',
-                                'notes' => $data['notes'] ?? null,
-                            ]);
+                            $session = \App\Models\CashSession::getOpenSession($customer->company_id, auth()->id());
+                            $meta = ['payment_method' => 'cash', 'notes' => $data['notes'] ?? null];
+                            if ($session) {
+                                $meta['cash_session_id'] = $session->id;
+                            }
+                            $tx = $customer->withdraw((int) $data['amount'], $meta);
+                            $session?->recalculate();
                             Notification::make()->title('Retrait effectué')
                                 ->body('Nouveau solde : ' . number_format((int) $customer->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                                 ->success()

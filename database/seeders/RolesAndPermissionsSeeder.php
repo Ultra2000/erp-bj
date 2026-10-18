@@ -61,7 +61,10 @@ class RolesAndPermissionsSeeder extends Seeder
         ['name' => 'Encaisser une facture', 'slug' => 'pos.collect', 'description' => 'Peut encaisser les factures impayées', 'module' => 'pos', 'action' => 'create'],
         ['name' => 'Ouvrir/fermer la caisse', 'slug' => 'pos.session', 'description' => 'Peut ouvrir et fermer des sessions de caisse', 'module' => 'pos', 'action' => 'manage'],
         ['name' => 'Voir les rapports caisse', 'slug' => 'pos.reports', 'description' => 'Peut consulter les rapports de caisse', 'module' => 'pos', 'action' => 'view'],
-        
+
+        // Tontine / Épargne
+        ['name' => 'Gérer la tontine / épargne', 'slug' => 'tontine.manage', 'description' => 'Peut enregistrer des dépôts et retraits d\'épargne', 'module' => 'tontine', 'action' => 'manage'],
+
         // Entrepôts
         ['name' => 'Voir les entrepôts', 'slug' => 'warehouses.view', 'description' => 'Peut consulter les entrepôts', 'module' => 'warehouses', 'action' => 'view'],
         ['name' => 'Gérer les entrepôts', 'slug' => 'warehouses.manage', 'description' => 'Peut créer/modifier les entrepôts', 'module' => 'warehouses', 'action' => 'manage'],
@@ -122,6 +125,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'quotes.view', 'quotes.create', 'quotes.edit',
                 'deliveries.view', 'deliveries.create', 'deliveries.edit',
                 'pos.access', 'pos.sell', 'pos.collect', 'pos.session', 'pos.reports',
+                'tontine.manage',
                 'warehouses.view', 'transfers.create', 'transfers.approve', 'inventory.manage',
                 'employees.view', 'schedule.manage', 'leaves.manage', 'attendance.view',
                 'reports.view',
@@ -131,7 +135,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'name' => 'Caissier',
             'description' => 'Encaissement et caisse',
             'permissions' => [
-                'pos.access', 'pos.collect', 'pos.session',
+                'pos.access', 'pos.collect', 'pos.session', 'tontine.manage',
             ],
         ],
         'vendeur' => [
