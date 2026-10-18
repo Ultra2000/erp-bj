@@ -128,6 +128,38 @@ class TontineOverview extends Page
         ];
     }
 
+    /**
+     * Modale (lecture seule) affichant les derniers mouvements d'épargne
+     * d'un client, déclenchée depuis la liste « Top épargnants ».
+     */
+    public function viewMovementsAction(): Action
+    {
+        return Action::make('viewMovements')
+            ->modalHeading(fn (array $arguments) => 'Mouvements — ' . (Customer::find($arguments['customer'] ?? null)?->name ?? 'Client'))
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Fermer')
+            ->modalWidth('2xl')
+            ->modalContent(function (array $arguments) {
+                $customer = Customer::withoutGlobalScopes()->find($arguments['customer'] ?? null);
+
+                if (! $customer) {
+                    return null;
+                }
+
+                $movements = SavingsTransaction::withoutGlobalScopes()
+                    ->where('customer_id', $customer->id)
+                    ->latest('id')
+                    ->limit(15)
+                    ->get();
+
+                return view('filament.pages.tontine-customer-movements', [
+                    'customer' => $customer,
+                    'movements' => $movements,
+                    'currency' => Filament::getTenant()->currency ?? 'FCFA',
+                ]);
+            });
+    }
+
     protected function getViewData(): array
     {
         return array_merge(

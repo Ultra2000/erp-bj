@@ -44,7 +44,9 @@
                             <tr class="border-b border-gray-100 dark:border-white/5">
                                 <td class="py-2 pr-2 font-bold">{{ $i + 1 }}</td>
                                 <td class="py-2 pr-2">
-                                    <a href="{{ \App\Filament\Resources\CustomerResource::getUrl('edit', ['record' => $c->id]) }}" class="font-semibold text-primary-600 hover:underline dark:text-primary-400">{{ $c->name }}</a>
+                                    <button type="button"
+                                            wire:click="mountAction('viewMovements', { customer: {{ $c->id }} })"
+                                            class="font-semibold text-primary-600 hover:underline dark:text-primary-400">{{ $c->name }}</button>
                                 </td>
                                 <td class="py-2 pr-2 text-gray-500">{{ $c->phone ?: '—' }}</td>
                                 <td class="py-2 text-right font-bold">{{ $fmt($c->savings_balance) }}</td>
