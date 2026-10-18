@@ -11,7 +11,7 @@ class TopCustomersWidget extends Widget
 {
     protected static string $view = 'filament.widgets.top-customers';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 1;
 
     protected static ?int $sort = 7;
 
@@ -44,7 +44,7 @@ class TopCustomersWidget extends Widget
             ->selectRaw('customer_id, COUNT(*) as nb, COALESCE(SUM(total), 0) as ca, MAX(created_at) as last_at')
             ->groupBy('customer_id')
             ->orderByDesc('ca')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         $customers = Customer::whereIn('id', $rows->pluck('customer_id'))->pluck('name', 'id');

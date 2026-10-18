@@ -83,7 +83,9 @@ class Dashboard extends Page implements HasForms
     {
         return [
             StatsOverview::make(['selectedWarehouse' => $this->selectedWarehouse]),
+            // Graphique des ventes + carte « Clients ambassadeurs » côte à côte.
             SalesChart::make(['selectedWarehouse' => $this->selectedWarehouse]),
+            TopCustomersWidget::make(),
             StockAlert::make(['selectedWarehouse' => $this->selectedWarehouse]),
         ];
     }
@@ -91,9 +93,8 @@ class Dashboard extends Page implements HasForms
     protected function getCustomFooterWidgets(): array
     {
         return [
-            TopSellersWidget::make(),
-            TopCustomersWidget::make(),
             TopProductsWidget::make(['selectedWarehouse' => $this->selectedWarehouse]),
+            TopSellersWidget::make(),
             WarehouseOverview::make(['selectedWarehouse' => $this->selectedWarehouse]),
             WarehouseStockSummary::make(['selectedWarehouse' => $this->selectedWarehouse]),
         ];
