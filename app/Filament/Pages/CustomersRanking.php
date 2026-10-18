@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\Customer;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
@@ -60,6 +61,52 @@ class CustomersRanking extends Page
         ];
     }
 
+    /**
+     * Modale (lecture seule) : articles achetés par un client sur la période
+     * du classement, triés de la plus grande à la plus petite quantité.
+     */
+    public function viewArticlesAction(): Action
+    {
+        return Action::make('viewArticles')
+            ->modalHeading(fn (array $arguments) => 'Articles achetés — ' . (Customer::find($arguments['customer'] ?? null)?->name ?? 'Client'))
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Fermer')
+            ->modalWidth('3xl')
+            ->modalContent(function (array $arguments) {
+                $customerId = $arguments['customer'] ?? null;
+                $customer = Customer::withoutGlobalScopes()->find($customerId);
+
+                if (! $customer) {
+                    return null;
+                }
+
+                $start = $this->start_date ? Carbon::parse($this->start_date)->startOfDay() : now()->startOfMonth();
+                $end = $this->end_date ? Carbon::parse($this->end_date)->endOfDay() : now()->endOfDay();
+
+                $articles = SaleItem::query()
+                    ->withoutGlobalScopes()
+                    ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                    ->join('products', 'products.id', '=', 'sale_items.product_id')
+                    ->where('sales.company_id', $this->getCompanyId())
+                    ->where('sales.customer_id', $customerId)
+                    ->where('sales.status', 'completed')
+                    ->where(fn ($q) => $q->whereNull('sales.type')->orWhere('sales.type', '!=', 'credit_note'))
+                    ->whereBetween('sales.created_at', [$start, $end])
+                    ->groupBy('sale_items.product_id', 'products.name')
+                    ->selectRaw('products.name as product_name, SUM(sale_items.quantity) as qty, SUM(sale_items.total_price) as montant')
+                    ->orderByDesc('qty')
+                    ->get();
+
+                return view('filament.pages.customer-articles', [
+                    'customer' => $customer,
+                    'articles' => $articles,
+                    'start' => $start,
+                    'end' => $end,
+                    'currency' => Filament::getTenant()->currency ?? 'FCFA',
+                ]);
+            });
+    }
+
     protected function getViewData(): array
     {
         return array_merge(
@@ -104,6 +151,7 @@ class CustomersRanking extends Page
             ->keyBy('id');
 
         $ranking = $rows->map(fn ($r) => [
+            'id' => $r->customer_id,
             'name' => $customers[$r->customer_id]->name ?? 'Client #' . $r->customer_id,
             'phone' => $customers[$r->customer_id]->phone ?? null,
             'nb' => (int) $r->nb,

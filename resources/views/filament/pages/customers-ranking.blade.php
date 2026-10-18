@@ -59,8 +59,10 @@
                                 'bg-indigo-50/50 dark:bg-indigo-500/5' => $i === 0,
                             ])>
                                 <td class="py-2 pr-2 font-bold">{{ $medals[$i] ?? ($i + 1) }}</td>
-                                <td class="py-2 pr-2 font-semibold text-gray-800 dark:text-gray-100">
-                                    {{ $c['name'] }}
+                                <td class="py-2 pr-2">
+                                    <button type="button"
+                                            wire:click="mountAction('viewArticles', { customer: {{ $c['id'] }} })"
+                                            class="font-semibold text-primary-600 hover:underline dark:text-primary-400">{{ $c['name'] }}</button>
                                     @if($c['phone'])<div class="text-xs font-normal text-gray-400">{{ $c['phone'] }}</div>@endif
                                 </td>
                                 <td class="py-2 pr-2 text-center">{{ number_format($c['nb'], 0, ',', ' ') }}</td>
