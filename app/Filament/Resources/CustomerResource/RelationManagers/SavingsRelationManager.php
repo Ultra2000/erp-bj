@@ -73,6 +73,14 @@ class SavingsRelationManager extends RelationManager
                     ->limit(40),
             ])
             ->defaultSort('id', 'desc')
+            ->actions([
+                Tables\Actions\Action::make('receipt')
+                    ->label('Reçu')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (SavingsTransaction $record) => route('savings.receipt', $record))
+                    ->openUrlInNewTab(),
+            ])
             ->headerActions([
                 Tables\Actions\Action::make('deposit')
                     ->label('Dépôt')
@@ -91,13 +99,20 @@ class SavingsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
                     ])
                     ->action(function (array $data) use ($customer, $currency) {
-                        $customer->deposit((int) $data['amount'], [
+                        $tx = $customer->deposit((int) $data['amount'], [
                             'payment_method' => $data['payment_method'] ?? 'cash',
                             'notes' => $data['notes'] ?? null,
                         ]);
                         Notification::make()->title('Dépôt enregistré')
                             ->body('Nouveau solde : ' . number_format((int) $customer->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
-                            ->success()->send();
+                            ->success()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('receipt')
+                                    ->label('Imprimer le reçu')
+                                    ->icon('heroicon-o-printer')
+                                    ->url(route('savings.receipt', $tx), shouldOpenInNewTab: true),
+                            ])
+                            ->send();
                     }),
                 Tables\Actions\Action::make('withdraw')
                     ->label('Retrait')
@@ -119,13 +134,20 @@ class SavingsRelationManager extends RelationManager
                     ])
                     ->action(function (array $data) use ($customer, $currency) {
                         try {
-                            $customer->withdraw((int) $data['amount'], [
+                            $tx = $customer->withdraw((int) $data['amount'], [
                                 'payment_method' => 'cash',
                                 'notes' => $data['notes'] ?? null,
                             ]);
                             Notification::make()->title('Retrait effectué')
                                 ->body('Nouveau solde : ' . number_format((int) $customer->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
-                                ->success()->send();
+                                ->success()
+                                ->actions([
+                                    \Filament\Notifications\Actions\Action::make('receipt')
+                                        ->label('Imprimer le reçu')
+                                        ->icon('heroicon-o-printer')
+                                        ->url(route('savings.receipt', $tx), shouldOpenInNewTab: true),
+                                ])
+                                ->send();
                         } catch (\Throwable $e) {
                             Notification::make()->title('Retrait impossible')->body($e->getMessage())->danger()->send();
                         }

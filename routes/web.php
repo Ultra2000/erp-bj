@@ -212,12 +212,31 @@ Route::middleware('auth')->group(function () {
 Route::get('/sales/{saleId}/receipt', function (int $saleId) {
     $sale = Sale::withoutGlobalScopes()->with(['items.product', 'customer', 'cashSession.user', 'payments'])->findOrFail($saleId);
     $company = \App\Models\Company::find($sale->company_id);
-    
+
     return view('prints.receipt', [
         'sale' => $sale,
         'company' => $company,
     ]);
 })->middleware('auth')->name('sales.receipt');
+
+// Reçu de mouvement d'épargne / tontine (ticket thermique 80mm)
+Route::get('/savings/{txId}/receipt', function (int $txId) {
+    $tx = \App\Models\SavingsTransaction::withoutGlobalScopes()
+        ->with(['customer', 'createdBy'])
+        ->findOrFail($txId);
+
+    $user = auth()->user();
+    if (! $user->is_super_admin && ! $user->companies()->where('companies.id', $tx->company_id)->exists()) {
+        abort(403);
+    }
+
+    $company = \App\Models\Company::find($tx->company_id);
+
+    return view('prints.savings-receipt', [
+        'tx' => $tx,
+        'company' => $company,
+    ]);
+})->middleware('auth')->name('savings.receipt');
 
 // Routes publiques signées pour vérification d'authenticité d'une facture
 Route::get('/verify/purchase/{purchase}', function (Request $request, Purchase $purchase) {

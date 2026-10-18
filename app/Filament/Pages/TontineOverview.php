@@ -76,13 +76,20 @@ class TontineOverview extends Page
                 ])
                 ->action(function (array $data) use ($currency) {
                     $c = Customer::findOrFail($data['customer_id']);
-                    $c->deposit((int) $data['amount'], [
+                    $tx = $c->deposit((int) $data['amount'], [
                         'payment_method' => $data['payment_method'] ?? 'cash',
                         'notes' => $data['notes'] ?? null,
                     ]);
                     Notification::make()->title('Dépôt enregistré')
                         ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
-                        ->success()->send();
+                        ->success()
+                        ->actions([
+                            \Filament\Notifications\Actions\Action::make('receipt')
+                                ->label('Imprimer le reçu')
+                                ->icon('heroicon-o-printer')
+                                ->url(route('savings.receipt', $tx), shouldOpenInNewTab: true),
+                        ])
+                        ->send();
                 }),
 
             Action::make('withdraw')
@@ -107,13 +114,20 @@ class TontineOverview extends Page
                 ->action(function (array $data) use ($currency) {
                     $c = Customer::findOrFail($data['customer_id']);
                     try {
-                        $c->withdraw((int) $data['amount'], [
+                        $tx = $c->withdraw((int) $data['amount'], [
                             'payment_method' => 'cash',
                             'notes' => $data['notes'] ?? null,
                         ]);
                         Notification::make()->title('Retrait effectué')
                             ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
-                            ->success()->send();
+                            ->success()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('receipt')
+                                    ->label('Imprimer le reçu')
+                                    ->icon('heroicon-o-printer')
+                                    ->url(route('savings.receipt', $tx), shouldOpenInNewTab: true),
+                            ])
+                            ->send();
                     } catch (\Throwable $e) {
                         Notification::make()->title('Retrait impossible')->body($e->getMessage())->danger()->send();
                     }
