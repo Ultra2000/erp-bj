@@ -95,4 +95,58 @@ class TontineReportController extends Controller
 
         return $pdf->stream('releve-epargne-' . $cust->id . '-' . now()->format('Y-m-d') . '.pdf');
     }
+
+    /**
+     * Export PDF des mouvements d'épargne d'une entreprise sur une période
+     * (tous clients), filtrable par type.
+     */
+    public function movements(Request $request, $company = null)
+    {
+        $companyId = $company ?? $request->query('company') ?? Filament::getTenant()?->id;
+
+        if (! $companyId) {
+            abort(400, 'Company ID required');
+        }
+
+        $companyModel = Company::findOrFail($companyId);
+
+        $user = auth()->user();
+        if (! $user->is_super_admin && ! $user->companies()->where('companies.id', $companyModel->id)->exists()) {
+            abort(403);
+        }
+
+        $from = $request->query('from')
+            ? Carbon::parse($request->query('from'))->startOfDay()
+            : now()->startOfMonth();
+        $until = $request->query('until')
+            ? Carbon::parse($request->query('until'))->endOfDay()
+            : now()->endOfDay();
+        $type = $request->query('type');
+
+        $movements = SavingsTransaction::withoutGlobalScopes()
+            ->where('company_id', $companyModel->id)
+            ->whereBetween('created_at', [$from, $until])
+            ->when($type, fn ($q) => $q->where('type', $type))
+            ->with(['customer:id,name', 'createdBy:id,name'])
+            ->orderByDesc('id')
+            ->get();
+
+        $sumType = fn (string $t) => (int) abs((int) $movements->where('type', $t)->sum('amount'));
+
+        $pdf = Pdf::loadView('reports.savings-movements', [
+            'company' => $companyModel,
+            'movements' => $movements,
+            'from' => $from,
+            'until' => $until,
+            'typeLabel' => $type ? (SavingsTransaction::TYPES[$type] ?? $type) : null,
+            'deposits' => $sumType('deposit'),
+            'withdrawals' => $sumType('withdrawal'),
+            'purchases' => $sumType('purchase'),
+            'count' => $movements->count(),
+            'currency' => $companyModel->currency ?? 'FCFA',
+            'generatedAt' => now(),
+        ])->setPaper('a4');
+
+        return $pdf->stream('mouvements-epargne-' . now()->format('Y-m-d') . '.pdf');
+    }
 }
