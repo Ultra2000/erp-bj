@@ -60,6 +60,41 @@
         @endif
     </x-filament::section>
 
+    {{-- Top tontiniers (collecte du mois) --}}
+    <x-filament::section>
+        <x-slot name="heading">Top tontiniers — {{ $month }}</x-slot>
+        @if(count($topTontiniers))
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500 dark:border-white/10 dark:text-gray-400">
+                            <th class="py-2 pr-2">#</th>
+                            <th class="py-2 pr-2">Tontinier</th>
+                            <th class="py-2 pr-2 text-center">Dépôts</th>
+                            <th class="py-2 text-right">Collecté</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $medals = ['🥇', '🥈', '🥉']; @endphp
+                        @foreach($topTontiniers as $i => $t)
+                            <tr @class([
+                                'border-b border-gray-100 dark:border-white/5',
+                                'bg-emerald-50/50 dark:bg-emerald-500/5' => $i === 0,
+                            ])>
+                                <td class="py-2 pr-2 font-bold">{{ $medals[$i] ?? ($i + 1) }}</td>
+                                <td class="py-2 pr-2 font-semibold text-gray-800 dark:text-gray-100">{{ $t['name'] }}</td>
+                                <td class="py-2 pr-2 text-center">{{ number_format($t['nb'], 0, ',', ' ') }}</td>
+                                <td class="py-2 text-right font-bold text-emerald-600 dark:text-emerald-400">{{ $fmt($t['total']) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @else
+            <p class="text-sm text-gray-500 dark:text-gray-400">Aucune collecte de tontinier ce mois-ci.</p>
+        @endif
+    </x-filament::section>
+
     {{-- Derniers mouvements --}}
     <x-filament::section>
         <x-slot name="heading">Derniers mouvements</x-slot>

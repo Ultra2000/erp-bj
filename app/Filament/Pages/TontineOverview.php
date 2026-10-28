@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Concerns\HasTontineActions;
 use App\Models\Customer;
 use App\Models\SavingsTransaction;
+use App\Models\User;
 use App\Support\Tontine;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -130,6 +131,30 @@ class TontineOverview extends Page
             ->limit(20)
             ->get();
 
+        // Top tontiniers : collecte (dépôts) du mois, par agent.
+        $tontinierIds = User::query()
+            ->whereHas('roles', fn ($r) => $r->where('roles.slug', 'tontinier')->where('model_has_roles.company_id', $companyId))
+            ->pluck('id');
+
+        $depRows = SavingsTransaction::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('type', 'deposit')
+            ->whereBetween('created_at', [$start, $end])
+            ->whereIn('created_by', $tontinierIds)
+            ->selectRaw('created_by, COALESCE(SUM(amount), 0) as total, COUNT(*) as nb')
+            ->groupBy('created_by')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get();
+
+        $agentNames = User::whereIn('id', $depRows->pluck('created_by'))->pluck('name', 'id');
+
+        $topTontiniers = $depRows->map(fn ($r) => [
+            'name' => $agentNames[$r->created_by] ?? ('Agent #' . $r->created_by),
+            'total' => (int) $r->total,
+            'nb' => (int) $r->nb,
+        ])->values()->all();
+
         return [
             'total' => $total,
             'savers' => $savers,
@@ -138,6 +163,7 @@ class TontineOverview extends Page
             'withdrawals_month' => $sumByType('withdrawal'),
             'used_month' => $sumByType('purchase'),
             'topSavers' => $topSavers,
+            'topTontiniers' => $topTontiniers,
             'recent' => $recent,
             'month' => ucfirst($start->locale('fr')->isoFormat('MMMM YYYY')),
         ];
