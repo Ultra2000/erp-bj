@@ -284,6 +284,16 @@ class Company extends Model
         return $this->hasMany(Zone::class);
     }
 
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
     public function suppliers(): HasMany
     {
         return $this->hasMany(Supplier::class);

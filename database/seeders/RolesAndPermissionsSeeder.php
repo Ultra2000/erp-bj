@@ -66,6 +66,10 @@ class RolesAndPermissionsSeeder extends Seeder
         ['name' => 'Gérer la tontine / épargne', 'slug' => 'tontine.manage', 'description' => 'Peut enregistrer des dépôts et retraits d\'épargne', 'module' => 'tontine', 'action' => 'manage'],
         ['name' => 'Collecter la tontine (terrain)', 'slug' => 'tontine.collect', 'description' => 'Tontinier : peut enregistrer des dépôts pour les épargnants de ses zones', 'module' => 'tontine', 'action' => 'create'],
 
+        // Dépenses
+        ['name' => 'Voir les dépenses', 'slug' => 'expenses.view', 'description' => 'Peut consulter les dépenses de l\'entreprise', 'module' => 'expenses', 'action' => 'view'],
+        ['name' => 'Gérer les dépenses', 'slug' => 'expenses.manage', 'description' => 'Peut créer/modifier les dépenses et catégories', 'module' => 'expenses', 'action' => 'manage'],
+
         // Entrepôts
         ['name' => 'Voir les entrepôts', 'slug' => 'warehouses.view', 'description' => 'Peut consulter les entrepôts', 'module' => 'warehouses', 'action' => 'view'],
         ['name' => 'Gérer les entrepôts', 'slug' => 'warehouses.manage', 'description' => 'Peut créer/modifier les entrepôts', 'module' => 'warehouses', 'action' => 'manage'],
@@ -127,6 +131,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'deliveries.view', 'deliveries.create', 'deliveries.edit',
                 'pos.access', 'pos.sell', 'pos.collect', 'pos.session', 'pos.reports',
                 'tontine.manage',
+                'expenses.view', 'expenses.manage',
                 'warehouses.view', 'transfers.create', 'transfers.approve', 'inventory.manage',
                 'employees.view', 'schedule.manage', 'leaves.manage', 'attendance.view',
                 'reports.view',
