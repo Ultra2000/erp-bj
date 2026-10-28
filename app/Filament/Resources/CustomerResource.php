@@ -369,6 +369,27 @@ class CustomerResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('assignZone')
+                        ->label('Affecter une zone')
+                        ->icon('heroicon-o-map-pin')
+                        ->color('info')
+                        ->form([
+                            Forms\Components\Select::make('zone_id')
+                                ->label('Zone')
+                                ->options(fn () => \App\Models\Zone::query()->orderBy('name')->pluck('name', 'id')->all())
+                                ->searchable()
+                                ->required()
+                                ->helperText('La zone sera appliquée à tous les clients sélectionnés.'),
+                        ])
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data) {
+                            $records->each(fn (Customer $c) => $c->update(['zone_id' => $data['zone_id']]));
+                            Notification::make()
+                                ->title('Zone affectée')
+                                ->body($records->count() . ' client(s) rattaché(s) à la zone.')
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Supprimer la sélection'),
                 ]),

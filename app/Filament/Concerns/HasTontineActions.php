@@ -66,6 +66,18 @@ trait HasTontineActions
                 ->all())
             ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name);
 
+        // Pour un tontinier (périmètre borné à ses zones) : pré-afficher la liste
+        // de ses épargnants sans avoir à taper.
+        if ($zoneIds !== null) {
+            $select->options(fn () => Customer::withoutGlobalScopes()
+                ->where('company_id', $companyId)
+                ->whereIn('zone_id', $zoneIds)
+                ->orderBy('name')
+                ->limit(100)
+                ->pluck('name', 'id')
+                ->all());
+        }
+
         if ($allowCreate) {
             $zoneRequired = $zoneIds !== null; // un tontinier doit rattacher le client à une zone
             $select
