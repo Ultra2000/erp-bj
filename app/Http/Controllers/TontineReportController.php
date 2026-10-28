@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Filament\Pages\TontineOverview;
+use App\Filament\Pages\TontineReports;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\SavingsTransaction;
@@ -148,5 +149,38 @@ class TontineReportController extends Controller
         ])->setPaper('a4');
 
         return $pdf->stream('mouvements-epargne-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Synthèse tontine sur une période (totaux + collecte par zone/tontinier).
+     */
+    public function summary(Request $request, $company = null)
+    {
+        $companyId = $company ?? $request->query('company') ?? Filament::getTenant()?->id;
+
+        if (! $companyId) {
+            abort(400, 'Company ID required');
+        }
+
+        $companyModel = Company::findOrFail($companyId);
+
+        $user = auth()->user();
+        if (! $user->is_super_admin && ! $user->companies()->where('companies.id', $companyModel->id)->exists()) {
+            abort(403);
+        }
+
+        $data = TontineReports::buildData(
+            (int) $companyId,
+            $request->query('from'),
+            $request->query('until'),
+        );
+
+        $pdf = Pdf::loadView('reports.tontine-summary', array_merge($data, [
+            'company' => $companyModel,
+            'currency' => $companyModel->currency ?? 'FCFA',
+            'generatedAt' => now(),
+        ]))->setPaper('a4');
+
+        return $pdf->stream('synthese-tontine-' . now()->format('Y-m-d') . '.pdf');
     }
 }
