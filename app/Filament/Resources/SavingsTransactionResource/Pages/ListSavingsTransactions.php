@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SavingsTransactionResource\Pages;
 
+use App\Filament\Concerns\HasTontineActions;
 use App\Filament\Resources\SavingsTransactionResource;
 use App\Models\SavingsTransaction;
 use Filament\Actions;
@@ -11,6 +12,8 @@ use Filament\Resources\Pages\ListRecords;
 
 class ListSavingsTransactions extends ListRecords
 {
+    use HasTontineActions;
+
     protected static string $resource = SavingsTransactionResource::class;
 
     public function getTitle(): string
@@ -21,6 +24,9 @@ class ListSavingsTransactions extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            $this->tontineDepositAction(),
+            $this->tontineWithdrawAction(),
+
             Actions\Action::make('exportPdf')
                 ->label('Export PDF')
                 ->icon('heroicon-o-document-arrow-down')
