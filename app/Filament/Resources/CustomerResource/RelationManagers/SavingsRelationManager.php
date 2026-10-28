@@ -52,6 +52,7 @@ class SavingsRelationManager extends RelationManager
                         'deposit', 'refund' => 'success',
                         'withdrawal' => 'danger',
                         'purchase' => 'warning',
+                        'fee' => 'info',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state) => SavingsTransaction::TYPES[$state] ?? $state),
@@ -142,16 +143,7 @@ class SavingsRelationManager extends RelationManager
                         Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
                     ])
                     ->action(function (array $data) use ($customer, $currency) {
-                        $method = $data['payment_method'] ?? 'cash';
-                        $meta = ['payment_method' => $method, 'notes' => $data['notes'] ?? null];
-                        $session = $method === 'cash'
-                            ? \App\Models\CashSession::getOpenSession($customer->company_id, auth()->id())
-                            : null;
-                        if ($session) {
-                            $meta['cash_session_id'] = $session->id;
-                        }
-                        $tx = $customer->deposit((int) $data['amount'], $meta);
-                        $session?->recalculate();
+                        $tx = \App\Support\SavingsOps::deposit($customer, (int) $data['amount'], $data['payment_method'] ?? 'cash', $data['notes'] ?? null);
                         Notification::make()->title('Dépôt enregistré')
                             ->body('Nouveau solde : ' . number_format((int) $customer->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                             ->success()

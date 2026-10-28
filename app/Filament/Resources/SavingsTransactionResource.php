@@ -82,6 +82,7 @@ class SavingsTransactionResource extends Resource
                         'deposit', 'refund' => 'success',
                         'withdrawal' => 'danger',
                         'purchase' => 'warning',
+                        'fee' => 'info',
                         default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state) => SavingsTransaction::TYPES[$state] ?? $state),

@@ -164,7 +164,7 @@ class CashSession extends Model
         $savingsCash = (int) SavingsTransaction::withoutGlobalScopes()
             ->where('cash_session_id', $this->id)
             ->where('payment_method', 'cash')
-            ->whereIn('type', ['deposit', 'withdrawal', 'adjustment', 'refund'])
+            ->whereIn('type', ['deposit', 'withdrawal', 'adjustment', 'refund', 'fee'])
             ->sum('amount');
 
         $this->total_savings = $savingsCash;

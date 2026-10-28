@@ -130,4 +130,20 @@ class Customer extends Model
     {
         return $this->recordSavings('adjustment', $signedAmount, $meta);
     }
+
+    /**
+     * Frais de tenue de compte (revenu entreprise) : enregistré comme mouvement
+     * de type « fee » mais SANS affecter le solde d'épargne du client.
+     */
+    public function chargeAccountFee(int $amount, array $meta = []): SavingsTransaction
+    {
+        return SavingsTransaction::create(array_merge([
+            'company_id' => $this->company_id,
+            'customer_id' => $this->getKey(),
+            'type' => 'fee',
+            'amount' => abs($amount),
+            'balance_after' => (int) $this->fresh()->savings_balance, // solde inchangé
+            'created_by' => auth()->id(),
+        ], $meta));
+    }
 }

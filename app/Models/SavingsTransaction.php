@@ -35,6 +35,7 @@ class SavingsTransaction extends Model
         'purchase' => 'Achat (utilisation)',
         'refund' => 'Remboursement',
         'adjustment' => 'Ajustement',
+        'fee' => 'Frais de tenue de compte',
     ];
 
     public function getTypeLabelAttribute(): string

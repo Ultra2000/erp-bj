@@ -28,6 +28,7 @@ class Company extends Model
         'footer_text',
         'settings',
         'currency',
+        'tontine_fee',
         'country_code',
         'is_active',
         // e-MCeF (Bénin)
@@ -48,6 +49,7 @@ class Company extends Model
         'emcef_sandbox' => 'boolean',
         'emcef_token_expires_at' => 'datetime',
         'aib_exempt_retail' => 'boolean',
+        'tontine_fee' => 'integer',
     ];
 
     protected static function boot()

@@ -56,6 +56,18 @@ class EditCompanyProfile extends EditTenantProfile
                             ->default('XOF'),
                     ]),
 
+                Section::make('Tontine / Épargne')
+                    ->description('Paramètres de la caisse d\'épargne / tontine.')
+                    ->schema([
+                        TextInput::make('tontine_fee')
+                            ->label('Frais de tenue de compte unique')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(2000)
+                            ->suffix('FCFA')
+                            ->helperText('Prélevés automatiquement, en plus, lors du tout premier dépôt d\'un client. 0 = aucun frais.'),
+                    ]),
+
                 Section::make('Fonctionnalités')
                     ->description('Activez ou désactivez les modules selon vos besoins.')
                     ->schema([
