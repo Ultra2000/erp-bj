@@ -38,11 +38,11 @@ class TontineOverview extends Page
         return Tontine::canManage();
     }
 
-    protected function customerSelect(): Forms\Components\Select
+    protected function customerSelect(bool $allowCreate = false): Forms\Components\Select
     {
         $companyId = $this->getCompanyId();
 
-        return Forms\Components\Select::make('customer_id')
+        $select = Forms\Components\Select::make('customer_id')
             ->label('Client')
             ->required()
             ->searchable()
@@ -53,6 +53,46 @@ class TontineOverview extends Page
                 ->pluck('name', 'id')
                 ->all())
             ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name);
+
+        // Bouton « + » : créer un nouveau client sans quitter le formulaire.
+        if ($allowCreate) {
+            $select
+                ->createOptionModalHeading('Nouveau client')
+                ->createOptionForm([
+                    \App\Filament\Resources\CustomerResource::nameInput('Nom / Raison sociale'),
+                    Forms\Components\TextInput::make('phone')
+                        ->label('Téléphone')
+                        ->tel()
+                        ->required()
+                        ->maxLength(255)
+                        ->placeholder('+229 XX XX XX XX'),
+                    Forms\Components\Select::make('customer_type')
+                        ->label('Type')
+                        ->options(['B2C' => 'Particulier (B2C)', 'B2B' => 'Professionnel (B2B)'])
+                        ->default('B2C'),
+                    Forms\Components\TextInput::make('email')
+                        ->label('Email')
+                        ->email()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('address')
+                        ->label('Adresse')
+                        ->maxLength(255),
+                ])
+                ->createOptionUsing(function (array $data) use ($companyId) {
+                    $customer = Customer::create([
+                        'company_id' => $companyId,
+                        'name' => $data['name'],
+                        'phone' => $data['phone'] ?? null,
+                        'customer_type' => $data['customer_type'] ?? 'B2C',
+                        'email' => $data['email'] ?? null,
+                        'address' => $data['address'] ?? null,
+                    ]);
+
+                    return $customer->getKey();
+                });
+        }
+
+        return $select;
     }
 
     protected function getHeaderActions(): array
@@ -67,7 +107,7 @@ class TontineOverview extends Page
                 ->visible(fn () => Tontine::canManage())
                 ->modalHeading('Enregistrer un dépôt d\'épargne')
                 ->form([
-                    $this->customerSelect(),
+                    $this->customerSelect(allowCreate: true),
                     Forms\Components\TextInput::make('amount')->label('Montant')->numeric()->minValue(1)->required()->suffix($currency),
                     Forms\Components\Select::make('payment_method')->label('Mode')
                         ->options(['cash' => 'Espèces', 'card' => 'Carte', 'transfer' => 'Virement', 'mobile_money' => 'Mobile Money'])
