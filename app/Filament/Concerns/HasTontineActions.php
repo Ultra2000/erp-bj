@@ -28,9 +28,30 @@ trait HasTontineActions
         return Filament::getTenant()->currency ?? 'FCFA';
     }
 
+    /** Zones visibles (toutes pour le bureau, seulement les siennes pour un tontinier). */
+    protected function tontineZoneOptions(): array
+    {
+        $zoneIds = \App\Support\Tontine::visibleZoneIds();
+
+        return \App\Models\Zone::query()
+            ->where('is_active', true)
+            ->when($zoneIds !== null, fn ($q) => $q->whereIn('id', $zoneIds))
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    protected function tontineDefaultZoneId(): ?int
+    {
+        $zoneIds = \App\Support\Tontine::visibleZoneIds();
+
+        return ($zoneIds !== null && count($zoneIds) === 1) ? (int) $zoneIds[0] : null;
+    }
+
     protected function tontineCustomerSelect(bool $allowCreate = false): Forms\Components\Select
     {
         $companyId = $this->tontineCompanyId();
+        $zoneIds = \App\Support\Tontine::visibleZoneIds();
 
         $select = Forms\Components\Select::make('customer_id')
             ->label('Client')
@@ -38,6 +59,7 @@ trait HasTontineActions
             ->searchable()
             ->getSearchResultsUsing(fn (string $search) => Customer::withoutGlobalScopes()
                 ->where('company_id', $companyId)
+                ->when($zoneIds !== null, fn ($q) => $q->whereIn('zone_id', $zoneIds))
                 ->where('name', 'like', "%{$search}%")
                 ->limit(30)
                 ->pluck('name', 'id')
@@ -45,12 +67,19 @@ trait HasTontineActions
             ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name);
 
         if ($allowCreate) {
+            $zoneRequired = $zoneIds !== null; // un tontinier doit rattacher le client à une zone
             $select
                 ->createOptionModalHeading('Nouveau client')
                 ->createOptionForm([
                     \App\Filament\Resources\CustomerResource::nameInput('Nom / Raison sociale'),
                     Forms\Components\TextInput::make('phone')
                         ->label('Téléphone')->tel()->required()->maxLength(255)->placeholder('+229 XX XX XX XX'),
+                    Forms\Components\Select::make('zone_id')
+                        ->label('Zone')
+                        ->options(fn () => $this->tontineZoneOptions())
+                        ->default(fn () => $this->tontineDefaultZoneId())
+                        ->required($zoneRequired)
+                        ->searchable(),
                     Forms\Components\Select::make('customer_type')
                         ->label('Type')->options(['B2C' => 'Particulier (B2C)', 'B2B' => 'Professionnel (B2B)'])->default('B2C'),
                     Forms\Components\TextInput::make('email')->label('Email')->email()->maxLength(255),
@@ -59,6 +88,7 @@ trait HasTontineActions
                 ->createOptionUsing(function (array $data) use ($companyId) {
                     return Customer::create([
                         'company_id' => $companyId,
+                        'zone_id' => $data['zone_id'] ?? null,
                         'name' => $data['name'],
                         'phone' => $data['phone'] ?? null,
                         'customer_type' => $data['customer_type'] ?? 'B2C',
@@ -79,7 +109,7 @@ trait HasTontineActions
             ->label('Dépôt')
             ->icon('heroicon-o-plus-circle')
             ->color('success')
-            ->visible(fn () => Tontine::canManage())
+            ->visible(fn () => Tontine::canCollect())
             ->modalHeading('Enregistrer un dépôt d\'épargne')
             ->form([
                 $this->tontineCustomerSelect(allowCreate: true),

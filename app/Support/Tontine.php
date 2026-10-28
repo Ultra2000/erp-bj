@@ -27,6 +27,17 @@ class Tontine
     }
 
     /**
+     * Peut enregistrer un dépôt (collecte). Inclut les tontiniers de terrain
+     * (tontine.collect) en plus du personnel de bureau.
+     */
+    public static function canCollect(?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return static::canManage($user) || ($user && $user->hasPermission('tontine.collect'));
+    }
+
+    /**
      * Peut corriger / annuler un mouvement d'épargne (opération sensible).
      * Réservé aux administrateurs.
      */
@@ -35,6 +46,41 @@ class Tontine
         $user ??= auth()->user();
 
         return $user && ($user->is_super_admin || $user->isAdmin());
+    }
+
+    /**
+     * Peut gérer les zones et les tontiniers. Réservé aux administrateurs.
+     */
+    public static function canAdminister(?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return $user && ($user->is_super_admin || $user->isAdmin());
+    }
+
+    /**
+     * Périmètre : un tontinier ne voit que les zones qui lui sont affectées ;
+     * les autres rôles autorisés voient tout. Retourne null = pas de restriction.
+     */
+    public static function visibleZoneIds(?User $user = null): ?array
+    {
+        $user ??= auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        // Admins / bureau : aucune restriction.
+        if ($user->is_super_admin || $user->isAdmin() || static::canManage($user)) {
+            return null;
+        }
+
+        // Tontinier : uniquement ses zones.
+        if ($user->isTontinier()) {
+            return $user->tontinierZoneIds();
+        }
+
+        return null;
     }
 
     /**
@@ -50,6 +96,7 @@ class Tontine
             || $user->hasPermission('reports.view')
             || $user->hasPermission('tontine.manage')
             || $user->hasPermission('pos.collect')
+            || $user->hasPermission('tontine.collect')
         );
     }
 }

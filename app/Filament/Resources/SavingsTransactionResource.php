@@ -46,6 +46,15 @@ class SavingsTransactionResource extends Resource
         return false;
     }
 
+    /** Un tontinier ne voit que les mouvements des épargnants de ses zones. */
+    public static function getEloquentQuery(): Builder
+    {
+        $zoneIds = Tontine::visibleZoneIds();
+
+        return parent::getEloquentQuery()
+            ->when($zoneIds !== null, fn (Builder $q) => $q->whereHas('customer', fn (Builder $c) => $c->whereIn('zone_id', $zoneIds)));
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([]);

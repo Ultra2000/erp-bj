@@ -52,11 +52,15 @@ class SaverResource extends Resource
         return $count > 0 ? (string) $count : null;
     }
 
-    /** Uniquement les clients disposant d'un solde d'épargne. */
+    /** Clients avec un solde d'épargne ; un tontinier ne voit que ses zones. */
     public static function getEloquentQuery(): Builder
     {
+        $zoneIds = Tontine::visibleZoneIds();
+
         return parent::getEloquentQuery()
             ->where('savings_balance', '>', 0)
+            ->when($zoneIds !== null, fn (Builder $q) => $q->whereIn('zone_id', $zoneIds))
+            ->with('zone')
             ->withMax('savingsTransactions as last_movement_at', 'created_at')
             ->withCount('savingsTransactions');
     }
@@ -82,6 +86,12 @@ class SaverResource extends Resource
                     ->icon('heroicon-m-phone')
                     ->placeholder('—')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('zone.name')
+                    ->label('Zone')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('savings_balance')
                     ->label('Solde épargne')
                     ->alignEnd()
@@ -101,6 +111,13 @@ class SaverResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('savings_balance', 'desc')
+            ->filters([
+                Tables\Filters\SelectFilter::make('zone_id')
+                    ->label('Zone')
+                    ->relationship('zone', 'name')
+                    ->searchable()
+                    ->preload(),
+            ])
             ->actions([
                 Tables\Actions\Action::make('mouvements')
                     ->label('Mouvements')

@@ -37,6 +37,7 @@ class Customer extends Model
 
     protected $fillable = [
         'company_id',
+        'zone_id',
         'name',
         'registration_number',
         'siret',
@@ -60,6 +61,11 @@ class Customer extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class);
     }
 
     public function savingsTransactions()

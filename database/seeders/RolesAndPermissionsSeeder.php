@@ -64,6 +64,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Tontine / Épargne
         ['name' => 'Gérer la tontine / épargne', 'slug' => 'tontine.manage', 'description' => 'Peut enregistrer des dépôts et retraits d\'épargne', 'module' => 'tontine', 'action' => 'manage'],
+        ['name' => 'Collecter la tontine (terrain)', 'slug' => 'tontine.collect', 'description' => 'Tontinier : peut enregistrer des dépôts pour les épargnants de ses zones', 'module' => 'tontine', 'action' => 'create'],
 
         // Entrepôts
         ['name' => 'Voir les entrepôts', 'slug' => 'warehouses.view', 'description' => 'Peut consulter les entrepôts', 'module' => 'warehouses', 'action' => 'view'],
@@ -148,6 +149,13 @@ class RolesAndPermissionsSeeder extends Seeder
                 'quotes.view', 'quotes.create',
                 'deliveries.view',
                 'pos.access', 'pos.sell',
+            ],
+        ],
+        'tontinier' => [
+            'name' => 'Tontinier',
+            'description' => 'Agent de collecte terrain (tontine) — dépôts pour ses zones',
+            'permissions' => [
+                'tontine.collect',
             ],
         ],
         'magasinier' => [

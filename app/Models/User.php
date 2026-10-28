@@ -210,6 +210,34 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             ->withTimestamps();
     }
 
+    // ============================================
+    // TONTINE — TONTINIER (agent de collecte)
+    // ============================================
+
+    /** Zones gérées par ce tontinier. */
+    public function zones(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Zone::class, 'tontinier_zone', 'user_id', 'zone_id')->withTimestamps();
+    }
+
+    public function isTontinier(): bool
+    {
+        return $this->hasRole('tontinier');
+    }
+
+    /**
+     * IDs des zones gérées par ce tontinier pour l'entreprise courante.
+     */
+    public function tontinierZoneIds(): array
+    {
+        $companyId = filament()->getTenant()?->id;
+
+        return $this->zones()
+            ->when($companyId, fn ($q) => $q->where('zones.company_id', $companyId))
+            ->pluck('zones.id')
+            ->all();
+    }
+
     /**
      * Récupère l'entrepôt par défaut de l'utilisateur pour l'entreprise courante
      */

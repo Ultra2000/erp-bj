@@ -26,7 +26,8 @@ class TontineOverview extends Page
 
     public static function canAccess(): bool
     {
-        return Tontine::canView();
+        // Vue d'ensemble globale : réservée au bureau (pas aux tontiniers de terrain).
+        return Tontine::canManage();
     }
 
     public function getCompanyId(): ?int

@@ -160,6 +160,13 @@ class CustomerResource extends Resource
                             ])
                             ->default('B2C')
                             ->helperText('B2B = IFU obligatoire pour e-MCeF'),
+                        Forms\Components\Select::make('zone_id')
+                            ->label('Zone (tontine)')
+                            ->relationship('zone', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Aucune')
+                            ->helperText('Zone de collecte de l\'épargnant'),
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
                             ->email()
