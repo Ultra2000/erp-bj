@@ -32,7 +32,7 @@ class AccountingReports extends Page implements HasForms
     protected static function isCashierUser(): bool
     {
         $user = auth()->user();
-        return $user && !$user->is_super_admin && !$user->isAdmin() && $user->isCashier();
+        return $user && !$user->is_super_admin && !$user->isAdmin() && ($user->isCashier() || $user->isTontinier());
     }
 
     public static function shouldRegisterNavigation(): bool

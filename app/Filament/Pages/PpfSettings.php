@@ -25,7 +25,7 @@ class PpfSettings extends Page implements Forms\Contracts\HasForms
     public static function shouldRegisterNavigation(): bool
     {
         $user = auth()->user();
-        if ($user && !$user->is_super_admin && !$user->isAdmin() && $user->isCashier()) {
+        if ($user && !$user->is_super_admin && !$user->isAdmin() && ($user->isCashier() || $user->isTontinier())) {
             return false;
         }
         return true;
@@ -34,7 +34,7 @@ class PpfSettings extends Page implements Forms\Contracts\HasForms
     public static function canAccess(): bool
     {
         $user = auth()->user();
-        if ($user && !$user->is_super_admin && !$user->isAdmin() && $user->isCashier()) {
+        if ($user && !$user->is_super_admin && !$user->isAdmin() && ($user->isCashier() || $user->isTontinier())) {
             return false;
         }
         return true;
