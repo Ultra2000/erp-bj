@@ -30,14 +30,18 @@ class MyCollectionWidget extends StatsOverviewWidget
         $startDay = now()->startOfDay();
         $startMonth = now()->startOfMonth();
 
-        $myDeposits = SavingsTransaction::withoutGlobalScopes()
+        // Bureau/admin : collecte TOTALE (tous les agents). Tontinier : sa collecte perso.
+        $isOffice = Tontine::canManage();
+        $label = $isOffice ? 'Collecte totale' : 'Ma collecte';
+
+        $deposits = SavingsTransaction::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('type', 'deposit')
-            ->where('created_by', $uid);
+            ->when(! $isOffice, fn ($q) => $q->where('created_by', $uid));
 
-        $todayAmount = (int) (clone $myDeposits)->where('created_at', '>=', $startDay)->sum('amount');
-        $todayCount = (clone $myDeposits)->where('created_at', '>=', $startDay)->count();
-        $monthAmount = (int) (clone $myDeposits)->where('created_at', '>=', $startMonth)->sum('amount');
+        $todayAmount = (int) (clone $deposits)->where('created_at', '>=', $startDay)->sum('amount');
+        $todayCount = (clone $deposits)->where('created_at', '>=', $startDay)->count();
+        $monthAmount = (int) (clone $deposits)->where('created_at', '>=', $startMonth)->sum('amount');
 
         $zoneIds = Tontine::visibleZoneIds();
         $savers = Customer::withoutGlobalScopes()
@@ -47,14 +51,14 @@ class MyCollectionWidget extends StatsOverviewWidget
             ->count();
 
         return [
-            Stat::make('Ma collecte aujourd\'hui', $fmt($todayAmount))
+            Stat::make($label . ' aujourd\'hui', $fmt($todayAmount))
                 ->description($todayCount . ' dépôt(s)')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),
-            Stat::make('Ma collecte ce mois', $fmt($monthAmount))
+            Stat::make($label . ' ce mois', $fmt($monthAmount))
                 ->color('primary'),
             Stat::make('Épargnants', number_format($savers, 0, ',', ' '))
-                ->description('dans mon périmètre')
+                ->description($isOffice ? 'au total' : 'dans mon périmètre')
                 ->color('gray'),
         ];
     }
