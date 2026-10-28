@@ -122,8 +122,8 @@ class ExpenseResource extends Resource
                     ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', ' ') . ' ' . $currency)
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total')->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', ' ') . ' ' . $currency)),
                 Tables\Columns\TextColumn::make('payment_method')->label('Mode')
-                    ->formatStateUsing(fn (?string $s) => match ($s) {
-                        'cash' => 'Espèces', 'mobile_money' => 'Mobile Money', 'transfer' => 'Virement', 'check' => 'Chèque', default => $s ?? '—',
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'cash' => 'Espèces', 'mobile_money' => 'Mobile Money', 'transfer' => 'Virement', 'check' => 'Chèque', default => $state ?? '—',
                     })->toggleable(),
                 Tables\Columns\IconColumn::make('receipt_path')->label('Justif.')->boolean()->toggleable(),
                 Tables\Columns\TextColumn::make('createdBy.name')->label('Enregistré par')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
