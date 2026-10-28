@@ -37,7 +37,20 @@ class Dashboard extends Page implements HasForms
     public static function shouldRegisterNavigation(): bool
     {
         $user = auth()->user();
-        return !$user?->isCashier();
+
+        if (! $user) {
+            return false;
+        }
+
+        // Caissiers et tontiniers (non-admin) n'ont pas le tableau de bord admin.
+        if ($user->isCashier()) {
+            return false;
+        }
+        if ($user->isTontinier() && ! $user->isAdmin()) {
+            return false;
+        }
+
+        return true;
     }
 
     public function mount(): void
@@ -50,6 +63,12 @@ class Dashboard extends Page implements HasForms
                 redirect()->to(route('filament.admin.pages.cash-register-page', ['tenant' => $tenant->slug]));
                 return;
             }
+        }
+
+        // Le tontinier de terrain atterrit sur son écran de collecte (Épargnants).
+        if ($user && $user->isTontinier() && ! $user->isAdmin() && Filament::getTenant()) {
+            redirect()->to(\App\Filament\Resources\SaverResource::getUrl('index'));
+            return;
         }
 
         $this->selectedWarehouse = null;
