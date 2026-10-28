@@ -141,9 +141,20 @@ class ExpenseResource extends Resource
                     ])
                     ->query(fn (Builder $query, array $data) => $query
                         ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('spent_at', '>=', $d))
-                        ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('spent_at', '<=', $d))),
+                        ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('spent_at', '<=', $d)))
+                    ->indicateUsing(function (array $data): array {
+                        $ind = [];
+                        if ($data['from'] ?? null) {
+                            $ind[] = \Filament\Tables\Filters\Indicator::make('Du ' . \Illuminate\Support\Carbon::parse($data['from'])->format('d/m/Y'))->removeField('from');
+                        }
+                        if ($data['until'] ?? null) {
+                            $ind[] = \Filament\Tables\Filters\Indicator::make('Au ' . \Illuminate\Support\Carbon::parse($data['until'])->format('d/m/Y'))->removeField('until');
+                        }
+                        return $ind;
+                    }),
             ])
-            ->filtersFormColumns(2)
+            ->filtersFormColumns(3)
+            ->filtersLayout(\Filament\Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\EditAction::make()->label('Modifier'),
                 Tables\Actions\DeleteAction::make()->label('Supprimer'),
