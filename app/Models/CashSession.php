@@ -164,7 +164,7 @@ class CashSession extends Model
         $savingsCash = (int) SavingsTransaction::withoutGlobalScopes()
             ->where('cash_session_id', $this->id)
             ->where('payment_method', 'cash')
-            ->whereIn('type', ['deposit', 'withdrawal'])
+            ->whereIn('type', ['deposit', 'withdrawal', 'adjustment', 'refund'])
             ->sum('amount');
 
         $this->total_savings = $savingsCash;
@@ -206,7 +206,10 @@ class CashSession extends Model
      */
     public static function getOpenSession(int $companyId, int $userId): ?self
     {
-        return static::where('company_id', $companyId)
+        // company_id est déjà contraint explicitement : on retire le scope global
+        // pour que la recherche fonctionne aussi hors contexte tenant (web, jobs).
+        return static::withoutGlobalScopes()
+            ->where('company_id', $companyId)
             ->where('user_id', $userId)
             ->where('status', 'open')
             ->first();

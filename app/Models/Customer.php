@@ -115,4 +115,13 @@ class Customer extends Model
     {
         return $this->recordSavings('purchase', -abs($amount), $meta);
     }
+
+    /**
+     * Écriture d'ajustement (correction / contre-passation). Montant signé :
+     * positif pour recréditer, négatif pour débiter.
+     */
+    public function adjust(int $signedAmount, array $meta = []): SavingsTransaction
+    {
+        return $this->recordSavings('adjustment', $signedAmount, $meta);
+    }
 }

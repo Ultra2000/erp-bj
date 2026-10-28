@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SavingsTransactionResource\Pages;
 use App\Models\SavingsTransaction;
+use App\Support\SavingsCorrection;
 use App\Support\Tontine;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -142,6 +144,47 @@ class SavingsTransactionResource extends Resource
                     ->color('gray')
                     ->url(fn (SavingsTransaction $record) => route('savings.receipt', $record))
                     ->openUrlInNewTab(),
+                Tables\Actions\Action::make('corriger')
+                    ->label('Corriger')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('warning')
+                    ->visible(fn (SavingsTransaction $record) => Tontine::canAdjust() && SavingsCorrection::isCorrectable($record))
+                    ->modalHeading('Corriger le montant')
+                    ->form([
+                        Forms\Components\Placeholder::make('actuel')
+                            ->label('Montant actuel')
+                            ->content(fn (SavingsTransaction $record) => number_format(abs((int) $record->amount), 0, ',', ' ') . ' ' . $currency),
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Montant correct')->numeric()->minValue(1)->required()->suffix($currency),
+                        Forms\Components\TextInput::make('reason')->label('Motif (optionnel)')->maxLength(255),
+                    ])
+                    ->action(function (SavingsTransaction $record, array $data) {
+                        try {
+                            SavingsCorrection::correctAmount($record, (int) $data['amount'], $data['reason'] ?? null);
+                            Notification::make()->title('Montant corrigé')->success()->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()->title('Correction impossible')->body($e->getMessage())->danger()->send();
+                        }
+                    }),
+                Tables\Actions\Action::make('annuler')
+                    ->label('Annuler')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('danger')
+                    ->visible(fn (SavingsTransaction $record) => Tontine::canAdjust() && SavingsCorrection::isCorrectable($record))
+                    ->requiresConfirmation()
+                    ->modalHeading('Annuler ce mouvement')
+                    ->modalDescription('Une écriture d\'ajustement inverse sera créée. Le mouvement d\'origine est conservé dans l\'historique.')
+                    ->form([
+                        Forms\Components\TextInput::make('reason')->label('Motif (optionnel)')->maxLength(255),
+                    ])
+                    ->action(function (SavingsTransaction $record, array $data) {
+                        try {
+                            SavingsCorrection::reverse($record, $data['reason'] ?? null);
+                            Notification::make()->title('Mouvement annulé')->success()->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()->title('Annulation impossible')->body($e->getMessage())->danger()->send();
+                        }
+                    }),
             ])
             ->emptyStateHeading('Aucun mouvement d\'épargne')
             ->emptyStateIcon('heroicon-o-banknotes');

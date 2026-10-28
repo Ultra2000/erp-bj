@@ -27,6 +27,17 @@ class Tontine
     }
 
     /**
+     * Peut corriger / annuler un mouvement d'épargne (opération sensible).
+     * Réservé aux administrateurs.
+     */
+    public static function canAdjust(?User $user = null): bool
+    {
+        $user ??= auth()->user();
+
+        return $user && ($user->is_super_admin || $user->isAdmin());
+    }
+
+    /**
      * Peut consulter la vue d'ensemble / les mouvements d'épargne.
      */
     public static function canView(?User $user = null): bool
