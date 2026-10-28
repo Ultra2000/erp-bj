@@ -155,6 +155,17 @@ class TontineOverview extends Page
             'nb' => (int) $r->nb,
         ])->values()->all();
 
+        // Frais de tenue de compte encaissés (revenu entreprise, hors épargne).
+        $totalFees = (int) SavingsTransaction::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('type', 'fee')
+            ->sum('amount');
+
+        $feesCount = (int) SavingsTransaction::withoutGlobalScopes()
+            ->where('company_id', $companyId)
+            ->where('type', 'fee')
+            ->count();
+
         return [
             'total' => $total,
             'savers' => $savers,
@@ -164,6 +175,8 @@ class TontineOverview extends Page
             'used_month' => $sumByType('purchase'),
             'topSavers' => $topSavers,
             'topTontiniers' => $topTontiniers,
+            'total_fees' => $totalFees,
+            'fees_count' => $feesCount,
             'recent' => $recent,
             'month' => ucfirst($start->locale('fr')->isoFormat('MMMM YYYY')),
         ];

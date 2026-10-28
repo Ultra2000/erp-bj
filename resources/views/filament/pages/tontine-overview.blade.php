@@ -5,10 +5,15 @@
     @endphp
 
     {{-- Cartes de synthèse --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-filament::section>
             <div class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Total épargné (dû aux clients)</div>
             <div class="mt-1 text-2xl font-black text-primary-600 dark:text-primary-400">{{ $fmt($total) }}</div>
+        </x-filament::section>
+        <x-filament::section>
+            <div class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Frais de tenue de compte</div>
+            <div class="mt-1 text-2xl font-black text-amber-600 dark:text-amber-400">{{ $fmt($total_fees) }}</div>
+            <div class="text-xs text-gray-400">Revenu entreprise — {{ number_format($fees_count, 0, ',', ' ') }} compte(s)</div>
         </x-filament::section>
         <x-filament::section>
             <div class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Épargnants</div>
