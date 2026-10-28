@@ -186,6 +186,63 @@ class SaverResource extends Resource
                         $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
                     }),
             ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('chargeFees')
+                        ->label('Prélever les frais de tenue')
+                        ->icon('heroicon-o-banknotes')
+                        ->color('warning')
+                        ->visible(fn () => Tontine::canAdjust())
+                        ->requiresConfirmation()
+                        ->modalHeading('Prélever les frais de tenue de compte')
+                        ->modalDescription('Les frais (définis dans les réglages de l\'entreprise) seront prélevés une seule fois pour chaque client sélectionné qui ne les a pas encore payés. Le solde d\'épargne n\'est pas affecté.')
+                        ->form([
+                            Forms\Components\Select::make('payment_method')
+                                ->label('Mode')
+                                ->options(['cash' => 'Espèces', 'mobile_money' => 'Mobile Money', 'transfer' => 'Virement', 'other' => 'Autre'])
+                                ->default('cash'),
+                        ])
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data) {
+                            $fee = (int) (Filament::getTenant()->tontine_fee ?? 2000);
+
+                            if ($fee <= 0) {
+                                Notification::make()->title('Aucun frais configuré')
+                                    ->body('Le montant des frais de tenue est à 0 dans les réglages.')
+                                    ->warning()->send();
+                                return;
+                            }
+
+                            $charged = 0;
+                            $skipped = 0;
+
+                            foreach ($records as $customer) {
+                                $already = SavingsTransaction::withoutGlobalScopes()
+                                    ->where('customer_id', $customer->id)
+                                    ->where('type', 'fee')
+                                    ->exists();
+
+                                if ($already) {
+                                    $skipped++;
+                                    continue;
+                                }
+
+                                $customer->chargeAccountFee($fee, [
+                                    'payment_method' => $data['payment_method'] ?? 'cash',
+                                    'notes' => 'Frais de tenue de compte (régularisation)',
+                                    'reference' => 'FEE-' . $customer->id,
+                                ]);
+                                $charged++;
+                            }
+
+                            Notification::make()
+                                ->title('Frais prélevés')
+                                ->body($charged . ' client(s) régularisé(s) — ' . $skipped . ' déjà à jour.')
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                ]),
+            ])
             ->emptyStateHeading('Aucun épargnant')
             ->emptyStateDescription('Aucun client n\'a de solde d\'épargne pour le moment.')
             ->emptyStateIcon('heroicon-o-banknotes');
