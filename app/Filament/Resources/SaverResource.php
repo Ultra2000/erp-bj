@@ -5,10 +5,13 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SaverResource\Pages;
 use App\Models\Customer;
 use App\Models\SavingsTransaction;
+use App\Support\SavingsOps;
 use App\Support\Tontine;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Actions\Action as NotificationAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -119,6 +122,34 @@ class SaverResource extends Resource
                     ->preload(),
             ])
             ->actions([
+                Tables\Actions\Action::make('depot')
+                    ->label('Dépôt')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->visible(fn () => Tontine::canCollect())
+                    ->modalHeading(fn (Customer $record) => 'Dépôt — ' . $record->name)
+                    ->modalWidth('md')
+                    ->form([
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Montant du dépôt')->numeric()->minValue(1)->required()->suffix($currency)->autofocus(),
+                        Forms\Components\Select::make('payment_method')->label('Mode')
+                            ->options(['cash' => 'Espèces', 'mobile_money' => 'Mobile Money', 'card' => 'Carte', 'transfer' => 'Virement'])
+                            ->default('cash'),
+                        Forms\Components\TextInput::make('notes')->label('Note')->maxLength(255),
+                    ])
+                    ->action(function (Customer $record, array $data) use ($currency) {
+                        $tx = SavingsOps::deposit($record, (int) $data['amount'], $data['payment_method'] ?? 'cash', $data['notes'] ?? null);
+                        Notification::make()->title('Dépôt enregistré')
+                            ->body($record->name . ' — nouveau solde : ' . number_format((int) $record->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
+                            ->success()
+                            ->actions([
+                                NotificationAction::make('receipt')
+                                    ->label('Imprimer le reçu')
+                                    ->icon('heroicon-o-printer')
+                                    ->url(route('savings.receipt', $tx), shouldOpenInNewTab: true),
+                            ])
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('mouvements')
                     ->label('Mouvements')
                     ->icon('heroicon-o-list-bullet')

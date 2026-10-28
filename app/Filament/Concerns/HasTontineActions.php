@@ -121,14 +121,7 @@ trait HasTontineActions
             ])
             ->action(function (array $data) use ($currency) {
                 $c = Customer::findOrFail($data['customer_id']);
-                $method = $data['payment_method'] ?? 'cash';
-                $meta = ['payment_method' => $method, 'notes' => $data['notes'] ?? null];
-                $session = $method === 'cash' ? CashSession::getOpenSession($c->company_id, auth()->id()) : null;
-                if ($session) {
-                    $meta['cash_session_id'] = $session->id;
-                }
-                $tx = $c->deposit((int) $data['amount'], $meta);
-                $session?->recalculate();
+                $tx = \App\Support\SavingsOps::deposit($c, (int) $data['amount'], $data['payment_method'] ?? 'cash', $data['notes'] ?? null);
                 Notification::make()->title('Dépôt enregistré')
                     ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                     ->success()
@@ -168,13 +161,7 @@ trait HasTontineActions
             ->action(function (array $data) use ($currency) {
                 $c = Customer::findOrFail($data['customer_id']);
                 try {
-                    $session = CashSession::getOpenSession($c->company_id, auth()->id());
-                    $meta = ['payment_method' => 'cash', 'notes' => $data['notes'] ?? null];
-                    if ($session) {
-                        $meta['cash_session_id'] = $session->id;
-                    }
-                    $tx = $c->withdraw((int) $data['amount'], $meta);
-                    $session?->recalculate();
+                    $tx = \App\Support\SavingsOps::withdraw($c, (int) $data['amount'], $data['notes'] ?? null);
                     Notification::make()->title('Retrait effectué')
                         ->body($c->name . ' — nouveau solde : ' . number_format((int) $c->fresh()->savings_balance, 0, ',', ' ') . ' ' . $currency)
                         ->success()

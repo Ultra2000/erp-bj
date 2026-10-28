@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SaverResource\Pages;
 
 use App\Filament\Concerns\HasTontineActions;
 use App\Filament\Resources\SaverResource;
+use App\Filament\Widgets\MyCollectionWidget;
 use Filament\Resources\Pages\ListRecords;
 
 class ListSavers extends ListRecords
@@ -15,6 +16,13 @@ class ListSavers extends ListRecords
     public function getTitle(): string
     {
         return 'Épargnants';
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            MyCollectionWidget::class,
+        ];
     }
 
     protected function getHeaderActions(): array
