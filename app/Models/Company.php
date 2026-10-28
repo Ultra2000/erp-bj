@@ -277,6 +277,11 @@ class Company extends Model
         return $this->hasMany(Customer::class);
     }
 
+    public function zones(): HasMany
+    {
+        return $this->hasMany(Zone::class);
+    }
+
     public function suppliers(): HasMany
     {
         return $this->hasMany(Supplier::class);
