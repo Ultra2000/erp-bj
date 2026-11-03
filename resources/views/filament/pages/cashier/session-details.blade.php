@@ -69,9 +69,9 @@
         </div>
         @endif
         @if(($session->total_savings ?? 0) != 0)
-        <div class="flex justify-between">
-            <span class="text-gray-600 dark:text-gray-400">Épargne / tontine (espèces)</span>
-            <span class="font-medium {{ $session->total_savings < 0 ? 'text-danger-600' : '' }}">{{ ($session->total_savings >= 0 ? '+' : '') . number_format($session->total_savings, 0, ',', ' ') }} FCFA</span>
+        <div class="flex justify-between text-xs text-gray-400">
+            <span>Épargne / tontine (espèces) — hors caisse, pour info</span>
+            <span>{{ ($session->total_savings >= 0 ? '+' : '') . number_format($session->total_savings, 0, ',', ' ') }} FCFA</span>
         </div>
         @endif
     </div>
@@ -80,7 +80,7 @@
     <hr class="border-gray-200 dark:border-gray-700">
 
     @php
-        $expectedCash = floatval($session->opening_amount) + floatval($session->total_cash) + floatval($session->total_savings ?? 0);
+        $expectedCash = floatval($session->opening_amount) + floatval($session->total_cash);
         $difference = floatval($session->closing_amount) - $expectedCash;
     @endphp
 

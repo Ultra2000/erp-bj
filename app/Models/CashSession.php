@@ -167,9 +167,11 @@ class CashSession extends Model
             ->whereIn('type', ['deposit', 'withdrawal', 'adjustment', 'refund', 'fee'])
             ->sum('amount');
 
+        // Épargne/tontine conservée pour information uniquement : elle est gérée
+        // hors du tiroir POS et N'ENTRE PAS dans le rapprochement de caisse.
         $this->total_savings = $savingsCash;
 
-        $this->expected_amount = $this->opening_amount + $this->total_cash + $savingsCash;
+        $this->expected_amount = $this->opening_amount + $this->total_cash;
 
         $this->save();
 
