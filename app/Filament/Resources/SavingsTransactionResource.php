@@ -78,19 +78,20 @@ class SavingsTransactionResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label('Opération')
                     ->badge()
-                    ->color(fn (string $state) => match ($state) {
+                    ->color(fn (string $state, SavingsTransaction $record) => $record->reversed_at ? 'gray' : match ($state) {
                         'deposit', 'refund' => 'success',
                         'withdrawal' => 'danger',
                         'purchase' => 'warning',
                         'fee' => 'info',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state) => SavingsTransaction::TYPES[$state] ?? $state),
+                    ->formatStateUsing(fn (string $state, SavingsTransaction $record) => (SavingsTransaction::TYPES[$state] ?? $state) . ($record->reversed_at ? ' (annulé)' : '')),
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Montant')
                     ->alignEnd()
                     ->sortable()
-                    ->color(fn ($state) => $state >= 0 ? 'success' : 'danger')
+                    ->color(fn ($state, SavingsTransaction $record) => $record->reversed_at ? 'gray' : ($state >= 0 ? 'success' : 'danger'))
+                    ->extraAttributes(fn (SavingsTransaction $record) => $record->reversed_at ? ['class' => 'line-through opacity-60'] : [])
                     ->formatStateUsing(fn ($state) => ($state >= 0 ? '+' : '') . number_format((int) $state, 0, ',', ' ') . ' ' . $currency),
                 Tables\Columns\TextColumn::make('balance_after')
                     ->label('Solde après')
