@@ -10,6 +10,7 @@ use App\Support\Tontine;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
+use Illuminate\Support\Carbon;
 
 class TontineOverview extends Page
 {
@@ -25,10 +26,20 @@ class TontineOverview extends Page
 
     protected static string $view = 'filament.pages.tontine-overview';
 
+    public ?string $start_date = null;
+
+    public ?string $end_date = null;
+
     public static function canAccess(): bool
     {
         // Vue d'ensemble globale : réservée au bureau (pas aux tontiniers de terrain).
         return Tontine::canManage();
+    }
+
+    public function mount(): void
+    {
+        $this->start_date = now()->startOfMonth()->toDateString();
+        $this->end_date = now()->toDateString();
     }
 
     public function getCompanyId(): ?int
@@ -46,7 +57,11 @@ class TontineOverview extends Page
                 ->label('Export PDF')
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('danger')
-                ->url(fn () => route('tontine.export', ['company' => $this->getCompanyId()]))
+                ->url(fn () => route('tontine.export', [
+                    'company' => $this->getCompanyId(),
+                    'from' => $this->start_date,
+                    'until' => $this->end_date,
+                ]))
                 ->openUrlInNewTab(),
         ];
     }
@@ -86,18 +101,21 @@ class TontineOverview extends Page
     protected function getViewData(): array
     {
         return array_merge(
-            static::buildData($this->getCompanyId()),
+            static::buildData($this->getCompanyId(), $this->start_date, $this->end_date),
             ['currency' => Filament::getTenant()->currency ?? 'FCFA'],
         );
     }
 
     /**
      * Données de synthèse de la tontine pour une entreprise (page + export PDF).
+     * Les métriques de flux (mouvements, top tontiniers) suivent la période ;
+     * les métriques de stock (total épargné, épargnants, frais cumulés) sont
+     * au temps présent.
      */
-    public static function buildData(int $companyId): array
+    public static function buildData(int $companyId, ?string $startDate = null, ?string $endDate = null): array
     {
-        $start = now()->startOfMonth();
-        $end = now()->endOfMonth();
+        $start = $startDate ? Carbon::parse($startDate)->startOfDay() : now()->startOfMonth();
+        $end = $endDate ? Carbon::parse($endDate)->endOfDay() : now()->endOfDay();
 
         $total = (int) Customer::withoutGlobalScopes()
             ->where('company_id', $companyId)
@@ -178,7 +196,7 @@ class TontineOverview extends Page
             'total_fees' => $totalFees,
             'fees_count' => $feesCount,
             'recent' => $recent,
-            'month' => ucfirst($start->locale('fr')->isoFormat('MMMM YYYY')),
+            'month' => 'du ' . $start->format('d/m/Y') . ' au ' . $end->format('d/m/Y'),
         ];
     }
 }

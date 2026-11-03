@@ -4,6 +4,25 @@
         $typeLabels = \App\Models\SavingsTransaction::TYPES;
     @endphp
 
+    {{-- Sélecteur de période (mouvements & top tontiniers) --}}
+    <x-filament::section>
+        <div class="flex flex-wrap items-end gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Du</label>
+                <input type="date" wire:model.live="start_date"
+                       class="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">Au</label>
+                <input type="date" wire:model.live="end_date"
+                       class="rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm">
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">
+                Les totaux « épargné / épargnants / frais » sont au temps présent ; les mouvements et le top tontiniers suivent la période.
+            </div>
+        </div>
+    </x-filament::section>
+
     {{-- Cartes de synthèse --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-filament::section>

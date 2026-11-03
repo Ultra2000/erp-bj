@@ -27,7 +27,7 @@ class TontineReportController extends Controller
             Filament::setTenant($companyModel);
         }
 
-        $data = TontineOverview::buildData((int) $companyId);
+        $data = TontineOverview::buildData((int) $companyId, $request->query('from'), $request->query('until'));
 
         $pdf = Pdf::loadView('reports.tontine', array_merge($data, [
             'company' => $companyModel,
