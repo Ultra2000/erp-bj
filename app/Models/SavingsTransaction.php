@@ -22,11 +22,13 @@ class SavingsTransaction extends Model
         'created_by',
         'reference',
         'notes',
+        'reversed_at',
     ];
 
     protected $casts = [
         'amount' => 'integer',
         'balance_after' => 'integer',
+        'reversed_at' => 'datetime',
     ];
 
     public const TYPES = [

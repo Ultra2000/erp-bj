@@ -90,6 +90,7 @@ class TontineReports extends Page
 
         $byType = SavingsTransaction::withoutGlobalScopes()
             ->where('company_id', $companyId)
+            ->whereNull('reversed_at')
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('type, COALESCE(SUM(amount), 0) as total, COUNT(*) as nb')
             ->groupBy('type')
@@ -104,6 +105,7 @@ class TontineReports extends Page
             ->join('customers', 'customers.id', '=', 'savings_transactions.customer_id')
             ->where('savings_transactions.company_id', $companyId)
             ->where('savings_transactions.type', 'deposit')
+            ->whereNull('savings_transactions.reversed_at')
             ->whereBetween('savings_transactions.created_at', [$start, $end])
             ->selectRaw('customers.zone_id as zone_id, COALESCE(SUM(savings_transactions.amount), 0) as total, COUNT(*) as nb')
             ->groupBy('customers.zone_id')
@@ -121,6 +123,7 @@ class TontineReports extends Page
         $depByAgent = SavingsTransaction::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('type', 'deposit')
+            ->whereNull('reversed_at')
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('created_by, COALESCE(SUM(amount), 0) as total, COUNT(*) as nb')
             ->groupBy('created_by')

@@ -37,6 +37,7 @@ class MyCollectionWidget extends StatsOverviewWidget
         $deposits = SavingsTransaction::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('type', 'deposit')
+            ->whereNull('reversed_at')
             ->when(! $isOffice, fn ($q) => $q->where('created_by', $uid));
 
         $todayAmount = (int) (clone $deposits)->where('created_at', '>=', $startDay)->sum('amount');

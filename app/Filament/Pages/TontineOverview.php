@@ -131,6 +131,7 @@ class TontineOverview extends Page
             return (int) abs((int) SavingsTransaction::withoutGlobalScopes()
                 ->where('company_id', $companyId)
                 ->where('type', $type)
+                ->whereNull('reversed_at')
                 ->whereBetween('created_at', [$start, $end])
                 ->sum('amount'));
         };
@@ -157,6 +158,7 @@ class TontineOverview extends Page
         $depRows = SavingsTransaction::withoutGlobalScopes()
             ->where('company_id', $companyId)
             ->where('type', 'deposit')
+            ->whereNull('reversed_at')
             ->whereBetween('created_at', [$start, $end])
             ->whereIn('created_by', $tontinierIds)
             ->selectRaw('created_by, COALESCE(SUM(amount), 0) as total, COUNT(*) as nb')

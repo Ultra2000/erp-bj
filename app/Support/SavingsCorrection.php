@@ -17,22 +17,21 @@ class SavingsCorrection
     public const CORRECTABLE = ['deposit', 'withdrawal'];
 
     /**
-     * Un mouvement déjà annulé ou corrigé ne peut plus l'être (évite les doubles).
+     * Un mouvement déjà annulé/corrigé (marqué reversed_at) ne peut plus l'être.
      */
     public static function isAdjusted(SavingsTransaction $tx): bool
     {
-        return SavingsTransaction::withoutGlobalScopes()
-            ->whereIn('reference', ['ANNUL-' . $tx->id, 'CORR-' . $tx->id])
-            ->exists();
+        return $tx->reversed_at !== null;
     }
 
     public static function isCorrectable(SavingsTransaction $tx): bool
     {
-        return in_array($tx->type, self::CORRECTABLE, true) && ! self::isAdjusted($tx);
+        return in_array($tx->type, self::CORRECTABLE, true) && $tx->reversed_at === null;
     }
 
     /**
-     * Annule entièrement un mouvement : écriture d'ajustement de sens inverse.
+     * Annule entièrement un mouvement : écriture d'ajustement de sens inverse,
+     * et marque l'original comme annulé (exclu des totaux de collecte).
      */
     public static function reverse(SavingsTransaction $tx, ?string $reason = null): SavingsTransaction
     {
@@ -44,12 +43,18 @@ class SavingsCorrection
             'notes' => 'Annulation du mouvement #' . $tx->id . ($reason ? ' — ' . $reason : ''),
         ];
 
-        return self::apply($customer, -(int) $tx->amount, $tx, $meta);
+        $adjustment = self::apply($customer, -(int) $tx->amount, $tx, $meta);
+
+        $tx->reversed_at = now();
+        $tx->saveQuietly();
+
+        return $adjustment;
     }
 
     /**
-     * Corrige le montant : crée l'ajustement de la différence, dans le même
-     * sens que le mouvement d'origine. $newMagnitude est un montant positif.
+     * Corrige le montant : contre-passe l'original (marqué annulé) et recrée un
+     * mouvement « vivant » au bon montant, en conservant l'auteur et la date
+     * d'origine (pour une collecte juste). $newMagnitude est un montant positif.
      */
     public static function correctAmount(SavingsTransaction $tx, int $newMagnitude, ?string $reason = null): SavingsTransaction
     {
@@ -57,22 +62,49 @@ class SavingsCorrection
 
         $direction = (int) $tx->amount >= 0 ? 1 : -1;
         $correctSigned = $direction * abs($newMagnitude);
-        $delta = $correctSigned - (int) $tx->amount;
 
-        if ($delta === 0) {
+        if ($correctSigned === (int) $tx->amount) {
             throw new \RuntimeException('Le montant corrigé est identique au montant actuel.');
         }
 
-        $meta = [
+        // 1) Contre-passer l'original + le marquer annulé.
+        self::apply($customer, -(int) $tx->amount, $tx, [
             'payment_method' => $tx->payment_method,
             'reference' => 'CORR-' . $tx->id,
             'notes' => 'Correction du mouvement #' . $tx->id . ' : '
                 . number_format(abs((int) $tx->amount), 0, ',', ' ') . ' → '
                 . number_format(abs($newMagnitude), 0, ',', ' ')
                 . ($reason ? ' — ' . $reason : ''),
-        ];
+        ]);
+        $tx->reversed_at = now();
+        $tx->saveQuietly();
 
-        return self::apply($customer, $delta, $tx, $meta);
+        // 2) Recréer le mouvement au bon montant (type, auteur et date d'origine).
+        $session = $tx->payment_method === 'cash'
+            ? CashSession::getOpenSession($customer->company_id, auth()->id())
+            : null;
+
+        $replMeta = [
+            'payment_method' => $tx->payment_method,
+            'reference' => 'CORR-NEW-' . $tx->id,
+            'notes' => 'Montant corrigé (réf. #' . $tx->id . ')',
+        ];
+        if ($session) {
+            $replMeta['cash_session_id'] = $session->id;
+        }
+
+        $replacement = $tx->type === 'withdrawal'
+            ? $customer->withdraw(abs($newMagnitude), $replMeta)
+            : $customer->deposit(abs($newMagnitude), $replMeta);
+
+        // Conserver l'attribution et la période du mouvement d'origine.
+        $replacement->created_at = $tx->created_at;
+        $replacement->created_by = $tx->created_by;
+        $replacement->saveQuietly();
+
+        $session?->recalculate();
+
+        return $replacement;
     }
 
     /**
